@@ -4,7 +4,7 @@ Interface Next.js App Router conectada à primeira vertical slice da API. Não c
 
 Use Node 22+, copie `.env.example` para `.env.local`, instale as dependências e execute `pnpm dev`.
 
-Com `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, a aplicação usa sessão SSR em cookies, login, logout e recuperação de senha. Sem essas variáveis, o modo local mantém os cabeçalhos de desenvolvimento; esse fallback não funciona na API em produção.
+Com `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, a aplicação usa sessão SSR em cookies, login, logout e recuperação de senha. O tenant é resolvido pela membership do usuário autenticado e nunca é configurado em variável pública. Sem Supabase, o modo local mantém os cabeçalhos de desenvolvimento; esse fallback não funciona na API em produção.
 
 A tela seleciona contrapartes do tenant, versiona a política de margem, recalcula rascunhos preservando cenários anteriores e cancela ofertas antes da ativação do contrato.
 

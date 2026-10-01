@@ -41,17 +41,21 @@ export function OfferWorkspace() {
   const [bootstrapAttempt, setBootstrapAttempt] = useState(0);
   const [bootstrapFailed, setBootstrapFailed] = useState(false);
   const authConfigured = hasSupabaseConfiguration();
-  const tenantId = process.env.NEXT_PUBLIC_TENANT_ID ?? process.env.NEXT_PUBLIC_DEV_TENANT_ID;
-  const envReady = Boolean(apiUrl && tenantId && (authConfigured || process.env.NEXT_PUBLIC_DEV_ACTOR_ID));
+  const developmentTenantId = process.env.NEXT_PUBLIC_DEV_TENANT_ID;
+  const envReady = Boolean(apiUrl && (authConfigured
+    || (developmentTenantId && process.env.NEXT_PUBLIC_DEV_ACTOR_ID)));
 
   async function identityHeaders(): Promise<Record<string, string>> {
-    if (!tenantId) throw new Error('Tenant não configurado.');
     if (authConfigured) {
       const { data } = await createClient().auth.getSession();
       if (!data.session?.access_token) throw new Error('Sessão expirada. Entre novamente.');
-      return { 'x-tenant-id': tenantId, authorization: `Bearer ${data.session.access_token}` };
+      return { authorization: `Bearer ${data.session.access_token}` };
     }
-    return { 'x-tenant-id': tenantId, 'x-actor-id': process.env.NEXT_PUBLIC_DEV_ACTOR_ID ?? '' };
+    if (!developmentTenantId) throw new Error('Tenant local não configurado.');
+    return {
+      'x-tenant-id': developmentTenantId,
+      'x-actor-id': process.env.NEXT_PUBLIC_DEV_ACTOR_ID ?? '',
+    };
   }
 
   async function request<T>(path: string, method: 'GET' | 'POST' | 'PUT' | 'PATCH' = 'POST', body?: object): Promise<T> {
@@ -222,7 +226,7 @@ export function OfferWorkspace() {
       {pending === 'bootstrap' ? (
         <div className="loading-band" role="status"><span />Carregando dados do tenant…</div>
       ) : null}
-      {!envReady ? <div className="feedback critical">As variáveis de ambiente da API e do tenant não estão completas.</div> : null}
+      {!envReady ? <div className="feedback critical">As variáveis de ambiente da API e da autenticação não estão completas.</div> : null}
       {error ? <div className="feedback critical" role="alert"><strong>Não foi possível concluir</strong><span>{error}</span>{bootstrapFailed ? <Button type="button" variant="tertiary" size="sm" onClick={() => setBootstrapAttempt((current) => current + 1)} disabled={pending !== null}>Tentar novamente</Button> : null}</div> : null}
       {notice ? <div className="feedback positive" role="status"><strong>Alteração salva</strong><span>{notice}</span></div> : null}
 
@@ -355,6 +359,7 @@ function readableError(value: unknown) {
     MARGIN_BELOW_ABSOLUTE_FLOOR: 'A margem calculada ficou abaixo do piso absoluto da política.',
     CAPABILITY_NOT_FOUND: 'Seu usuário não possui permissão para executar esta ação.',
     ACTIVE_MEMBERSHIP_NOT_FOUND: 'Seu usuário não possui vínculo ativo com este tenant.',
+    ACTIVE_MEMBERSHIP_REQUIRED: 'Seu usuário ainda não possui acesso ativo a uma empresa.',
     INVALID_DELIVERY_WINDOW: 'A data final da entrega deve ser igual ou posterior à data inicial.',
   };
   return messages[code] ?? (code || 'A operação não pôde ser concluída.');
