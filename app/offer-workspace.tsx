@@ -28,8 +28,7 @@ export function OfferWorkspace() {
     process.env.NEXT_PUBLIC_API_URL && process.env.NEXT_PUBLIC_DEV_TENANT_ID &&
     process.env.NEXT_PUBLIC_DEV_ACTOR_ID && process.env.NEXT_PUBLIC_DEV_COUNTERPARTY_ID,
   ), []);
-  const headers = useMemo(() => ({
-    'content-type': 'application/json',
+  const identityHeaders = useMemo(() => ({
     'x-tenant-id': process.env.NEXT_PUBLIC_DEV_TENANT_ID!,
     'x-actor-id': process.env.NEXT_PUBLIC_DEV_ACTOR_ID!,
   }), []);
@@ -38,7 +37,7 @@ export function OfferWorkspace() {
     setError(null);
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${path}`, {
       method,
-      headers,
+      headers: body ? { ...identityHeaders, 'content-type': 'application/json' } : identityHeaders,
       body: body ? JSON.stringify(body) : undefined,
     });
     const payload = await response.json();
