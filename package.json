@@ -2,7 +2,9 @@
   "name": "@mountier/tier-trade-web",
   "version": "0.1.0",
   "private": true,
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -11,6 +13,8 @@
   },
   "dependencies": {
     "@mountier/tier-trade-design-system": "file:../tier-trade-design-system",
+    "@supabase/ssr": "0.12.7",
+    "@supabase/supabase-js": "2.117.2",
     "geist": "^1.5.1",
     "next": "^16.2.9",
     "react": "^19.2.0",
