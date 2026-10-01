@@ -64,10 +64,10 @@ main { min-width: 0; }
 .environment-label { padding-bottom: 3px; color: var(--ink-muted); font-size: 11px; white-space: nowrap; }
 
 .process-rail { max-width: 1520px; margin: 0 auto; padding: 22px 40px 28px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); list-style: none; }
-.process-rail li { position: relative; display: grid; grid-template-columns: 22px 1fr; align-items: center; gap: 8px; color: var(--ink-muted); font-size: 11px; }
-.process-rail li:not(:last-child)::after { content: ""; position: absolute; top: 10px; right: 12px; left: 28px; border-top: 1px dashed var(--line-strong); }
+.process-rail li { position: relative; display: grid; grid-template-columns: 22px 1fr; align-items: start; gap: 8px; color: var(--ink-muted); font-size: 11px; }
+.process-rail li:not(:last-child)::after { content: ""; position: absolute; top: 24px; right: 12px; left: 28px; border-top: 1px dashed var(--line-strong); }
 .process-rail li > span { z-index: 1; width: 11px; height: 11px; display: grid; place-items: center; border: 1px solid var(--line-strong); color: transparent; background: white; font-size: 8px; }
-.process-rail li strong { font-weight: 600; }
+.process-rail li strong { position: relative; top: -2px; line-height: 16px; font-weight: 600; }
 .process-rail li[data-state="done"] { color: var(--forest); }
 .process-rail li[data-state="done"] > span { width: 13px; height: 13px; color: white; background: var(--forest); border-color: var(--forest); }
 .process-rail li[data-state="done"]::after { border-top-style: solid; border-color: var(--forest); }
@@ -80,6 +80,7 @@ main { min-width: 0; }
 @keyframes spin { to { transform: rotate(1turn); } }
 .feedback { margin-bottom: 18px; padding: 13px 40px; display: flex; gap: 12px; border-block: 1px solid; font-size: 12px; line-height: 18px; }
 .feedback strong { white-space: nowrap; }
+.feedback .tt-button { margin-left: auto; flex: none; }
 .feedback.critical { color: var(--state-critical); background: var(--state-critical-bg); border-color: #e5bbb7; }
 .feedback.positive { color: var(--state-positive); background: var(--state-positive-bg); border-color: #bcd5b7; }
 
@@ -169,7 +170,8 @@ main { min-width: 0; }
   .context-bar { top: 56px; padding-inline: 16px; }
   .page-header, .process-rail, .offer-layout, .policy-section, .setup-panel, .obligations-panel { padding-inline: 16px; }
   .process-rail strong { display: none; }
-  .feedback { margin-inline: 0; padding-inline: 16px; flex-direction: column; gap: 2px; }
+  .feedback { margin-inline: 0; padding-inline: 16px; flex-direction: column; align-items: flex-start; gap: 6px; }
+  .feedback .tt-button { margin-left: 0; }
   .setup-form, .policy-form { grid-template-columns: 1fr; }
   .policy-actions { grid-column: auto; align-items: stretch; flex-direction: column; }
   .field-span-2 { grid-column: auto; }

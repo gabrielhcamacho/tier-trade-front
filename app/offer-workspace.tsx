@@ -38,6 +38,8 @@ export function OfferWorkspace() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [pending, setPending] = useState<string | null>('bootstrap');
+  const [bootstrapAttempt, setBootstrapAttempt] = useState(0);
+  const [bootstrapFailed, setBootstrapFailed] = useState(false);
   const authConfigured = hasSupabaseConfiguration();
   const tenantId = process.env.NEXT_PUBLIC_TENANT_ID ?? process.env.NEXT_PUBLIC_DEV_TENANT_ID;
   const envReady = Boolean(apiUrl && tenantId && (authConfigured || process.env.NEXT_PUBLIC_DEV_ACTOR_ID));
@@ -78,6 +80,7 @@ export function OfferWorkspace() {
     if (!envReady) { setPending(null); return; }
     async function bootstrap() {
       setError(null);
+      setBootstrapFailed(false);
       setPending('bootstrap');
       try {
         const [loadedCounterparties, loadedPolicy] = await Promise.all([
@@ -89,16 +92,19 @@ export function OfferWorkspace() {
         setPolicy(loadedPolicy);
         if (loadedCounterparties.length === 1) setCounterpartyId(loadedCounterparties[0]!.id);
       } catch (cause) {
-        if (active) setError(errorMessage(cause));
+        if (active) {
+          setError(errorMessage(cause));
+          setBootstrapFailed(true);
+        }
       } finally {
         if (active) setPending(null);
       }
     }
     void bootstrap();
     return () => { active = false; };
-    // O carregamento deve ocorrer uma vez por sessão da tela.
+    // Recarrega apenas no início e quando o usuário solicita uma nova tentativa.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [envReady]);
+  }, [envReady, bootstrapAttempt]);
 
   function offerInput(data: FormData) {
     return {
@@ -217,7 +223,7 @@ export function OfferWorkspace() {
         <div className="loading-band" role="status"><span />Carregando dados do tenant…</div>
       ) : null}
       {!envReady ? <div className="feedback critical">As variáveis de ambiente da API e do tenant não estão completas.</div> : null}
-      {error ? <div className="feedback critical" role="alert"><strong>Não foi possível concluir</strong><span>{error}</span></div> : null}
+      {error ? <div className="feedback critical" role="alert"><strong>Não foi possível concluir</strong><span>{error}</span>{bootstrapFailed ? <Button type="button" variant="tertiary" size="sm" onClick={() => setBootstrapAttempt((current) => current + 1)} disabled={pending !== null}>Tentar novamente</Button> : null}</div> : null}
       {notice ? <div className="feedback positive" role="status"><strong>Alteração salva</strong><span>{notice}</span></div> : null}
 
       {counterparties?.length === 0 ? (
