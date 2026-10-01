@@ -1,5 +1,6 @@
 'use client';
 
+import { BrandLogo } from '../brand-logo';
 import { Button, Card } from '@mountier/tier-trade-design-system';
 import { type FormEvent, useState } from 'react';
 import { createClient } from '../../lib/supabase/client';
@@ -14,6 +15,7 @@ export default function UpdatePasswordPage() {
     window.location.assign('/');
   }
   return <main className="auth-shell"><Card className="auth-card">
+    <div className="auth-brand"><BrandLogo /></div>
     <p className="eyebrow">RECUPERAÇÃO DE ACESSO</p><h1>Defina uma nova senha</h1>
     <form onSubmit={updatePassword} className="auth-form">
       <label>Nova senha<input name="password" type="password" autoComplete="new-password" required /></label>

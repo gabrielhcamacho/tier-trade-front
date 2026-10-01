@@ -1,5 +1,6 @@
 'use client';
 
+import { BrandLogo } from '../brand-logo';
 import { Button, Card } from '@mountier/tier-trade-design-system';
 import { type FormEvent, useState } from 'react';
 import { createClient } from '../../lib/supabase/client';
@@ -35,7 +36,7 @@ export default function LoginPage() {
 
   return <main className="auth-shell">
     <Card className="auth-card">
-      <div className="brand auth-brand"><span>MT</span><strong>Tier Trade</strong></div>
+      <div className="auth-brand"><BrandLogo /></div>
       <p className="eyebrow">ACESSO SEGURO</p><h1>Entrar na operação</h1>
       <form onSubmit={signIn} className="auth-form">
         <label>E-mail<input name="email" type="email" autoComplete="email" required /></label>

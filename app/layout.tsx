@@ -6,6 +6,13 @@ import './styles.css';
 export const metadata: Metadata = {
   title: 'Tier Trade',
   description: 'Gestão operacional para trading agrícola',
+  icons: {
+    icon: {
+      url: encodeURI('/favicon/Imagem do ChatGPT 1 de out. de 2026, 18_06_53-4.png'),
+      type: 'image/png',
+      sizes: '1254x1254',
+    },
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
