@@ -3,45 +3,27 @@ import Link from 'next/link';
 import { AppShell } from '../../app-shell';
 import { DemoLoadDetail } from './demo-load-detail';
 import { currentUserContext } from '../../../lib/current-user';
-import {
-  commodityLabel,
-  formatDate,
-  formatQuantity,
-  loadContractSummary,
-  type ContractSummary,
-} from '../../../lib/contracts';
+import { commodityLabel, formatDate, loadContractSummary, type ContractSummary } from '../../../lib/contracts';
+import { formatSchedule, formatWeightKg, loadLoadDetail, loadStatusLabel, type ScheduledLoad } from '../../../lib/loads';
 
-export default async function LoadDetailPage({
-  params,
-  searchParams,
-}: {
+export default async function LoadDetailPage({ params, searchParams }: {
   params: Promise<{ loadId: string }>;
-  searchParams: Promise<{ contractId?: string; modo?: string }>;
+  searchParams: Promise<{ modo?: string }>;
 }) {
-  const [{ loadId }, { contractId, modo }, user] = await Promise.all([params, searchParams, currentUserContext()]);
-  if (modo === 'demonstracao') {
-    return <AppShell activeDomain="operations" userLabel={user.userLabel}><DemoLoadDetail loadId={loadId} /></AppShell>;
-  }
-  const result = contractId ? await loadContractSummary(contractId, user.identityHeaders) : null;
+  const [{ loadId }, { modo }, user] = await Promise.all([params, searchParams, currentUserContext()]);
+  if (modo === 'demonstracao') return <AppShell activeDomain="operations" userLabel={user.userLabel}><DemoLoadDetail loadId={loadId} /></AppShell>;
+
+  const loadResult = await loadLoadDetail(loadId, user.identityHeaders);
+  const contractResult = loadResult.data
+    ? await loadContractSummary(loadResult.data.contractId, user.identityHeaders)
+    : null;
 
   return (
     <AppShell activeDomain="operations" userLabel={user.userLabel}>
-      {!contractId ? <MissingContract /> : null}
-      {result?.error ? <LoadError message={result.error} /> : null}
-      {result?.summary ? <LoadUnavailableState loadId={loadId} summary={result.summary} /> : null}
+      {loadResult.error ? <LoadError message={loadResult.error} /> : null}
+      {contractResult?.error ? <LoadError message={contractResult.error} /> : null}
+      {loadResult.data && contractResult?.summary ? <LoadDetail load={loadResult.data} summary={contractResult.summary} /> : null}
     </AppShell>
-  );
-}
-
-function MissingContract() {
-  return (
-    <section className="loads-empty-state" aria-labelledby="load-missing-contract-title">
-      <span className="loads-empty-mark" aria-hidden="true">CG</span>
-      <p className="section-kicker">VÍNCULO NECESSÁRIO</p>
-      <h1 id="load-missing-contract-title">A carga precisa de um contrato</h1>
-      <p>Abra o detalhe pela agenda contratual para preservar o tenant e o vínculo operacional.</p>
-      <Link className="tt-button" data-variant="primary" data-size="md" href="/cargas">Voltar à agenda</Link>
-    </section>
   );
 }
 
@@ -49,78 +31,56 @@ function LoadError({ message }: { message: string }) {
   return <div className="feedback critical detail-feedback" role="alert"><strong>Não foi possível abrir a carga</strong><span>{message}</span><Link href="/cargas">Voltar à agenda</Link></div>;
 }
 
-function LoadUnavailableState({ loadId, summary }: { loadId: string; summary: ContractSummary }) {
+function LoadDetail({ load, summary }: { load: ScheduledLoad; summary: ContractSummary }) {
   return (
     <>
       <header className="entity-header load-entity-header">
-        <p className="breadcrumbs">Operações <span>›</span> Cargas <span>›</span> <span className="tt-mono">{loadId}</span></p>
+        <p className="breadcrumbs">Operações <span>›</span> <Link href={`/cargas?contractId=${summary.id}`}>Cargas</Link> <span>›</span> <span className="tt-mono">{load.id.slice(0, 8)}</span></p>
         <div className="entity-title-row">
-          <div>
-            <p className="entity-kind">Carga de recebimento</p>
-            <h1>Detalhe operacional indisponível</h1>
-            <p className="entity-id tt-mono">Referência solicitada: {loadId}</p>
-          </div>
-          <div className="entity-actions">
-            <Status tone="neutral">Não registrada</Status>
-            <Button disabled title="A criação e consulta de cargas depende do backend da próxima vertical slice.">Registrar carga</Button>
-          </div>
+          <div><p className="entity-kind">Carga de recebimento</p><h1>{load.vehiclePlate}</h1><p className="entity-id tt-mono">Carga {load.id}</p></div>
+          <div className="entity-actions"><Status tone="positive">{loadStatusLabel(load.status)}</Status></div>
         </div>
         <dl className="entity-facts">
-          <div><dt>Contrato</dt><dd className="tt-mono">{summary.id}</dd></div>
+          <div><dt>Contrato</dt><dd><Link className="tt-mono" href={`/contratos/${summary.id}`}>{summary.id}</Link></dd></div>
           <div><dt>Commodity</dt><dd>{commodityLabel(summary.commodity)}</dd></div>
-          <div><dt>Volume contratado</dt><dd>{formatQuantity(summary.quantity_sc)} sc</dd></div>
-          <div><dt>Janela contratual</dt><dd>{formatDate(summary.delivery_start)} a {formatDate(summary.delivery_end)}</dd></div>
-          <div><dt>Situação</dt><dd>Sem registro de carga</dd></div>
+          <div><dt>Programação</dt><dd>{formatSchedule(load.scheduledAt, load.timezone)}</dd></div>
+          <div><dt>Peso previsto</dt><dd>{formatWeightKg(load.expectedWeightKg)} kg</dd></div>
+          <div><dt>Destino</dt><dd>{load.destinationCode}</dd></div>
         </dl>
         <ol className="trace-rail" aria-label="Etapas da carga">
-          <TraceStep label="Programação" />
-          <TraceStep label="Pesagem" />
-          <TraceStep label="Classificação" />
-          <TraceStep label="Romaneio" />
-          <TraceStep label="NF-e" />
-          <TraceStep label="Liquidação" />
+          <TraceStep label="Programação" detail="Concluída" state="done" /><TraceStep label="Pesagem" /><TraceStep label="Classificação" /><TraceStep label="Romaneio" /><TraceStep label="NF-e" /><TraceStep label="Liquidação" />
         </ol>
       </header>
 
       <div className="load-detail-layout">
         <div className="load-main-column">
-          <div className="availability-banner" role="status"><strong>Ações indisponíveis nesta etapa</strong><span>O contrato é real, mas a entidade de carga ainda não existe na API. Nenhuma informação operacional foi simulada.</span></div>
+          <section className="detail-section load-programming-section">
+            <header><div><p className="section-kicker">PROGRAMAÇÃO</p><h2>Dados previstos</h2></div><Status tone="positive">Saldo reservado</Status></header>
+            <dl className="detail-data-grid">
+              <div><dt>Data e horário</dt><dd>{formatSchedule(load.scheduledAt, load.timezone)}</dd></div><div><dt>Veículo</dt><dd>{load.vehiclePlate}</dd></div>
+              <div><dt>Transportadora</dt><dd>{load.carrierName}</dd></div><div><dt>Destino</dt><dd>{load.destinationCode}</dd></div>
+              <div><dt>Peso previsto</dt><dd>{formatWeightKg(load.expectedWeightKg)} kg</dd></div><div><dt>Janela do contrato</dt><dd>{formatDate(summary.delivery_start)} a {formatDate(summary.delivery_end)}</dd></div>
+            </dl>
+          </section>
           <UnavailableSection kicker="RECEBIMENTO" title="Pesagem" description="Peso bruto, tara e peso líquido aparecerão aqui após o registro da balança ou contingência manual." action="Registrar pesagem" />
           <UnavailableSection kicker="QUALIDADE" title="Classificação e desconto" description="Umidade, impureza, avariados, regra aplicada e memória do desconto dependerão da medição real da carga." action="Registrar classificação" />
         </div>
 
         <aside className="load-side-column" aria-label="Relações e histórico da carga">
-          <section>
-            <p className="section-kicker">OBJETOS VINCULADOS</p>
-            <h2>Rastreabilidade</h2>
-            <dl className="linked-object-list">
-              <div><dt>Contrato</dt><dd><Link className="tt-mono" href={`/contratos/${summary.id}`}>{summary.id}</Link></dd></div>
-              <div><dt>Romaneio</dt><dd>Ainda não existe</dd></div>
-              <div><dt>NF-e</dt><dd>Ainda não existe</dd></div>
-              <div><dt>Lote</dt><dd>Ainda não existe</dd></div>
-              <div><dt>Liquidação</dt><dd>Ainda não existe</dd></div>
-            </dl>
-          </section>
-          <section>
-            <p className="section-kicker">HISTÓRICO DA CARGA</p>
-            <h2>Eventos</h2>
-            <p className="empty-history">Sem eventos registrados. O histórico será alimentado pela trilha de auditoria da carga.</p>
-          </section>
+          <section><p className="section-kicker">OBJETOS VINCULADOS</p><h2>Rastreabilidade</h2><dl className="linked-object-list">
+            <div><dt>Contrato</dt><dd><Link className="tt-mono" href={`/contratos/${summary.id}`}>{summary.id}</Link></dd></div><div><dt>Romaneio</dt><dd>Ainda não existe</dd></div><div><dt>NF-e</dt><dd>Ainda não existe</dd></div><div><dt>Lote</dt><dd>Ainda não existe</dd></div><div><dt>Liquidação</dt><dd>Ainda não existe</dd></div>
+          </dl></section>
+          <section><p className="section-kicker">HISTÓRICO DA CARGA</p><h2>Eventos</h2><div className="load-history-item"><span aria-hidden="true" /><div><strong>Carga programada</strong><p>Saldo reservado no contrato para {formatWeightKg(load.expectedWeightKg)} kg.</p><small>{formatSchedule(load.createdAt, load.timezone)}</small></div></div></section>
         </aside>
       </div>
     </>
   );
 }
 
-function TraceStep({ label }: { label: string }) {
-  return <li data-state="future"><span aria-hidden="true" /><div><strong>{label}</strong><small>—</small></div></li>;
+function TraceStep({ label, detail = '—', state = 'future' }: { label: string; detail?: string; state?: 'done' | 'future' }) {
+  return <li data-state={state}><span aria-hidden="true" /><div><strong>{label}</strong><small>{detail}</small></div></li>;
 }
 
 function UnavailableSection({ kicker, title, description, action }: { kicker: string; title: string; description: string; action: string }) {
-  return (
-    <section className="detail-section unavailable-section">
-      <header><div><p className="section-kicker">{kicker}</p><h2>{title}</h2></div><Button disabled title="Disponível quando o backend de cargas for implementado.">{action}</Button></header>
-      <div className="section-empty-state"><span aria-hidden="true">＋</span><strong>{title} ainda não registrada</strong><p>{description}</p></div>
-    </section>
-  );
+  return <section className="detail-section unavailable-section"><header><div><p className="section-kicker">{kicker}</p><h2>{title}</h2></div><Button disabled title="Disponível na próxima etapa operacional.">{action}</Button></header><div className="section-empty-state"><span aria-hidden="true">＋</span><strong>{title} ainda não registrada</strong><p>{description}</p></div></section>;
 }

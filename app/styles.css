@@ -181,6 +181,22 @@ main { min-width: 0; }
 .loads-table-empty > span { width: 34px; height: 34px; display: grid; place-items: center; color: var(--ink-secondary); border: 1px solid var(--line-strong); font-size: 18px; }
 .loads-table-empty strong { margin-top: 4px; font-size: 13px; }
 .loads-table-empty p { max-width: 480px; margin: 0; color: var(--ink-muted); font-size: 11px; line-height: 17px; text-wrap: pretty; }
+.loads-table-row { min-width: 660px; min-height: 64px; display: grid; grid-template-columns: 1.1fr 1.25fr 1fr .8fr .9fr; align-items: center; color: var(--ink); border-bottom: 1px solid var(--line); font-size: 10px; text-decoration: none; transition: background-color 140ms ease; }
+.loads-table-row:hover { background: var(--surface-sunken); }
+.loads-table-row > span { min-width: 0; padding: 10px 12px; overflow: hidden; text-overflow: ellipsis; }
+.loads-table-row strong, .loads-table-row small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.loads-table-row small { margin-top: 3px; color: var(--ink-muted); font-size: 9px; }
+
+.modal-backdrop { position: fixed; z-index: 100; inset: 0; padding: 24px; display: grid; place-items: center; background: rgb(20 29 24 / 52%); backdrop-filter: blur(3px); }
+.load-schedule-dialog { width: min(100%, 720px); max-height: calc(100dvh - 48px); overflow-y: auto; padding: 28px; background: var(--canvas); border-top: 3px solid var(--forest); box-shadow: var(--shadow-pop); }
+.load-schedule-dialog > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
+.load-schedule-dialog h2 { margin: 0; font-size: 24px; line-height: 30px; letter-spacing: -.035em; }
+.load-schedule-dialog header p:not(.section-kicker) { margin: 6px 0 0; color: var(--ink-secondary); font-size: 11px; line-height: 17px; }
+.modal-close { width: 34px; height: 34px; flex: none; color: var(--ink-secondary); background: transparent; border: 1px solid var(--line-strong); cursor: pointer; font-size: 20px; line-height: 1; }
+.modal-close:hover { color: var(--ink); border-color: var(--ink); }
+.load-schedule-form { margin-top: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.load-schedule-feedback { grid-column: 1 / -1; margin: 0; }
+.load-schedule-actions { grid-column: 1 / -1; padding-top: 18px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--line); }
 
 .loads-sidebar { display: grid; gap: 28px; }
 .loads-sidebar > section { padding-left: 22px; border-left: 1px solid var(--line); }
@@ -273,6 +289,11 @@ main { min-width: 0; }
 .section-empty-state strong { font-size: 12px; }
 .section-empty-state p { max-width: 520px; margin: 0; color: var(--ink-muted); font-size: 10px; line-height: 16px; text-wrap: pretty; }
 .empty-history { padding: 14px 0; border-block: 1px solid var(--line); }
+.load-history-item { padding: 15px 0; display: grid; grid-template-columns: 12px minmax(0, 1fr); gap: 10px; border-block: 1px solid var(--line); }
+.load-history-item > span { width: 8px; height: 8px; margin-top: 4px; background: var(--forest); border-radius: 50%; }
+.load-history-item strong { font-size: 11px; }
+.load-history-item p { margin: 3px 0 !important; }
+.load-history-item small { color: var(--ink-muted); font-family: var(--font-mono); font-size: 9px; }
 
 .auth-shell { min-height: 100dvh; display: grid; place-items: center; padding: 24px; background: var(--forest); }
 .auth-card { width: min(100%, 420px); padding: 32px; box-shadow: var(--shadow-pop); }
@@ -616,6 +637,11 @@ main { min-width: 0; }
   .loads-metrics article:last-child { border-bottom: 0; }
   .loads-ledger > header { flex-direction: column; }
   .loads-table { overflow-x: auto; }
+  .load-scheduler, .load-scheduler .tt-button { width: 100%; }
+  .load-schedule-dialog { padding: 22px 18px; }
+  .load-schedule-form { grid-template-columns: 1fr; }
+  .load-schedule-form .field-span-2, .load-schedule-feedback, .load-schedule-actions { grid-column: auto; }
+  .load-schedule-actions { align-items: stretch; flex-direction: column-reverse; }
   .loads-sidebar { grid-template-columns: 1fr; }
   .detail-feedback a { margin-left: 0; }
   .entity-actions { width: 100%; align-items: stretch; flex-direction: column; }
