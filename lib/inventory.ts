@@ -1,0 +1,93 @@
+export type InventoryLot = {
+  id: string;
+  lotCode: string;
+  sourceLoadId: string;
+  contractId: string;
+  location: { code: string; name: string };
+  commodity: string;
+  status: string;
+  ownershipStatus: string;
+  riskStatus: string;
+  custodyStatus: string;
+  quantityKg: string;
+  quality: { moisturePct: string; impurityPct: string; damagedPct: string };
+  vehiclePlate: string;
+  createdAt: string;
+};
+
+export type InventoryMovement = {
+  id: string;
+  lotId: string;
+  lotCode: string;
+  sourceLoadId: string;
+  sourceReceiptId: string;
+  type: string;
+  quantityDeltaKg: string;
+  occurredAt: string;
+};
+
+export type InventoryPosition = {
+  tenant: {
+    legalName: string;
+    isDemo: boolean;
+    demoSeedVersion: number | null;
+  };
+  summary: {
+    physicalWeightKg: string;
+    availableWeightKg: string;
+    blockedWeightKg: string;
+    lotCount: number;
+    pendingOwnershipCount: number;
+  };
+  lots: InventoryLot[];
+  movements: InventoryMovement[];
+};
+
+export type InventoryResult =
+  | { data: InventoryPosition; error: null }
+  | { data: null; error: string };
+
+export async function loadInventory(
+  identityHeaders: Record<string, string>,
+): Promise<InventoryResult> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (!apiUrl || Object.keys(identityHeaders).length === 0) {
+    return { data: null, error: 'A API ou a identidade do ambiente ainda não está configurada.' };
+  }
+  try {
+    const response = await fetch(`${apiUrl}/v1/inventory`, {
+      headers: identityHeaders,
+      cache: 'no-store',
+    });
+    if (!response.ok) {
+      return { data: null, error: 'A API não conseguiu carregar a posição de estoque.' };
+    }
+    return { data: await response.json() as InventoryPosition, error: null };
+  } catch {
+    return { data: null, error: 'Não foi possível acessar a API na porta configurada.' };
+  }
+}
+
+export function formatTonnes(weightKg: string): string {
+  return new Intl.NumberFormat('pt-BR', {
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3,
+  }).format(Number(weightKg) / 1000);
+}
+
+export function formatInventoryDate(value: string): string {
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'America/Sao_Paulo',
+  }).format(new Date(value));
+}
+
+export function movementLabel(value: string): string {
+  if (value === 'RECEIPT') return 'Entrada por recebimento';
+  if (value === 'RECEIPT_CORRECTION') return 'Correção de recebimento';
+  if (value === 'RECEIPT_REVERSAL') return 'Estorno para revisão';
+  return value;
+}

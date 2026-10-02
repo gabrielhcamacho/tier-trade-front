@@ -1,69 +1,164 @@
 import Link from 'next/link';
-import type { CSSProperties } from 'react';
 import { AppShell } from '../app-shell';
 import { DemoNotice } from '../demo-notice';
 import { DemoMetricStrip, DemoPageHeader, DemoSection, DemoStatus, DemoTable } from '../demo-ui';
 import { currentUserContext } from '../../lib/current-user';
-
-const positionRows = [
-  ['ARM-RV01 · Silo 03', 'LT-RV-26-0312', 'Milho 25/26', 'Próprio', '1.248,60 t', '758,40 t', '490,20 t', <DemoStatus tone="positive" key="s1">Disponível</DemoStatus>],
-  ['ARM-RV01 · Silo 04', 'LT-RV-26-0313', 'Milho 25/26', 'Terceiros', '884,20 t', '720,00 t', '164,20 t', <DemoStatus tone="info" key="s2">Depositado</DemoStatus>],
-  ['ARM-RV01 · Moega 02', 'LT-RV-26-0314', 'Milho 25/26', 'Próprio', '96,00 t', '96,00 t', '0,00 t', <DemoStatus tone="attention" key="s3">Em trânsito</DemoStatus>],
-  ['ARM-JT02 · Silo 01', 'LT-JT-26-0108', 'Soja 25/26', 'Próprio', '612,80 t', '410,00 t', '202,80 t', <DemoStatus key="s4">Disponível</DemoStatus>],
-];
-
-const movementRows = [
-  ['01/10 · 10:18', 'Entrada', 'CG-26-10421', 'LT-RV-26-0312', '+ 48,000 t', 'RM-RV-26-08812'],
-  ['01/10 · 09:42', 'Transferência', 'TR-26-00114', 'LT-RV-26-0313', '− 32,000 t', 'ARM-RV01 → ARM-JT02'],
-  ['30/09 · 17:06', 'Reserva', 'CT-V-2026-00208', 'LT-RV-26-0312', '− 240,000 t', 'entrega 08–12/10'],
-  ['30/09 · 14:20', 'Ajuste validado', 'AJ-26-00031', 'LT-JT-26-0108', '+ 0,120 t', 'diferença de balança'],
-];
+import {
+  formatInventoryDate,
+  formatTonnes,
+  loadInventory,
+  movementLabel,
+  type InventoryLot,
+  type InventoryPosition,
+} from '../../lib/inventory';
 
 export default async function InventoryPage() {
-  const { userLabel } = await currentUserContext();
+  const user = await currentUserContext();
+  const result = await loadInventory(user.identityHeaders);
 
   return (
-    <AppShell activeDomain="inventory" userLabel={userLabel}>
-      <DemoPageHeader domain="Estoque" section="Posição" eyebrow="Custódia e disponibilidade" title="Posição de estoque" description="Visão física, comercial e de titularidade por unidade e lote." scope="Atualizado em 01/10/2026 · 10:30" />
+    <AppShell activeDomain="inventory" userLabel={user.userLabel}>
+      <DemoPageHeader
+        domain="Estoque"
+        section="Posição"
+        eyebrow="Custódia e disponibilidade"
+        title="Posição de estoque"
+        description="Saldo físico rastreado por recebimento, lote e localização."
+        scope="Fonte: livro imutável de movimentos"
+      />
       <div className="demo-page demo-workspace">
-        <DemoNotice />
-        <DemoMetricStrip items={[
-          { label: 'Estoque físico', value: '2.841,60', unit: 't', detail: 'todas as unidades' },
-          { label: 'Disponível', value: '857,20', unit: 't', detail: 'após reservas', tone: 'primary' },
-          { label: 'De terceiros', value: '884,20', unit: 't', detail: 'custódia segregada' },
-          { label: 'Diferença em apuração', value: '0,12', unit: 't', detail: '0,004% do saldo', tone: 'attention' },
-        ]} />
-        <div className="demo-filterbar"><span>Unidade <strong>Todas</strong></span><span>Commodity <strong>Todas</strong></span><span>Safra <strong>25/26</strong></span><span>Titularidade <strong>Todas</strong></span></div>
-
-        <div className="demo-domain-layout">
-          <div className="demo-main-stack">
-            <DemoSection kicker="POSIÇÃO CONSOLIDADA" title="Saldo por lote e localização" aside="4 lotes visíveis">
-              <DemoTable label="Posição demonstrativa de estoque" columns={['Localização', 'Lote', 'Produto', 'Titularidade', 'Físico', 'Comprometido', 'Disponível', 'Situação']} rows={positionRows} />
-            </DemoSection>
-
-            <DemoSection kicker="RASTREABILIDADE FÍSICA" title="Composição dos lotes" id="lotes" aside="origem, qualidade e vínculo">
-              <div className="lot-ledger">
-                <article><header><div><span>LT-RV-26-0312</span><strong>Milho · próprio</strong></div><DemoStatus tone="positive">Liberado</DemoStatus></header><dl><div><dt>Origem</dt><dd>11 cargas · 3 contratos</dd></div><div><dt>Qualidade média</dt><dd>Umidade 14,1% · avariados 2,4%</dd></div><div><dt>Vínculo de venda</dt><dd>CT-V-2026-00208 · 758,40 t</dd></div><div><dt>Disponibilidade</dt><dd>490,20 t</dd></div></dl></article>
-                <article><header><div><span>LT-RV-26-0313</span><strong>Milho · terceiros</strong></div><DemoStatus tone="info">Custódia</DemoStatus></header><dl><div><dt>Depositante</dt><dd>Cooperativa Campo Alto</dd></div><div><dt>Qualidade média</dt><dd>Umidade 13,8% · avariados 1,9%</dd></div><div><dt>Contrato de depósito</dt><dd>CD-2026-00041</dd></div><div><dt>Disponibilidade</dt><dd>164,20 t</dd></div></dl></article>
-              </div>
-            </DemoSection>
-
-            <DemoSection kicker="LIVRO DE MOVIMENTOS" title="Entradas, saídas e reservas" id="movimentos" aside="ordem cronológica">
-              <DemoTable label="Movimentos demonstrativos de estoque" columns={['Data', 'Movimento', 'Origem', 'Lote', 'Quantidade', 'Documento']} rows={movementRows} />
-            </DemoSection>
-
-            <DemoSection kicker="CONTROLE" title="Reconciliação físico × sistema" id="reconciliacao" aside="fechamento diário">
-              <div className="inventory-reconciliation"><div><span>ARM-RV01</span><strong>2.228,800 t</strong><small>saldo operacional</small></div><b aria-hidden="true">=</b><div><span>Livro de estoque</span><strong>2.228,680 t</strong><small>movimentos contabilizados</small></div><b aria-hidden="true">+</b><div data-tone="attention"><span>Diferença</span><strong>0,120 t</strong><small>AJ-26-00031 em validação</small></div></div>
-            </DemoSection>
-          </div>
-
-          <aside className="demo-side-stack">
-            <section><p className="section-kicker">OCUPAÇÃO · ARM-RV01</p><h2>67% da capacidade</h2><div className="inventory-capacity"><span style={{ '--bar': '67%' } as CSSProperties} /><small>2.228,8 t de 3.300 t</small></div><dl className="summary-ledger"><div><dt>Silo 03</dt><dd>78%</dd></div><div><dt>Silo 04</dt><dd>59%</dd></div><div><dt>Moegas</dt><dd>12%</dd></div></dl></section>
-            <section><p className="section-kicker">ATENÇÃO</p><div className="demo-alert" data-tone="attention"><strong>Ajuste aguardando validação</strong><p>Diferença de 120 kg entre a balança operacional e o livro do lote LT-JT-26-0108.</p></div></section>
-            <section><p className="section-kicker">PRÓXIMA ENTRADA</p><h2>CG-26-10423</h2><p>Milho · 47,368 t previstas<br />07/10 às 08:00 · ARM-RV01</p><Link className="operational-link" href="/cargas?modo=demonstracao">Abrir agenda <span>→</span></Link></section>
-          </aside>
-        </div>
+        {result.data
+          ? <InventoryWorkspace data={result.data} />
+          : <InventoryError message={result.error} />}
       </div>
     </AppShell>
   );
+}
+
+function InventoryError({ message }: { message: string }) {
+  return (
+    <section className="detail-section demo-section">
+      <p className="section-kicker">ESTOQUE INDISPONÍVEL</p>
+      <h2>Não foi possível carregar a posição</h2>
+      <p>{message}</p>
+    </section>
+  );
+}
+
+function InventoryWorkspace({ data }: { data: InventoryPosition }) {
+  const locationCount = new Set(data.lots.map((lot) => lot.location.code)).size;
+  const commodityCount = new Set(data.lots.map((lot) => lot.commodity)).size;
+  const positionRows = data.lots.map((lot) => [
+    `${lot.location.name} · ${lot.location.code}`,
+    lot.lotCode,
+    commodityLabel(lot.commodity),
+    ownershipLabel(lot.ownershipStatus),
+    `${formatTonnes(lot.quantityKg)} t`,
+    custodyLabel(lot.custodyStatus),
+    lot.status === 'AVAILABLE' ? `${formatTonnes(lot.quantityKg)} t` : '0,000 t',
+    <DemoStatus tone={lot.status === 'AVAILABLE' ? 'positive' : 'attention'} key={lot.id}>
+      {lot.status === 'AVAILABLE' ? 'Disponível' : 'Em revisão'}
+    </DemoStatus>,
+  ]);
+  const movementRows = data.movements.map((movement) => [
+    formatInventoryDate(movement.occurredAt),
+    movementLabel(movement.type),
+    <Link href={`/cargas/${movement.sourceLoadId}`} key={movement.id}>
+      {movement.sourceLoadId.slice(0, 8).toUpperCase()}
+    </Link>,
+    movement.lotCode,
+    `${Number(movement.quantityDeltaKg) >= 0 ? '+' : '−'} ${formatTonnes(String(Math.abs(Number(movement.quantityDeltaKg))))} t`,
+    `Recebimento ${movement.sourceReceiptId.slice(0, 8).toUpperCase()}`,
+  ]);
+
+  return (
+    <>
+      {data.tenant.isDemo ? <DemoNotice persisted /> : null}
+      <DemoMetricStrip items={[
+        { label: 'Estoque físico', value: formatTonnes(data.summary.physicalWeightKg), unit: 't', detail: 'saldo do livro de movimentos' },
+        { label: 'Disponível', value: formatTonnes(data.summary.availableWeightKg), unit: 't', detail: 'recebimentos aceitos', tone: 'primary' },
+        { label: 'Em revisão', value: formatTonnes(data.summary.blockedWeightKg), unit: 't', detail: 'sem disponibilidade', tone: 'attention' },
+        { label: 'Titularidade pendente', value: String(data.summary.pendingOwnershipCount), detail: 'lotes aguardando regra contratual', tone: 'attention' },
+      ]} />
+      <div className="demo-filterbar">
+        <span>Localizações <strong>{locationCount}</strong></span>
+        <span>Commodities <strong>{commodityCount}</strong></span>
+        <span>Lotes <strong>{data.summary.lotCount}</strong></span>
+        <span>Movimentos <strong>{data.movements.length}</strong></span>
+      </div>
+
+      <div className="demo-domain-layout">
+        <div className="demo-main-stack">
+          <DemoSection kicker="POSIÇÃO CONSOLIDADA" title="Saldo por lote e localização" aside={`${data.lots.length} lotes visíveis`}>
+            {positionRows.length > 0
+              ? <DemoTable label="Posição de estoque" columns={['Localização', 'Lote', 'Produto', 'Titularidade', 'Físico', 'Custódia', 'Disponível', 'Situação']} rows={positionRows} />
+              : <p>Nenhum recebimento aceito gerou estoque para este tenant.</p>}
+          </DemoSection>
+
+          <DemoSection kicker="RASTREABILIDADE FÍSICA" title="Composição dos lotes" id="lotes" aside="origem, qualidade e vínculo">
+            <div className="lot-ledger">
+              {data.lots.map((lot) => <LotCard lot={lot} key={lot.id} />)}
+            </div>
+          </DemoSection>
+
+          <DemoSection kicker="LIVRO DE MOVIMENTOS" title="Entradas e correções de recebimento" id="movimentos" aside="ordem cronológica">
+            {movementRows.length > 0
+              ? <DemoTable label="Movimentos de estoque" columns={['Data', 'Movimento', 'Carga', 'Lote', 'Quantidade', 'Origem']} rows={movementRows} />
+              : <p>Nenhum movimento registrado.</p>}
+          </DemoSection>
+
+          <DemoSection kicker="CONTROLE" title="Integridade do saldo" id="reconciliacao" aside="calculado, nunca editado diretamente">
+            <div className="inventory-reconciliation">
+              <div><span>Entradas e correções</span><strong>{data.movements.length}</strong><small>movimentos imutáveis</small></div>
+              <b aria-hidden="true">=</b>
+              <div><span>Livro de estoque</span><strong>{formatTonnes(data.summary.physicalWeightKg)} t</strong><small>soma dos movimentos</small></div>
+              <b aria-hidden="true">→</b>
+              <div data-tone={data.summary.pendingOwnershipCount > 0 ? 'attention' : undefined}><span>Disponível</span><strong>{formatTonnes(data.summary.availableWeightKg)} t</strong><small>somente recebimentos aceitos</small></div>
+            </div>
+          </DemoSection>
+        </div>
+
+        <aside className="demo-side-stack">
+          <section><p className="section-kicker">GOVERNANÇA</p><h2>Título e risco separados</h2><p>A entrada física não transfere automaticamente propriedade ou risco. Esses estados permanecem pendentes até a regra contratual ser definida.</p></section>
+          <section><p className="section-kicker">ATENÇÃO</p><div className="demo-alert" data-tone="attention"><strong>{data.summary.pendingOwnershipCount} lote(s) sem titularidade definida</strong><p>O saldo físico está disponível operacionalmente, mas a classificação jurídica ainda exige decisão de produto.</p></div></section>
+          <section><p className="section-kicker">OPERAÇÃO CONECTADA</p><h2>Recebimentos alimentam o saldo</h2><p>Corrigir ou reabrir uma pesagem gera automaticamente um movimento compensatório.</p><Link className="operational-link" href="/cargas">Abrir agenda <span>→</span></Link></section>
+        </aside>
+      </div>
+    </>
+  );
+}
+
+function LotCard({ lot }: { lot: InventoryLot }) {
+  return (
+    <article>
+      <header><div><span>{lot.lotCode}</span><strong>{commodityLabel(lot.commodity)} · {ownershipLabel(lot.ownershipStatus)}</strong></div><DemoStatus tone={lot.status === 'AVAILABLE' ? 'positive' : 'attention'}>{lot.status === 'AVAILABLE' ? 'Liberado' : 'Em revisão'}</DemoStatus></header>
+      <dl>
+        <div><dt>Origem</dt><dd>Carga {lot.sourceLoadId.slice(0, 8).toUpperCase()} · placa {lot.vehiclePlate}</dd></div>
+        <div><dt>Qualidade</dt><dd>Umidade {formatPercent(lot.quality.moisturePct)} · impureza {formatPercent(lot.quality.impurityPct)}</dd></div>
+        <div><dt>Localização</dt><dd>{lot.location.name}</dd></div>
+        <div><dt>Saldo físico</dt><dd>{formatTonnes(lot.quantityKg)} t</dd></div>
+      </dl>
+    </article>
+  );
+}
+
+function commodityLabel(value: string): string {
+  return value === 'MILHO' ? 'Milho' : value;
+}
+
+function ownershipLabel(value: string): string {
+  if (value === 'OWN') return 'Próprio';
+  if (value === 'THIRD_PARTY') return 'Terceiros';
+  return 'A definir';
+}
+
+function custodyLabel(value: string): string {
+  if (value === 'IN_STORAGE') return 'Armazenado';
+  if (value === 'IN_TRANSIT') return 'Em trânsito';
+  if (value === 'RELEASED') return 'Liberado';
+  return value;
+}
+
+function formatPercent(value: string): string {
+  return `${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 }).format(Number(value))}%`;
 }
