@@ -409,7 +409,7 @@ main { min-width: 0; }
 .activity-list strong { font-size: 10px; line-height: 15px; }
 .activity-list span { margin-top: 3px; color: var(--ink-muted); font-size: 9px; line-height: 13px; }
 
-.settlement-header .trace-rail { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.settlement-header .trace-rail { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .settlement-page { display: grid; gap: 20px; }
 .settlement-page > .demo-notice { margin-bottom: 0; }
 .settlement-layout { margin-top: 14px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(290px, 340px); gap: 48px; align-items: start; }
@@ -568,6 +568,13 @@ main { min-width: 0; }
 
 /* Financial */
 .finance-ledgers { display: grid; gap: 42px; }
+.finance-action-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--ink); }
+.finance-action-grid form { min-width: 0; padding: 20px; display: grid; align-content: start; gap: 14px; border-right: 1px solid var(--line); }
+.finance-action-grid form:last-child { border-right: 0; }
+.finance-action-grid h3 { margin: 2px 0 0; font-size: 17px; letter-spacing: -.025em; }
+.finance-action-grid .tt-button { justify-self: start; margin-top: 4px; }
+.finance-form-hint { margin-top: -8px; color: var(--ink-muted); font-size: 10px; }
+.finance-live-layout { margin-top: 10px; }
 .cash-flow-chart { padding-top: 8px; border-top: 1px solid var(--ink); }
 .cash-flow-legend { min-height: 36px; display: flex; align-items: center; justify-content: flex-end; gap: 20px; color: var(--ink-muted); font-size: 9px; }
 .cash-flow-legend span { display: flex; align-items: center; gap: 6px; }
@@ -643,7 +650,9 @@ main { min-width: 0; }
   .central-layout, .settlement-layout, .demo-domain-layout, .demo-load-layout { grid-template-columns: 1fr; }
   .central-sidebar, .settlement-sidebar, .demo-side-stack { grid-template-columns: 1fr 1fr; }
   .quality-calculation { grid-template-columns: 1fr; }
-  .settlement-header .trace-rail { grid-template-columns: repeat(7, minmax(120px, 1fr)); }
+  .settlement-header .trace-rail { grid-template-columns: repeat(5, minmax(120px, 1fr)); }
+  .finance-action-grid { grid-template-columns: 1fr; }
+  .finance-action-grid form { border-right: 0; border-bottom: 1px solid var(--line); }
 }
 
 @media (max-width: 620px) {

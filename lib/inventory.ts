@@ -50,7 +50,7 @@ export type InventoryPosition = {
   salesContracts: Array<{
     id: string; counterparty_id: string; reference: string; commodity: string; quantity_kg: string;
     sale_price_per_kg: string; destination_code: string; delivery_start: string;
-    delivery_end: string; required_documents: string[]; status: string;
+    delivery_end: string; required_documents: string[]; payment_term_days: number | null; status: string;
     counterparty_name: string; allocated_kg: string; dispatched_kg: string;
   }>;
   allocations: Array<{

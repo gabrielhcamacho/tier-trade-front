@@ -31,6 +31,7 @@ export async function saveSalesContractAction(
       deliveryStart: String(formData.get('deliveryStart') ?? ''),
       deliveryEnd: String(formData.get('deliveryEnd') ?? ''),
       requiredDocuments: String(formData.get('requiredDocuments') ?? '').split(',').map((item) => item.trim()).filter(Boolean),
+      paymentTermDays: optionalInteger(formData.get('paymentTermDays')),
     }, contractId ? 'Contrato de venda atualizado.' : 'Contrato de venda criado.',
   );
 }
@@ -81,4 +82,9 @@ async function send(path: string, method: 'POST' | 'PUT', payload: unknown, succ
 
 function decimal(value: FormDataEntryValue | null): string {
   return String(value ?? '').replace(/\./g, '').replace(',', '.');
+}
+
+function optionalInteger(value: FormDataEntryValue | null): number | null {
+  const text = String(value ?? '').trim();
+  return text ? Number.parseInt(text, 10) : null;
 }

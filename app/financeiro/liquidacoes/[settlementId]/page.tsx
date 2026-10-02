@@ -1,68 +1,98 @@
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { currentUserContext } from '../../../../lib/current-user';
+import { formatFinancialDate, formatMoney, loadFinance, titleStatusLabel } from '../../../../lib/finance';
 import { AppShell } from '../../../app-shell';
 import { DemoNotice } from '../../../demo-notice';
-import { currentUserContext } from '../../../../lib/current-user';
 
-const calculationRows = [
-  ['', 'Quantidade aceita', '48.000 kg · 800,0000 sc', 'Romaneio RM-RV-26-08812'],
-  ['×', 'Preço contratado', 'R$ 56,25/sc', 'CT-2026-00512 · cláusula 4.1'],
-  ['=', 'Valor da mercadoria', 'R$ 45.000,00', 'NF-e 001.284'],
-  ['−', 'Desconto de qualidade', 'R$ 0,00', 'Tabela TQ-MI v3'],
-  ['−', 'Retenção RT-EX-01 · 0,20%', 'R$ 90,00', 'regra demonstrativa v1'],
-  ['=', 'Valor líquido ao fornecedor', 'R$ 44.910,00', 'Título TP-2026-04412'],
-];
+export default async function SettlementDetailPage({
+  params,
+}: { params: Promise<{ settlementId: string }> }) {
+  const [{ settlementId }, { userLabel, identityHeaders }] = await Promise.all([
+    params, currentUserContext(),
+  ]);
+  const result = await loadFinance(identityHeaders);
 
-const reconciliationRows = [
-  ['Quantidade (kg)', '48.000', '48.000', '48.000', '—', '—', '—', '48.000'],
-  ['Valor bruto', '45.000,00', '45.000,00', '45.000,00', '45.000,00', '—', '—', '45.000,00'],
-  ['Retenção', '—', '—', '—', '90,00', '—', '90,00', '90,00'],
-  ['Valor líquido', '—', '—', '—', '44.910,00', 'pendente', '—', '44.910,00'],
-];
-
-export default async function SettlementDetailPage({ params }: { params: Promise<{ settlementId: string }> }) {
-  const [{ settlementId }, { userLabel }] = await Promise.all([params, currentUserContext()]);
+  if (result.error || !result.data) {
+    return (
+      <AppShell activeDomain="financial" userLabel={userLabel}>
+        <div className="feedback critical"><strong>Não foi possível concluir</strong><span>{result.error}</span></div>
+      </AppShell>
+    );
+  }
+  const event = result.data.events.find((item) => item.id === settlementId);
+  if (!event) notFound();
+  const title = event.title;
+  const settlements = result.data.settlements.filter((item) => item.titleId === title?.id);
+  const activeSettlements = settlements.filter((item) => !item.reversedAt);
+  const received = activeSettlements.reduce((total, item) => total + Number(item.amount), 0);
+  const status = title ? titleStatusLabel(title.status) : event.calculationStatus === 'READY'
+    ? 'Aguardando título' : 'Política de arredondamento pendente';
 
   return (
     <AppShell activeDomain="financial" userLabel={userLabel}>
       <header className="entity-header settlement-header">
-        <p className="breadcrumbs">Financeiro <span>›</span> Liquidações <span>›</span> {settlementId}</p>
+        <p className="breadcrumbs">Financeiro <span>›</span> Previsões <span>›</span> {event.dispatchDocumentReference}</p>
         <div className="entity-title-row">
-          <div><p className="entity-kind">Liquidação de compra</p><h1>CG-26-10421 · Agropecuária Boa Vista</h1><p className="entity-id">{settlementId} · cenário de demonstração</p></div>
-          <span className="demo-status" data-tone="attention">Aguardando aprovação</span>
+          <div>
+            <p className="entity-kind">Recebível de venda</p>
+            <h1>{event.contractReference} · {event.counterpartyName}</h1>
+            <p className="entity-id">{event.id} · fonte oficial do tenant</p>
+          </div>
+          <span className="demo-status" data-tone={title?.status === 'SETTLED' ? 'positive' : 'attention'}>{status}</span>
         </div>
         <dl className="entity-facts">
-          <div><dt>Contrato</dt><dd>CT-2026-00512</dd></div><div><dt>Carga</dt><dd>CG-26-10421</dd></div><div><dt>NF-e</dt><dd>001.284</dd></div><div><dt>Título</dt><dd>TP-2026-04412</dd></div><div><dt>Vencimento</dt><dd>13/10/2026</dd></div>
+          <div><dt>Contrato</dt><dd>{event.contractReference}</dd></div>
+          <div><dt>Expedição</dt><dd>{event.dispatchDocumentReference}</dd></div>
+          <div><dt>Quantidade</dt><dd>{Number(event.quantityKg).toLocaleString('pt-BR')} kg</dd></div>
+          <div><dt>Título</dt><dd>{title?.number ?? 'não emitido'}</dd></div>
+          <div><dt>Vencimento</dt><dd>{title ? formatFinancialDate(title.dueDate) : event.expectedOn ? formatFinancialDate(event.expectedOn) : 'a definir'}</dd></div>
         </dl>
-        <ol className="trace-rail settlement-trace" aria-label="Rastreabilidade da liquidação">
-          <li data-state="done"><span /><div><strong>Carga</strong><small>48.000 kg</small></div></li>
-          <li data-state="done"><span /><div><strong>NF-e</strong><small>R$ 45.000,00</small></div></li>
-          <li data-state="current"><span /><div><strong>Liquidação</strong><small>Em aprovação</small></div></li>
-          <li><span /><div><strong>Título</strong><small>R$ 44.910,00</small></div></li>
-          <li><span /><div><strong>Banco</strong><small>pendente</small></div></li>
-          <li data-state="current"><span /><div><strong>Tributo</strong><small>R$ 90,00</small></div></li>
-          <li data-state="current"><span /><div><strong>Contábil</strong><small>provisionado</small></div></li>
+        <ol className="trace-rail settlement-trace" aria-label="Rastreabilidade do recebível">
+          <li data-state="done"><span /><div><strong>Expedição</strong><small>{event.dispatchDocumentReference}</small></div></li>
+          <li data-state="done"><span /><div><strong>Previsão</strong><small>{event.calculatedAmount ? formatMoney(event.calculatedAmount) : 'regra pendente'}</small></div></li>
+          <li data-state={title ? 'done' : 'current'}><span /><div><strong>Título</strong><small>{title?.number ?? 'pendente'}</small></div></li>
+          <li data-state={received > 0 ? 'done' : undefined}><span /><div><strong>Recebimento</strong><small>{formatMoney(received)}</small></div></li>
+          <li data-state={title?.status === 'SETTLED' ? 'done' : 'current'}><span /><div><strong>Saldo</strong><small>{title ? formatMoney(title.outstandingAmount) : '—'}</small></div></li>
         </ol>
       </header>
 
       <div className="demo-page settlement-page">
-        <DemoNotice />
-        <div className="demo-alert" data-tone="attention"><strong>Regra RT-EX-01 é um parâmetro demonstrativo</strong><p>Alíquota, base e responsabilidade dependem de homologação fiscal antes de qualquer uso produtivo.</p></div>
-
+        {result.data.tenant.isDemo ? <DemoNotice persisted /> : null}
+        {event.calculationStatus !== 'READY'
+          ? <div className="demo-alert" data-tone="attention"><strong>Emissão bloqueada com segurança</strong><p>O cálculo produziu fração de centavo. A política de arredondamento do tenant precisa ser homologada antes do título.</p></div>
+          : null}
         <div className="settlement-layout">
           <div className="settlement-main">
-            <section className="detail-section"><header><div><p className="section-kicker">CÁLCULO DETERMINÍSTICO</p><h2>Memória de cálculo</h2></div><span className="data-source">Contrato, carga e regra versionada</span></header><div className="calculation-demo">{calculationRows.map(([operator, label, value, source], index) => <div key={label} data-total={operator === '=' && index > 2 ? 'true' : undefined}><span>{operator}</span><div><strong>{label}</strong><small>{source}</small></div><b>{value}</b></div>)}</div><p className="detail-note">A mesma entrada, regra e versão sempre produzem o mesmo resultado.</p></section>
+            <section className="detail-section">
+              <header><div><p className="section-kicker">CÁLCULO DETERMINÍSTICO</p><h2>Memória de cálculo</h2></div><span className="data-source">{event.formulaCode} · v{event.formulaVersion}</span></header>
+              <div className="calculation-demo">
+                <div><span /><div><strong>Quantidade expedida</strong><small>Expedição {event.dispatchDocumentReference}</small></div><b>{Number(event.quantityKg).toLocaleString('pt-BR')} kg</b></div>
+                <div><span>×</span><div><strong>Preço contratado por kg</strong><small>Contrato {event.contractReference}</small></div><b>{formatMoney(event.unitPrice)}</b></div>
+                <div data-total="true"><span>=</span><div><strong>Valor bruto previsto</strong><small>Sem tributos ou ajustes não homologados</small></div><b>{event.calculatedAmount ? formatMoney(event.calculatedAmount) : event.rawAmount}</b></div>
+              </div>
+              <p className="detail-note">A memória preserva entradas, fórmula, versão e a decisão de arredondamento.</p>
+            </section>
 
-            <section className="detail-section"><header><div><p className="section-kicker">DESDOBRAMENTO FINANCEIRO</p><h2>Valor líquido e obrigação tributária</h2></div></header><div className="financial-groups"><article><h3>Título a pagar · TP-2026-04412</h3><dl><div><dt>Favorecido</dt><dd>Agropecuária Boa Vista Ltda.</dd></div><div><dt>Valor</dt><dd>R$ 44.910,00</dd></div><div><dt>Vencimento</dt><dd>13/10/2026 · D+5 úteis</dd></div><div><dt>Status</dt><dd><span className="demo-status">Em aberto</span></dd></div></dl></article><article><h3>Obrigação tributária · OT-2026-00931</h3><dl><div><dt>Origem</dt><dd>Retenção sobre NF-e 001.284</dd></div><div><dt>Valor</dt><dd>R$ 90,00</dd></div><div><dt>Competência</dt><dd>10/2026</dd></div><div><dt>Status</dt><dd><span className="demo-status" data-tone="info">Provisionada</span></dd></div></dl></article></div></section>
+            <section className="detail-section">
+              <header><div><p className="section-kicker">DESDOBRAMENTO FINANCEIRO</p><h2>Título e saldo</h2></div></header>
+              {title
+                ? <div className="financial-groups"><article><h3>Título a receber · {title.number}</h3><dl><div><dt>Cliente</dt><dd>{event.counterpartyName}</dd></div><div><dt>Documento</dt><dd>{title.documentReference}</dd></div><div><dt>Valor</dt><dd>{formatMoney(title.amount)}</dd></div><div><dt>Recebido</dt><dd>{formatMoney(title.settledAmount)}</dd></div><div><dt>Saldo</dt><dd>{formatMoney(title.outstandingAmount)}</dd></div><div><dt>Status</dt><dd>{titleStatusLabel(title.status)}</dd></div></dl></article></div>
+                : <p>O título ainda não foi emitido. A operação pode ser concluída na visão geral do Financeiro.</p>}
+            </section>
 
-            <section className="detail-section"><header><div><p className="section-kicker">RASTREABILIDADE</p><h2>Conciliação ponta a ponta</h2></div><span className="data-source">Tolerância R$ 0,01</span></header><div className="reconciliation-wrap"><table className="reconciliation-table"><thead><tr><th>Medida</th><th>Contrato</th><th>Carga</th><th>NF-e</th><th>Título</th><th>Banco</th><th>Tributo</th><th>Contábil</th></tr></thead><tbody>{reconciliationRows.map(row => <tr key={row[0]}>{row.map((cell, index) => index === 0 ? <th key={index}>{cell}</th> : <td key={index} data-pending={cell === 'pendente' ? 'true' : undefined}>{cell}</td>)}</tr>)}</tbody></table></div></section>
-
-            <section className="detail-section"><header><div><p className="section-kicker">ECONOMIA DO CONTRATO</p><h2>Margem projetada e realizada</h2></div></header><div className="central-metrics settlement-metrics"><article><span>Margem prevista</span><strong>R$ 102 mil</strong><small>R$ 3,40/sc</small></article><article><span>Margem comprometida</span><strong>R$ 2.720</strong><small>800 sacas recebidas</small></article><article data-primary="true"><span>Margem realizada</span><strong>R$ 2.720</strong><small>primeira carga</small></article><article><span>Pago ao produtor</span><strong>R$ 0,00</strong><small>aguardando aprovação</small></article></div></section>
+            <section className="detail-section">
+              <header><div><p className="section-kicker">HISTÓRICO DE CAIXA</p><h2>Recebimentos e estornos</h2></div></header>
+              {settlements.length
+                ? <div className="financial-groups">{settlements.map((item) => <article key={item.id}><h3>{item.bankReference}</h3><dl><div><dt>Valor</dt><dd>{formatMoney(item.amount)}</dd></div><div><dt>Data</dt><dd>{formatFinancialDate(item.receivedAt)}</dd></div><div><dt>Status</dt><dd>{item.reversedAt ? 'Estornado' : 'Confirmado'}</dd></div>{item.reversalReason ? <div><dt>Motivo</dt><dd>{item.reversalReason}</dd></div> : null}</dl></article>)}</div>
+                : <p>Nenhum recebimento registrado para este título.</p>}
+            </section>
           </div>
 
           <aside className="settlement-sidebar">
-            <section><p className="section-kicker">VALIDAÇÃO DE DOCUMENTOS</p><ul className="document-checks"><li data-done="true">Contrato ativo e saldo disponível<small>CT-2026-00512</small></li><li data-done="true">NF-e autorizada na SEFAZ GO<small>chave 5226…1284</small></li><li data-done="true">Romaneio e peso líquido<small>RM-RV-26-08812</small></li><li data-done="true">Laudo de classificação<small>dentro do padrão</small></li><li data-done="true">Dados bancários e titularidade<small>sem alteração recente</small></li></ul></section>
-            <section><p className="section-kicker">APROVAÇÃO DO PAGAMENTO</p><ol className="approval-timeline"><li data-state="done"><strong>Liquidação preparada</strong><span>Lucas Andrade · 07/10 08:50</span></li><li data-state="done"><strong>Documentos validados</strong><span>Renata Prado · 07/10 09:10</span></li><li data-state="current"><strong>Aprovação financeira</strong><span>segregação entre preparador e aprovador</span></li><li><strong>Remessa bancária</strong><span>Banco 341 · CNAB</span></li></ol><button className="tt-button" data-variant="primary" data-size="md" type="button" disabled title="Disponível quando o backend financeiro for implementado">Aprovar pagamento</button></section>
-            <section><p className="section-kicker">OBJETOS VINCULADOS</p><nav className="linked-objects" aria-label="Objetos vinculados"><Link href="/contratos">Contrato <strong>CT-2026-00512</strong></Link><Link href="/cargas">Carga <strong>CG-26-10421</strong></Link><span>NF-e <strong>001.284</strong></span><span>Título <strong>TP-2026-04412</strong></span></nav></section>
+            <section><p className="section-kicker">OBJETOS VINCULADOS</p><nav className="linked-objects" aria-label="Objetos vinculados"><Link href="/estoque">Contrato de venda <strong>{event.contractReference}</strong></Link><Link href="/estoque">Expedição <strong>{event.dispatchDocumentReference}</strong></Link>{title ? <span>Título <strong>{title.number}</strong></span> : null}</nav></section>
+            <section><p className="section-kicker">CONTROLE</p><h2>Sem fiscal fictício</h2><p>Esta fatia registra a referência documental, mas não presume autorização fiscal, tributos ou contabilização.</p></section>
+            <section><Link className="operational-link" href="/financeiro">Voltar ao financeiro <span>→</span></Link></section>
           </aside>
         </div>
       </div>

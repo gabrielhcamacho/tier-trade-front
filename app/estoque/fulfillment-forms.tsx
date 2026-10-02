@@ -34,6 +34,7 @@ export function FulfillmentForms({ data }: { data: FulfillmentData }) {
         <Field label="Início da janela" required><input type="date" name="deliveryStart" defaultValue={editing?.delivery_start ?? ''} required /></Field>
         <Field label="Fim da janela" required><input type="date" name="deliveryEnd" defaultValue={editing?.delivery_end ?? ''} required /></Field>
         <Field label="Documentos exigidos" hint="Separe os documentos por vírgula."><input name="requiredDocuments" defaultValue={editing?.required_documents.join(', ') ?? ''} placeholder="Nota fiscal, romaneio de pesagem" /></Field>
+        <Field label="Prazo financeiro" hint="Dias corridos após a expedição; deixe vazio quando ainda não definido."><input type="number" name="paymentTermDays" min={0} max={730} defaultValue={editing?.payment_term_days ?? ''} placeholder="7" /></Field>
         <Feedback state={salesState} />
         <Button type="submit" disabled={salesPending}>{salesPending ? 'Salvando…' : editing ? 'Atualizar contrato' : 'Criar contrato'}</Button>
       </form>
