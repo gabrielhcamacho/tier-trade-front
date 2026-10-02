@@ -61,7 +61,7 @@ function InventoryWorkspace({ data }: { data: InventoryPosition }) {
     </DemoStatus>,
   ]);
   const movementRows = data.movements.map((movement) => [
-    formatInventoryDate(movement.occurredAt),
+    formatInventoryDate(movement.recordedAt),
     movementLabel(movement.type),
     <Link href={`/cargas/${movement.sourceLoadId}`} key={movement.id}>
       {movement.sourceLoadId.slice(0, 8).toUpperCase()}

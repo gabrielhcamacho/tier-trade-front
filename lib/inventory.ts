@@ -24,6 +24,7 @@ export type InventoryMovement = {
   type: string;
   quantityDeltaKg: string;
   occurredAt: string;
+  recordedAt: string;
 };
 
 export type InventoryPosition = {
