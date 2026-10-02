@@ -11,6 +11,10 @@ export function ContractPortfolioView({ portfolio }: { portfolio: ContractPortfo
     (total, contract) => total + Number(contract.scheduled_weight_kg),
     0,
   );
+  const receivedWeightKg = portfolio.items.reduce(
+    (total, contract) => total + Number(contract.received_weight_kg),
+    0,
+  );
   const projectedMargin = portfolio.items.reduce(
     (total, contract) => total + Number(contract.quantity_sc) * Number(contract.projected_margin_per_sc),
     0,
@@ -40,7 +44,7 @@ export function ContractPortfolioView({ portfolio }: { portfolio: ContractPortfo
           label: 'Volume programado',
           value: formatWeightTonnes(scheduledWeightKg),
           unit: 't',
-          detail: 'cargas não canceladas',
+          detail: `${formatWeightTonnes(receivedWeightKg)} t recebidas`,
         },
         {
           label: 'Margem projetada',
@@ -77,7 +81,7 @@ export function ContractPortfolioView({ portfolio }: { portfolio: ContractPortfo
         >
           <DemoTable
             label="Execução dos contratos"
-            columns={['Contrato', 'Cargas', 'Programado', 'Saldo disponível', 'Obrigações', 'Agenda']}
+            columns={['Contrato', 'Cargas', 'Programado', 'Recebido', 'Saldo disponível', 'Obrigações', 'Agenda']}
             rows={portfolio.items.map((contract) => executionRow(contract))}
           />
         </DemoSection>
@@ -91,6 +95,7 @@ function executionRow(contract: ContractListItem) {
     contractReference(contract.id),
     String(contract.load_count),
     `${formatWeightTonnes(Number(contract.scheduled_weight_kg))} t`,
+    `${formatWeightTonnes(Number(contract.received_weight_kg))} t`,
     `${formatWeightTonnes(Number(contract.available_weight_kg))} t`,
     contract.pending_obligations === 0 ? 'Em dia' : `${contract.pending_obligations} pendentes`,
     <Link key={`${contract.id}-agenda`} href={`/cargas?contractId=${contract.id}`}>Abrir agenda</Link>,

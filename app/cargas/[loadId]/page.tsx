@@ -1,10 +1,11 @@
-import { Button, Status } from '@mountier/tier-trade-design-system';
+import { Status } from '@mountier/tier-trade-design-system';
 import Link from 'next/link';
 import { AppShell } from '../../app-shell';
 import { DemoLoadDetail } from './demo-load-detail';
 import { currentUserContext } from '../../../lib/current-user';
 import { commodityLabel, formatDate, loadContractSummary, type ContractSummary } from '../../../lib/contracts';
-import { formatSchedule, formatWeightKg, loadLoadDetail, loadStatusLabel, type ScheduledLoad } from '../../../lib/loads';
+import { formatSchedule, formatWeightKg, loadLoadDetail, loadStatusLabel, type LoadDetail as LoadDetailData } from '../../../lib/loads';
+import { ReceiptWorkspace } from './receipt-workspace';
 
 export default async function LoadDetailPage({ params, searchParams }: {
   params: Promise<{ loadId: string }>;
@@ -31,7 +32,9 @@ function LoadError({ message }: { message: string }) {
   return <div className="feedback critical detail-feedback" role="alert"><strong>Não foi possível abrir a carga</strong><span>{message}</span><Link href="/cargas">Voltar à agenda</Link></div>;
 }
 
-function LoadDetail({ load, summary }: { load: ScheduledLoad; summary: ContractSummary }) {
+function LoadDetail({ load, summary }: { load: LoadDetailData; summary: ContractSummary }) {
+  const hasReceipt = Boolean(load.receipt);
+  const accepted = load.receipt?.qualityDecision === 'ACCEPTED';
   return (
     <>
       <header className="entity-header load-entity-header">
@@ -48,7 +51,10 @@ function LoadDetail({ load, summary }: { load: ScheduledLoad; summary: ContractS
           <div><dt>Destino</dt><dd>{load.destinationCode}</dd></div>
         </dl>
         <ol className="trace-rail" aria-label="Etapas da carga">
-          <TraceStep label="Programação" detail="Concluída" state="done" /><TraceStep label="Pesagem" /><TraceStep label="Classificação" /><TraceStep label="Romaneio" /><TraceStep label="NF-e" /><TraceStep label="Liquidação" />
+          <TraceStep label="Programação" detail="Concluída" state="done" />
+          <TraceStep label="Pesagem" detail={hasReceipt ? 'Registrada' : load.status === 'IN_RECEIVING' ? 'Em andamento' : '—'} state={hasReceipt ? 'done' : load.status === 'IN_RECEIVING' ? 'current' : 'future'} />
+          <TraceStep label="Classificação" detail={accepted ? 'Aceita' : hasReceipt ? 'Em revisão' : '—'} state={accepted ? 'done' : hasReceipt ? 'current' : 'future'} />
+          <TraceStep label="Romaneio" /><TraceStep label="NF-e" /><TraceStep label="Liquidação" />
         </ol>
       </header>
 
@@ -62,25 +68,37 @@ function LoadDetail({ load, summary }: { load: ScheduledLoad; summary: ContractS
               <div><dt>Peso previsto</dt><dd>{formatWeightKg(load.expectedWeightKg)} kg</dd></div><div><dt>Janela do contrato</dt><dd>{formatDate(summary.delivery_start)} a {formatDate(summary.delivery_end)}</dd></div>
             </dl>
           </section>
-          <UnavailableSection kicker="RECEBIMENTO" title="Pesagem" description="Peso bruto, tara e peso líquido aparecerão aqui após o registro da balança ou contingência manual." action="Registrar pesagem" />
-          <UnavailableSection kicker="QUALIDADE" title="Classificação e desconto" description="Umidade, impureza, avariados, regra aplicada e memória do desconto dependerão da medição real da carga." action="Registrar classificação" />
+          <ReceiptWorkspace key={`${load.id}-${load.receipt?.version ?? 0}`} loadId={load.id} status={load.status} receipt={load.receipt} />
         </div>
 
         <aside className="load-side-column" aria-label="Relações e histórico da carga">
           <section><p className="section-kicker">OBJETOS VINCULADOS</p><h2>Rastreabilidade</h2><dl className="linked-object-list">
             <div><dt>Contrato</dt><dd><Link className="tt-mono" href={`/contratos/${summary.id}`}>{summary.id}</Link></dd></div><div><dt>Romaneio</dt><dd>Ainda não existe</dd></div><div><dt>NF-e</dt><dd>Ainda não existe</dd></div><div><dt>Lote</dt><dd>Ainda não existe</dd></div><div><dt>Liquidação</dt><dd>Ainda não existe</dd></div>
           </dl></section>
-          <section><p className="section-kicker">HISTÓRICO DA CARGA</p><h2>Eventos</h2><div className="load-history-item"><span aria-hidden="true" /><div><strong>Carga programada</strong><p>Saldo reservado no contrato para {formatWeightKg(load.expectedWeightKg)} kg.</p><small>{formatSchedule(load.createdAt, load.timezone)}</small></div></div></section>
+          <section><p className="section-kicker">HISTÓRICO DA CARGA</p><h2>Eventos</h2>{load.events.length ? load.events.map((event, index) => <div className="load-history-item" key={`${event.type}-${event.occurredAt}-${index}`}><span aria-hidden="true" /><div><strong>{eventLabel(event.type)}</strong><p>{eventDescription(event.type, event.payload)}</p><small>{formatSchedule(event.occurredAt, load.timezone)}</small></div></div>) : <div className="load-history-item"><span aria-hidden="true" /><div><strong>Carga programada</strong><p>Saldo reservado no contrato para {formatWeightKg(load.expectedWeightKg)} kg.</p><small>{formatSchedule(load.createdAt, load.timezone)}</small></div></div>}</section>
         </aside>
       </div>
     </>
   );
 }
 
-function TraceStep({ label, detail = '—', state = 'future' }: { label: string; detail?: string; state?: 'done' | 'future' }) {
+function TraceStep({ label, detail = '—', state = 'future' }: { label: string; detail?: string; state?: 'done' | 'current' | 'future' }) {
   return <li data-state={state}><span aria-hidden="true" /><div><strong>{label}</strong><small>{detail}</small></div></li>;
 }
 
-function UnavailableSection({ kicker, title, description, action }: { kicker: string; title: string; description: string; action: string }) {
-  return <section className="detail-section unavailable-section"><header><div><p className="section-kicker">{kicker}</p><h2>{title}</h2></div><Button disabled title="Disponível na próxima etapa operacional.">{action}</Button></header><div className="section-empty-state"><span aria-hidden="true">＋</span><strong>{title} ainda não registrada</strong><p>{description}</p></div></section>;
+function eventLabel(type: string): string {
+  if (type === 'load.scheduled') return 'Carga programada';
+  if (type === 'load.receiving_started') return 'Recebimento iniciado';
+  if (type === 'load.receipt_recorded') return 'Pesagem e qualidade registradas';
+  if (type === 'load.receipt_corrected') return 'Registro corrigido';
+  return type;
+}
+
+function eventDescription(type: string, payload: Record<string, unknown>): string {
+  if (type === 'load.scheduled') return `Saldo reservado para ${String(payload.expectedWeightKg ?? '—')} kg.`;
+  if (type === 'load.receiving_started') return 'A carga entrou no fluxo de recebimento.';
+  if (type === 'load.receipt_recorded' || type === 'load.receipt_corrected') {
+    return `Versão ${String(payload.version ?? '—')} · peso líquido ${String(payload.netWeightKg ?? '—')} kg · ${payload.qualityDecision === 'ACCEPTED' ? 'aceita' : 'em revisão'}.`;
+  }
+  return 'Evento operacional auditado.';
 }

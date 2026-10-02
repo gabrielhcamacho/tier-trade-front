@@ -1,0 +1,95 @@
+'use server';
+
+import { revalidatePath } from 'next/cache';
+import { currentUserContext } from '../../../lib/current-user';
+
+export type ReceiptActionState = { ok: boolean; message: string };
+
+const ERROR_MESSAGES: Record<string, string> = {
+  CAPABILITY_NOT_FOUND: 'Seu usuário não possui permissão para registrar o recebimento.',
+  LOAD_NOT_FOUND: 'A carga não existe ou não pertence ao tenant autenticado.',
+  LOAD_NOT_SCHEDULED: 'Somente uma carga programada pode iniciar o recebimento.',
+  LOAD_NOT_IN_RECEIVING: 'Inicie o recebimento antes de registrar a pesagem.',
+  GROSS_WEIGHT_MUST_EXCEED_TARE: 'O peso bruto deve ser maior que a tara.',
+};
+
+export async function startReceivingAction(
+  _previousState: ReceiptActionState,
+  formData: FormData,
+): Promise<ReceiptActionState> {
+  return mutateLoad(formData, 'start-receiving', 'POST', null, 'Recebimento iniciado.');
+}
+
+export async function recordReceiptAction(
+  _previousState: ReceiptActionState,
+  formData: FormData,
+): Promise<ReceiptActionState> {
+  const weighingMode = String(formData.get('weighingMode') ?? 'SCALE');
+  const payload = {
+    receivedAt: localDateTimeWithOffset(
+      String(formData.get('receivedAtLocal') ?? ''),
+      Number(formData.get('timezoneOffsetMinutes') ?? 0),
+    ),
+    grossWeightKg: decimal(formData.get('grossWeightKg')),
+    tareWeightKg: decimal(formData.get('tareWeightKg')),
+    weighingMode,
+    scaleTicketNumber: weighingMode === 'SCALE' ? nullable(formData.get('scaleTicketNumber')) : null,
+    contingencyReason: weighingMode === 'MANUAL_CONTINGENCY' ? nullable(formData.get('contingencyReason')) : null,
+    moisturePct: decimal(formData.get('moisturePct')),
+    impurityPct: decimal(formData.get('impurityPct')),
+    damagedPct: decimal(formData.get('damagedPct')),
+    qualityDecision: String(formData.get('qualityDecision') ?? 'REVIEW_REQUIRED'),
+    notes: nullable(formData.get('notes')),
+  };
+  return mutateLoad(formData, 'receipt', 'PUT', payload, 'Pesagem e classificação registradas.');
+}
+
+async function mutateLoad(
+  formData: FormData,
+  suffix: string,
+  method: 'POST' | 'PUT',
+  payload: object | null,
+  successMessage: string,
+): Promise<ReceiptActionState> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const loadId = String(formData.get('loadId') ?? '');
+  const { identityHeaders } = await currentUserContext();
+  if (!apiUrl || !loadId || Object.keys(identityHeaders).length === 0) {
+    return { ok: false, message: 'A API ou a identidade do ambiente ainda não está configurada.' };
+  }
+  try {
+    const response = await fetch(`${apiUrl}/v1/loads/${encodeURIComponent(loadId)}/${suffix}`, {
+      method,
+      headers: { ...identityHeaders, ...(payload ? { 'content-type': 'application/json' } : {}) },
+      body: payload ? JSON.stringify(payload) : undefined,
+      cache: 'no-store',
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({})) as { code?: string; message?: string | string[] };
+      const fallback = Array.isArray(body.message) ? body.message[0] : body.message;
+      return { ok: false, message: (body.code && ERROR_MESSAGES[body.code]) || fallback || 'Não foi possível atualizar a carga.' };
+    }
+    revalidatePath(`/cargas/${loadId}`);
+    revalidatePath('/cargas');
+    return { ok: true, message: successMessage };
+  } catch {
+    return { ok: false, message: 'Não foi possível acessar a API. Confirme se o backend está em execução.' };
+  }
+}
+
+function decimal(value: FormDataEntryValue | null): string {
+  return String(value ?? '').replace(/\./g, '').replace(',', '.');
+}
+
+function nullable(value: FormDataEntryValue | null): string | null {
+  const text = String(value ?? '').trim();
+  return text || null;
+}
+
+function localDateTimeWithOffset(local: string, offsetMinutes: number): string {
+  const sign = offsetMinutes > 0 ? '-' : '+';
+  const absolute = Math.abs(offsetMinutes);
+  const hours = String(Math.floor(absolute / 60)).padStart(2, '0');
+  const minutes = String(absolute % 60).padStart(2, '0');
+  return `${local}:00${sign}${hours}:${minutes}`;
+}

@@ -90,7 +90,7 @@ function ContractLoadAgenda({ summary, agenda }: { summary: ContractSummary; age
               <Link className="loads-table-row" role="row" key={load.id} href={`/cargas/${load.id}`}>
                 <span role="cell" className="tt-mono">{load.id.slice(-8)}</span><span role="cell">{formatSchedule(load.scheduledAt, load.timezone)}</span>
                 <span role="cell"><strong>{load.vehiclePlate}</strong><small>{load.carrierName}</small></span><span role="cell">{formatWeightKg(load.expectedWeightKg)} kg</span>
-                <span role="cell"><Status tone={load.status === 'CANCELLED' ? 'neutral' : 'positive'}>{loadStatusLabel(load.status)}</Status></span>
+                <span role="cell"><Status tone={load.status === 'CANCELLED' ? 'neutral' : load.status === 'IN_RECEIVING' ? 'warning' : 'positive'}>{loadStatusLabel(load.status)}</Status></span>
               </Link>
             ))}
           </div>
@@ -98,7 +98,7 @@ function ContractLoadAgenda({ summary, agenda }: { summary: ContractSummary; age
 
         <aside className="loads-sidebar" aria-label="Pré-condições da execução">
           <section><p className="section-kicker">PRÉ-CONDIÇÕES</p><h2>Obrigações do contrato</h2><div className="loads-obligations">{summary.obligations.map((item) => <div key={item.code}><span>{obligationLabel(item.code)}</span><Status tone={item.status === 'COMPLETED' ? 'positive' : 'warning'}>{obligationStatus(item.status)}</Status></div>)}</div></section>
-          <section className="loads-next-step"><p className="section-kicker">PRÓXIMA ETAPA</p><h2>Recebimento e pesagem</h2><p>A programação já reserva o saldo contratual. A próxima entrega registrará bruto, tara, líquido e contingência da balança.</p><dl><div><dt>Assinatura</dt><dd>{obligationStatus(obligationMap.get('SIGNED_CONTRACT'))}</dd></div><div><dt>Agenda de entrega</dt><dd>{obligationStatus(obligationMap.get('DELIVERY_SCHEDULE'))}</dd></div></dl></section>
+          <section className="loads-next-step"><p className="section-kicker">FLUXO OPERACIONAL</p><h2>Recebimento e pesagem</h2><p>Abra uma carga para iniciar o recebimento, registrar bruto, tara, peso líquido, contingência e classificação.</p><dl><div><dt>Assinatura</dt><dd>{obligationStatus(obligationMap.get('SIGNED_CONTRACT'))}</dd></div><div><dt>Agenda de entrega</dt><dd>{obligationStatus(obligationMap.get('DELIVERY_SCHEDULE'))}</dd></div></dl></section>
         </aside>
       </div>
     </div>

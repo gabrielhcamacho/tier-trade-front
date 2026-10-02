@@ -11,6 +11,36 @@ export type ScheduledLoad = {
   createdAt: string;
 };
 
+export type LoadReceipt = {
+  id: string;
+  version: number;
+  receivedAt: string;
+  grossWeightKg: string;
+  tareWeightKg: string;
+  netWeightKg: string;
+  weighingMode: 'SCALE' | 'MANUAL_CONTINGENCY';
+  scaleTicketNumber: string | null;
+  contingencyReason: string | null;
+  moisturePct: string;
+  impurityPct: string;
+  damagedPct: string;
+  qualityDecision: 'ACCEPTED' | 'REVIEW_REQUIRED';
+  notes: string | null;
+  createdAt: string;
+};
+
+export type LoadEvent = {
+  type: string;
+  payload: Record<string, unknown>;
+  occurredAt: string;
+};
+
+export type LoadDetail = ScheduledLoad & {
+  receipt: LoadReceipt | null;
+  receiptHistory: LoadReceipt[];
+  events: LoadEvent[];
+};
+
 export type LoadAgenda = {
   items: ScheduledLoad[];
   summary: {
@@ -33,7 +63,7 @@ export async function loadContractLoads(
 export async function loadLoadDetail(
   loadId: string,
   identityHeaders: Record<string, string>,
-): Promise<ApiResult<ScheduledLoad>> {
+): Promise<ApiResult<LoadDetail>> {
   return fetchOperational(`/v1/loads/${encodeURIComponent(loadId)}`, identityHeaders);
 }
 

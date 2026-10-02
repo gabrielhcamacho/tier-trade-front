@@ -38,6 +38,7 @@ export type ContractListItem = {
   projected_margin_per_sc: string;
   load_count: number;
   scheduled_weight_kg: string;
+  received_weight_kg: string;
   available_weight_kg: string;
   pending_obligations: number;
 };
