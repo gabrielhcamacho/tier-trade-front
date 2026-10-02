@@ -1,5 +1,18 @@
 html { scroll-behavior: smooth; }
 
+.fulfillment-forms { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--ink); }
+.fulfillment-forms > form { min-width: 0; padding: 20px; display: grid; align-content: start; gap: 14px; border-right: 1px solid var(--line); }
+.fulfillment-forms > form:last-child { border-right: 0; }
+.fulfillment-forms h3 { margin: 3px 0 0; font-size: 17px; letter-spacing: -.025em; }
+.fulfillment-forms .tt-button { justify-self: start; margin-top: 4px; }
+.fulfillment-feedback { margin: 0; padding: 10px 12px; color: var(--ember-text); background: var(--ember-soft); border: 1px solid #efd0bd; font-size: 11px; line-height: 16px; }
+.fulfillment-feedback[data-ok] { color: var(--forest); background: var(--leaf-soft); border-color: #bdd9b1; }
+
+@media (max-width: 1100px) {
+  .fulfillment-forms { grid-template-columns: 1fr; }
+  .fulfillment-forms > form { border-right: 0; border-bottom: 1px solid var(--line); }
+}
+
 .skip-link { position: fixed; top: 8px; left: 8px; z-index: 100; padding: 9px 12px; color: white; background: var(--forest); transform: translateY(-150%); }
 .skip-link:focus { transform: translateY(0); }
 

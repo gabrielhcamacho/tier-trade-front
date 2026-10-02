@@ -10,6 +10,8 @@ export type InventoryLot = {
   riskStatus: string;
   custodyStatus: string;
   quantityKg: string;
+  committedKg: string;
+  availableKg: string;
   quality: { moisturePct: string; impurityPct: string; damagedPct: string };
   vehiclePlate: string;
   createdAt: string;
@@ -19,8 +21,10 @@ export type InventoryMovement = {
   id: string;
   lotId: string;
   lotCode: string;
-  sourceLoadId: string;
-  sourceReceiptId: string;
+  sourceLoadId: string | null;
+  sourceReceiptId: string | null;
+  allocationId: string | null;
+  dispatchId: string | null;
   type: string;
   quantityDeltaKg: string;
   occurredAt: string;
@@ -37,11 +41,28 @@ export type InventoryPosition = {
     physicalWeightKg: string;
     availableWeightKg: string;
     blockedWeightKg: string;
+    committedWeightKg: string;
     lotCount: number;
     pendingOwnershipCount: number;
   };
   lots: InventoryLot[];
   movements: InventoryMovement[];
+  salesContracts: Array<{
+    id: string; counterparty_id: string; reference: string; commodity: string; quantity_kg: string;
+    sale_price_per_kg: string; destination_code: string; delivery_start: string;
+    delivery_end: string; required_documents: string[]; status: string;
+    counterparty_name: string; allocated_kg: string; dispatched_kg: string;
+  }>;
+  allocations: Array<{
+    id: string; sales_contract_id: string; lot_id: string; quantity_kg: string;
+    status: string; contract_reference: string; lot_code: string; dispatched_kg: string;
+  }>;
+  dispatches: Array<{
+    id: string; allocation_id: string; quantity_kg: string; dispatched_at: string;
+    vehicle_plate: string; document_reference: string; notes: string | null;
+    contract_reference: string; lot_code: string;
+  }>;
+  counterparties: Array<{ id: string; legal_name: string }>;
 };
 
 export type InventoryResult =
@@ -90,5 +111,6 @@ export function movementLabel(value: string): string {
   if (value === 'RECEIPT') return 'Entrada por recebimento';
   if (value === 'RECEIPT_CORRECTION') return 'Correção de recebimento';
   if (value === 'RECEIPT_REVERSAL') return 'Estorno para revisão';
+  if (value === 'DISPATCH') return 'Saída por expedição';
   return value;
 }

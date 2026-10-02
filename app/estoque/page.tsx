@@ -11,6 +11,7 @@ import {
   type InventoryLot,
   type InventoryPosition,
 } from '../../lib/inventory';
+import { FulfillmentForms } from './fulfillment-forms';
 
 export default async function InventoryPage() {
   const user = await currentUserContext();
@@ -55,7 +56,7 @@ function InventoryWorkspace({ data }: { data: InventoryPosition }) {
     ownershipLabel(lot.ownershipStatus),
     `${formatTonnes(lot.quantityKg)} t`,
     custodyLabel(lot.custodyStatus),
-    lot.status === 'AVAILABLE' ? `${formatTonnes(lot.quantityKg)} t` : '0,000 t',
+    lot.status === 'AVAILABLE' ? `${formatTonnes(lot.availableKg)} t` : '0,000 t',
     <DemoStatus tone={lot.status === 'AVAILABLE' ? 'positive' : 'attention'} key={lot.id}>
       {lot.status === 'AVAILABLE' ? 'Disponível' : 'Em revisão'}
     </DemoStatus>,
@@ -63,12 +64,14 @@ function InventoryWorkspace({ data }: { data: InventoryPosition }) {
   const movementRows = data.movements.map((movement) => [
     formatInventoryDate(movement.recordedAt),
     movementLabel(movement.type),
-    <Link href={`/cargas/${movement.sourceLoadId}`} key={movement.id}>
-      {movement.sourceLoadId.slice(0, 8).toUpperCase()}
-    </Link>,
+    movement.sourceLoadId
+      ? <Link href={`/cargas/${movement.sourceLoadId}`} key={movement.id}>{movement.sourceLoadId.slice(0, 8).toUpperCase()}</Link>
+      : 'Expedição',
     movement.lotCode,
     `${Number(movement.quantityDeltaKg) >= 0 ? '+' : '−'} ${formatTonnes(String(Math.abs(Number(movement.quantityDeltaKg))))} t`,
-    `Recebimento ${movement.sourceReceiptId.slice(0, 8).toUpperCase()}`,
+    movement.sourceReceiptId
+      ? `Recebimento ${movement.sourceReceiptId.slice(0, 8).toUpperCase()}`
+      : `Alocação ${movement.allocationId?.slice(0, 8).toUpperCase()}`,
   ]);
 
   return (
@@ -77,18 +80,40 @@ function InventoryWorkspace({ data }: { data: InventoryPosition }) {
       <DemoMetricStrip items={[
         { label: 'Estoque físico', value: formatTonnes(data.summary.physicalWeightKg), unit: 't', detail: 'saldo do livro de movimentos' },
         { label: 'Disponível', value: formatTonnes(data.summary.availableWeightKg), unit: 't', detail: 'recebimentos aceitos', tone: 'primary' },
+        { label: 'Comprometido', value: formatTonnes(data.summary.committedWeightKg), unit: 't', detail: 'reservado para contratos de venda', tone: 'attention' },
         { label: 'Em revisão', value: formatTonnes(data.summary.blockedWeightKg), unit: 't', detail: 'sem disponibilidade', tone: 'attention' },
-        { label: 'Titularidade pendente', value: String(data.summary.pendingOwnershipCount), detail: 'lotes aguardando regra contratual', tone: 'attention' },
       ]} />
       <div className="demo-filterbar">
         <span>Localizações <strong>{locationCount}</strong></span>
         <span>Commodities <strong>{commodityCount}</strong></span>
         <span>Lotes <strong>{data.summary.lotCount}</strong></span>
         <span>Movimentos <strong>{data.movements.length}</strong></span>
+        <span>Vendas <strong>{data.salesContracts.length}</strong></span>
       </div>
 
       <div className="demo-domain-layout">
         <div className="demo-main-stack">
+          <DemoSection kicker="EXECUÇÃO DE VENDA" title="Contrato, alocação e expedição" aside="fluxo conectado de ponta a ponta">
+            <FulfillmentForms data={{
+              salesContracts: data.salesContracts,
+              counterparties: data.counterparties,
+              allocations: data.allocations,
+              lots: data.lots,
+            }} />
+          </DemoSection>
+
+          <DemoSection kicker="CARTEIRA DE VENDA" title="Saldos executados" aside={`${data.salesContracts.length} contratos`}>
+            {data.salesContracts.length > 0
+              ? <DemoTable label="Contratos de venda" columns={['Contrato', 'Cliente', 'Contratado', 'Alocado', 'Expedido', 'Saldo']} rows={data.salesContracts.map((contract) => [
+                contract.reference,
+                contract.counterparty_name,
+                `${formatTonnes(contract.quantity_kg)} t`,
+                `${formatTonnes(contract.allocated_kg)} t`,
+                `${formatTonnes(contract.dispatched_kg)} t`,
+                `${formatTonnes(String(Number(contract.quantity_kg) - Number(contract.dispatched_kg)))} t`,
+              ])} />
+              : <p>Nenhum contrato de venda cadastrado.</p>}
+          </DemoSection>
           <DemoSection kicker="POSIÇÃO CONSOLIDADA" title="Saldo por lote e localização" aside={`${data.lots.length} lotes visíveis`}>
             {positionRows.length > 0
               ? <DemoTable label="Posição de estoque" columns={['Localização', 'Lote', 'Produto', 'Titularidade', 'Físico', 'Custódia', 'Disponível', 'Situação']} rows={positionRows} />
@@ -101,7 +126,7 @@ function InventoryWorkspace({ data }: { data: InventoryPosition }) {
             </div>
           </DemoSection>
 
-          <DemoSection kicker="LIVRO DE MOVIMENTOS" title="Entradas e correções de recebimento" id="movimentos" aside="ordem cronológica">
+          <DemoSection kicker="LIVRO DE MOVIMENTOS" title="Entradas, correções e saídas" id="movimentos" aside="ordem cronológica">
             {movementRows.length > 0
               ? <DemoTable label="Movimentos de estoque" columns={['Data', 'Movimento', 'Carga', 'Lote', 'Quantidade', 'Origem']} rows={movementRows} />
               : <p>Nenhum movimento registrado.</p>}
