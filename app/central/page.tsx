@@ -29,7 +29,7 @@ const workItems = [
     due: '06/10, 16:00',
     status: 'Vence em breve',
     tone: 'attention',
-    href: '/cargas/CG-26-10422?contractId=demonstracao',
+    href: '/cargas/CG-26-10422?modo=demonstracao',
   },
 ];
 

@@ -1,6 +1,7 @@
 import { Button, Status } from '@mountier/tier-trade-design-system';
 import Link from 'next/link';
 import { AppShell } from '../app-shell';
+import { DemoLoadsAgenda } from './demo-loads';
 import { currentUserContext } from '../../lib/current-user';
 import {
   commodityLabel,
@@ -17,9 +18,12 @@ import {
 export default async function LoadsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ contractId?: string }>;
+  searchParams: Promise<{ contractId?: string; modo?: string }>;
 }) {
-  const [{ contractId }, user] = await Promise.all([searchParams, currentUserContext()]);
+  const [{ contractId, modo }, user] = await Promise.all([searchParams, currentUserContext()]);
+  if (modo === 'demonstracao') {
+    return <AppShell activeDomain="operations" userLabel={user.userLabel}><DemoLoadsAgenda /></AppShell>;
+  }
   const result = contractId
     ? await loadContractSummary(contractId, user.identityHeaders)
     : null;

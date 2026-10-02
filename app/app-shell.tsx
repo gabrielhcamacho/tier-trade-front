@@ -4,7 +4,7 @@ import { signOut } from './auth/actions';
 import { BrandLogo } from './brand-logo';
 import { hasSupabaseConfiguration } from '../lib/supabase/configuration';
 
-type Domain = 'central' | 'commercial' | 'contracts' | 'operations' | 'financial';
+type Domain = 'central' | 'commercial' | 'contracts' | 'operations' | 'inventory' | 'risk' | 'financial';
 
 export function AppShell({
   activeDomain,
@@ -25,11 +25,11 @@ export function AppShell({
         <nav aria-label="Domínios">
           <Link className={activeDomain === 'central' ? 'active' : undefined} aria-current={activeDomain === 'central' ? 'page' : undefined} href="/central">Central</Link>
           <Link className={activeDomain === 'commercial' ? 'active' : undefined} aria-current={activeDomain === 'commercial' ? 'page' : undefined} href="/">Comercial</Link>
-          <Link className={activeDomain === 'contracts' ? 'active' : undefined} aria-current={activeDomain === 'contracts' ? 'page' : undefined} href="/contratos">Contratos</Link>
-          <Link className={activeDomain === 'operations' ? 'active' : undefined} aria-current={activeDomain === 'operations' ? 'page' : undefined} href="/cargas">Operações</Link>
-          <span aria-disabled="true">Estoque</span>
-          <span aria-disabled="true">Risco</span>
-          <Link className={activeDomain === 'financial' ? 'active' : undefined} aria-current={activeDomain === 'financial' ? 'page' : undefined} href="/financeiro/liquidacoes/LQ-2026-01877">Financeiro</Link>
+          <Link className={activeDomain === 'contracts' ? 'active' : undefined} aria-current={activeDomain === 'contracts' ? 'page' : undefined} href="/contratos?modo=demonstracao">Contratos</Link>
+          <Link className={activeDomain === 'operations' ? 'active' : undefined} aria-current={activeDomain === 'operations' ? 'page' : undefined} href="/cargas?modo=demonstracao">Operações</Link>
+          <Link className={activeDomain === 'inventory' ? 'active' : undefined} aria-current={activeDomain === 'inventory' ? 'page' : undefined} href="/estoque">Estoque</Link>
+          <Link className={activeDomain === 'risk' ? 'active' : undefined} aria-current={activeDomain === 'risk' ? 'page' : undefined} href="/risco">Risco</Link>
+          <Link className={activeDomain === 'financial' ? 'active' : undefined} aria-current={activeDomain === 'financial' ? 'page' : undefined} href="/financeiro">Financeiro</Link>
         </nav>
         <div className="user-menu">
           <span className="user-avatar" aria-hidden="true">{userLabel.slice(0, 1).toUpperCase()}</span>
@@ -45,7 +45,7 @@ export function AppShell({
           <Link className="active" aria-current="page" href="/central">Minha fila</Link>
           <Link href="/central#aprovacoes">Aprovações</Link>
           <Link href="/central#alertas">Alertas</Link>
-          <span aria-disabled="true">Pesquisa global</span>
+          <Link href="/demonstracao">Roteiro de demonstração</Link>
         </nav>
       ) : activeDomain === 'commercial' ? (
         <nav className="context-bar" aria-label="Comercial">
@@ -57,26 +57,40 @@ export function AppShell({
         </nav>
       ) : activeDomain === 'contracts' ? (
         <nav className="context-bar" aria-label="Contratos">
-          <Link className="active" aria-current="page" href="/contratos">Contratos</Link>
-          <span aria-disabled="true">Obrigações</span>
-          <span aria-disabled="true">Documentos</span>
+          <Link className="active" aria-current="page" href="/contratos?modo=demonstracao">Contratos</Link>
+          <Link href="/contratos?modo=demonstracao#obrigacoes">Obrigações</Link>
+          <Link href="/contratos?modo=demonstracao#documentos">Documentos</Link>
           <span aria-disabled="true">Auditoria</span>
         </nav>
       ) : activeDomain === 'operations' ? (
         <nav className="context-bar" aria-label="Operações">
-          <Link className="active" aria-current="page" href="/cargas">Agenda</Link>
-          <span aria-disabled="true">Cargas</span>
-          <span aria-disabled="true">Recebimento</span>
-          <span aria-disabled="true">Qualidade</span>
+          <Link className="active" aria-current="page" href="/cargas?modo=demonstracao">Agenda</Link>
+          <Link href="/cargas/CG-26-10422?modo=demonstracao">Cargas</Link>
+          <Link href="/cargas/CG-26-10422?modo=demonstracao#pesagem">Recebimento</Link>
+          <Link href="/cargas/CG-26-10422?modo=demonstracao#qualidade">Qualidade</Link>
           <span aria-disabled="true">Ocorrências</span>
+        </nav>
+      ) : activeDomain === 'inventory' ? (
+        <nav className="context-bar" aria-label="Estoque">
+          <Link className="active" aria-current="page" href="/estoque">Posição</Link>
+          <Link href="/estoque#lotes">Lotes</Link>
+          <Link href="/estoque#movimentos">Movimentos</Link>
+          <Link href="/estoque#reconciliacao">Reconciliação</Link>
+        </nav>
+      ) : activeDomain === 'risk' ? (
+        <nav className="context-bar" aria-label="Risco">
+          <Link className="active" aria-current="page" href="/risco">Posição</Link>
+          <Link href="/risco#exposicao">Exposição</Link>
+          <Link href="/risco#cobertura">Cobertura</Link>
+          <Link href="/risco#limites">Limites</Link>
         </nav>
       ) : (
         <nav className="context-bar" aria-label="Financeiro">
-          <Link className="active" aria-current="page" href="/financeiro/liquidacoes/LQ-2026-01877">Liquidações</Link>
-          <span aria-disabled="true">Contas a pagar</span>
-          <span aria-disabled="true">Contas a receber</span>
-          <span aria-disabled="true">Conciliação</span>
-          <span aria-disabled="true">Fluxo de caixa</span>
+          <Link className="active" aria-current="page" href="/financeiro#liquidacoes">Liquidações</Link>
+          <Link href="/financeiro#pagar">Contas a pagar</Link>
+          <Link href="/financeiro#receber">Contas a receber</Link>
+          <Link href="/financeiro#conciliacao">Conciliação</Link>
+          <Link href="/financeiro#fluxo-caixa">Fluxo de caixa</Link>
         </nav>
       )}
 
