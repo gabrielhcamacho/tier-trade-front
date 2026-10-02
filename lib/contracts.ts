@@ -16,12 +16,66 @@ export type ContractSummary = {
   total_costs_per_sc: string;
   projected_margin_per_sc: string;
   policy_version: number;
+  load_count: number;
   obligations: ContractObligation[];
 };
 
 export type ContractSummaryResult =
   | { summary: ContractSummary; error: null }
   | { summary: null; error: string };
+
+export type ContractListItem = {
+  id: string;
+  status: string;
+  activated_at: string;
+  counterparty_name: string;
+  commodity: string;
+  unit: string;
+  quantity_sc: string;
+  delivery_start: string;
+  delivery_end: string;
+  purchase_price_per_sc: string;
+  projected_margin_per_sc: string;
+  load_count: number;
+  scheduled_weight_kg: string;
+  available_weight_kg: string;
+  pending_obligations: number;
+};
+
+export type ContractPortfolio = {
+  tenant: {
+    legalName: string;
+    isDemo: boolean;
+    demoSeedVersion: number | null;
+  };
+  items: ContractListItem[];
+};
+
+export type ContractPortfolioResult =
+  | { portfolio: ContractPortfolio; error: null }
+  | { portfolio: null; error: string };
+
+export async function loadContracts(
+  identityHeaders: Record<string, string>,
+): Promise<ContractPortfolioResult> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (!apiUrl || Object.keys(identityHeaders).length === 0) {
+    return { portfolio: null, error: 'A API ou a identidade do ambiente ainda não está configurada.' };
+  }
+
+  try {
+    const response = await fetch(`${apiUrl}/v1/contracts`, {
+      headers: identityHeaders,
+      cache: 'no-store',
+    });
+    if (!response.ok) {
+      return { portfolio: null, error: 'A API não conseguiu carregar a carteira de contratos.' };
+    }
+    return { portfolio: await response.json() as ContractPortfolio, error: null };
+  } catch {
+    return { portfolio: null, error: 'Não foi possível acessar a API na porta configurada.' };
+  }
+}
 
 export async function loadContractSummary(
   contractId: string,

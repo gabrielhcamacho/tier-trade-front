@@ -74,7 +74,11 @@ function ContractDetail({ summary }: { summary: ContractSummary }) {
         <ol className="trace-rail" aria-label="Rastreabilidade do contrato">
           <TraceStep label="Negociação" value="Concluída" state="done" />
           <TraceStep label="Contrato" value={contractStatusLabel(summary.status)} state="done" />
-          <TraceStep label="Execução física" value="Não iniciada" state="future" />
+          <TraceStep
+            label="Execução física"
+            value={summary.load_count > 0 ? `${summary.load_count} carga${summary.load_count === 1 ? '' : 's'}` : 'Não iniciada'}
+            state={summary.load_count > 0 ? 'current' : 'future'}
+          />
           <TraceStep label="Estoque" value="Sem movimento" state="future" />
           <TraceStep label="Liquidação" value="Não iniciada" state="future" />
           <TraceStep label="Contábil" value="Não iniciado" state="future" />
@@ -128,14 +132,14 @@ function ContractDetail({ summary }: { summary: ContractSummary }) {
           <section>
             <p className="section-kicker">PRONTO PARA EXECUTAR?</p>
             <h2>{signed?.status === 'COMPLETED' ? 'Contrato formalizado' : 'Assinatura pendente'}</h2>
-            <p>A agenda operacional está preparada para receber as cargas assim que o backend da próxima vertical slice estiver conectado.</p>
+            <p>A agenda operacional está conectada a este contrato. Cadastre e acompanhe as cargas enquanto as obrigações são concluídas.</p>
             <Link className="operational-link" href={`/cargas?contractId=${summary.id}`}>Abrir execução física <span aria-hidden="true">→</span></Link>
           </section>
           <section>
             <p className="section-kicker">OBJETOS RELACIONADOS</p>
             <dl className="linked-object-list">
               <div><dt>Contrato</dt><dd className="tt-mono">{summary.id}</dd></div>
-              <div><dt>Cargas</dt><dd>Ainda não existem</dd></div>
+              <div><dt>Cargas</dt><dd>{summary.load_count}</dd></div>
               <div><dt>Documentos</dt><dd>Backend pendente</dd></div>
             </dl>
           </section>

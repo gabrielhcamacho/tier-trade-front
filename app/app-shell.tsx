@@ -25,8 +25,8 @@ export function AppShell({
         <nav aria-label="Domínios">
           <Link className={activeDomain === 'central' ? 'active' : undefined} aria-current={activeDomain === 'central' ? 'page' : undefined} href="/central">Central</Link>
           <Link className={activeDomain === 'commercial' ? 'active' : undefined} aria-current={activeDomain === 'commercial' ? 'page' : undefined} href="/">Comercial</Link>
-          <Link className={activeDomain === 'contracts' ? 'active' : undefined} aria-current={activeDomain === 'contracts' ? 'page' : undefined} href="/contratos?modo=demonstracao">Contratos</Link>
-          <Link className={activeDomain === 'operations' ? 'active' : undefined} aria-current={activeDomain === 'operations' ? 'page' : undefined} href="/cargas?modo=demonstracao">Operações</Link>
+          <Link className={activeDomain === 'contracts' ? 'active' : undefined} aria-current={activeDomain === 'contracts' ? 'page' : undefined} href="/contratos">Contratos</Link>
+          <Link className={activeDomain === 'operations' ? 'active' : undefined} aria-current={activeDomain === 'operations' ? 'page' : undefined} href="/cargas">Operações</Link>
           <Link className={activeDomain === 'inventory' ? 'active' : undefined} aria-current={activeDomain === 'inventory' ? 'page' : undefined} href="/estoque">Estoque</Link>
           <Link className={activeDomain === 'risk' ? 'active' : undefined} aria-current={activeDomain === 'risk' ? 'page' : undefined} href="/risco">Risco</Link>
           <Link className={activeDomain === 'financial' ? 'active' : undefined} aria-current={activeDomain === 'financial' ? 'page' : undefined} href="/financeiro">Financeiro</Link>
@@ -57,17 +57,17 @@ export function AppShell({
         </nav>
       ) : activeDomain === 'contracts' ? (
         <nav className="context-bar" aria-label="Contratos">
-          <Link className="active" aria-current="page" href="/contratos?modo=demonstracao">Contratos</Link>
-          <Link href="/contratos?modo=demonstracao#obrigacoes">Obrigações</Link>
-          <Link href="/contratos?modo=demonstracao#documentos">Documentos</Link>
+          <Link className="active" aria-current="page" href="/contratos">Contratos</Link>
+          <Link href="/contratos#obrigacoes">Obrigações</Link>
+          <span aria-disabled="true">Documentos</span>
           <span aria-disabled="true">Auditoria</span>
         </nav>
       ) : activeDomain === 'operations' ? (
         <nav className="context-bar" aria-label="Operações">
-          <Link className="active" aria-current="page" href="/cargas?modo=demonstracao">Agenda</Link>
-          <Link href="/cargas/CG-26-10422?modo=demonstracao">Cargas</Link>
-          <Link href="/cargas/CG-26-10422?modo=demonstracao#pesagem">Recebimento</Link>
-          <Link href="/cargas/CG-26-10422?modo=demonstracao#qualidade">Qualidade</Link>
+          <Link className="active" aria-current="page" href="/cargas">Agenda</Link>
+          <span aria-disabled="true">Cargas</span>
+          <span aria-disabled="true">Recebimento</span>
+          <span aria-disabled="true">Qualidade</span>
           <span aria-disabled="true">Ocorrências</span>
         </nav>
       ) : activeDomain === 'inventory' ? (
