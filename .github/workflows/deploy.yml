@@ -1,0 +1,50 @@
+name: deploy-web
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Ambiente protegido do GitHub
+        required: true
+        type: choice
+        options: [preview, production]
+        default: preview
+
+concurrency:
+  group: deploy-web-${{ inputs.target }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.target }}
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm install --global vercel@62.1.0
+      - name: Pull environment
+        run: |
+          if [ "${{ inputs.target }}" = "production" ]; then
+            vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+          else
+            vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
+          fi
+      - name: Build immutable artifact
+        run: |
+          if [ "${{ inputs.target }}" = "production" ]; then
+            vercel build --prod --token="$VERCEL_TOKEN"
+          else
+            vercel build --token="$VERCEL_TOKEN"
+          fi
+      - name: Deploy prebuilt artifact
+        run: |
+          if [ "${{ inputs.target }}" = "production" ]; then
+            vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+          else
+            vercel deploy --prebuilt --token="$VERCEL_TOKEN"
+          fi

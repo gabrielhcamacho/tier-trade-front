@@ -4,21 +4,12 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - name: Require design system repository configuration
-        env:
-          DESIGN_SYSTEM_REPOSITORY: ${{ vars.DESIGN_SYSTEM_REPOSITORY }}
-        run: test -n "$DESIGN_SYSTEM_REPOSITORY"
       - uses: actions/checkout@v4
-        with: { path: tier-trade-web }
-      - uses: actions/checkout@v4
-        with:
-          repository: ${{ vars.DESIGN_SYSTEM_REPOSITORY }}
-          path: tier-trade-design-system
       - uses: pnpm/action-setup@v4
-        with: { version: 10 }
+        with: { version: 10.33.3 }
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
-        working-directory: tier-trade-web
+      - run: pnpm typecheck
       - run: pnpm build
-        working-directory: tier-trade-web
+      - run: docker build --tag tier-trade-web:${{ github.sha }} .

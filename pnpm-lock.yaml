@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@mountier/tier-trade-design-system':
-        specifier: file:../tier-trade-design-system
-        version: file:../tier-trade-design-system(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+        specifier: file:vendor/mountier-tier-trade-design-system-0.1.0.tgz
+        version: file:vendor/mountier-tier-trade-design-system-0.1.0.tgz(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@supabase/ssr':
         specifier: 0.12.7
         version: 0.12.7(@supabase/supabase-js@2.117.2)
@@ -210,8 +210,9 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@mountier/tier-trade-design-system@file:../tier-trade-design-system':
-    resolution: {directory: ../tier-trade-design-system, type: directory}
+  '@mountier/tier-trade-design-system@file:vendor/mountier-tier-trade-design-system-0.1.0.tgz':
+    resolution: {integrity: sha512-6LpZ8cufILj/n687/qYMpUk3wNgvCqSBe8AfzePSUiY9rO+cDQn6B0P69ZSt1RnTGfaVFPSe0Nh3mha3k0LpiQ==, tarball: file:vendor/mountier-tier-trade-design-system-0.1.0.tgz}
+    version: 0.1.0
     peerDependencies:
       react: '>=19'
       react-dom: '>=19'
@@ -554,7 +555,7 @@ snapshots:
   '@img/sharp-win32-x64@0.35.5':
     optional: true
 
-  '@mountier/tier-trade-design-system@file:../tier-trade-design-system(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
+  '@mountier/tier-trade-design-system@file:vendor/mountier-tier-trade-design-system-0.1.0.tgz(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
     dependencies:
       react: 19.3.0
       react-dom: 19.3.0(react@19.3.0)

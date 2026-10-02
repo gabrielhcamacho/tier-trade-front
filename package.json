@@ -2,6 +2,7 @@
   "name": "@mountier/tier-trade-web",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.33.3",
   "engines": {
     "node": ">=22"
   },
@@ -12,7 +13,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@mountier/tier-trade-design-system": "file:../tier-trade-design-system",
+    "@mountier/tier-trade-design-system": "file:vendor/mountier-tier-trade-design-system-0.1.0.tgz",
     "@supabase/ssr": "0.12.7",
     "@supabase/supabase-js": "2.117.2",
     "geist": "^1.5.1",
