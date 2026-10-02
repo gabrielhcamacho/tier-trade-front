@@ -98,7 +98,7 @@ function executionRow(contract: ContractListItem) {
 }
 
 function contractReference(id: string): string {
-  return `CT-${id.slice(0, 8).toUpperCase()}`;
+  return `CT-${id.slice(-8).toUpperCase()}`;
 }
 
 function formatWeightTonnes(weightKg: number): string {

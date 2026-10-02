@@ -35,7 +35,7 @@ function LoadDetail({ load, summary }: { load: ScheduledLoad; summary: ContractS
   return (
     <>
       <header className="entity-header load-entity-header">
-        <p className="breadcrumbs">Operações <span>›</span> <Link href={`/cargas?contractId=${summary.id}`}>Cargas</Link> <span>›</span> <span className="tt-mono">{load.id.slice(0, 8)}</span></p>
+        <p className="breadcrumbs">Operações <span>›</span> <Link href={`/cargas?contractId=${summary.id}`}>Cargas</Link> <span>›</span> <span className="tt-mono">{load.id.slice(-8)}</span></p>
         <div className="entity-title-row">
           <div><p className="entity-kind">Carga de recebimento</p><h1>{load.vehiclePlate}</h1><p className="entity-id tt-mono">Carga {load.id}</p></div>
           <div className="entity-actions"><Status tone="positive">{loadStatusLabel(load.status)}</Status></div>
