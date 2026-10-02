@@ -573,6 +573,8 @@ main { min-width: 0; }
 .finance-action-grid form:last-child { border-right: 0; }
 .finance-action-grid h3 { margin: 2px 0 0; font-size: 17px; letter-spacing: -.025em; }
 .finance-action-grid .tt-button { justify-self: start; margin-top: 4px; }
+.risk-policy-form { margin-top: 16px; display: grid; gap: 14px; }
+.risk-policy-form .tt-button { justify-self: start; }
 .finance-form-hint { margin-top: -8px; color: var(--ink-muted); font-size: 10px; }
 .finance-live-layout { margin-top: 10px; }
 .cash-flow-chart { padding-top: 8px; border-top: 1px solid var(--ink); }
