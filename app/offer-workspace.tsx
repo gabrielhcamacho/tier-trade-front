@@ -322,7 +322,7 @@ export function OfferWorkspace() {
           <div><p className="section-kicker">CONTRATO ATIVO</p><h2>Obrigações para iniciar a execução</h2></div>
           <div>
             {summary.obligations.map((item) => <p key={item.code}><strong>{obligationLabel(item.code)}</strong><Status tone="warning">{item.status}</Status></p>)}
-            {contract ? <a className="operational-link" href={`/cargas?contractId=${contract.contractId}`}>Abrir agenda de cargas <span aria-hidden="true">→</span></a> : null}
+            {contract ? <a className="operational-link" href={`/contratos/${contract.contractId}`}>Abrir contrato <span aria-hidden="true">→</span></a> : null}
           </div>
         </section>
       ) : null}

@@ -2,23 +2,17 @@ import { Button, Status } from '@mountier/tier-trade-design-system';
 import Link from 'next/link';
 import { AppShell } from '../app-shell';
 import { currentUserContext } from '../../lib/current-user';
-
-type ContractSummary = {
-  id: string;
-  status: string;
-  commodity: string;
-  unit: string;
-  quantity_sc: string;
-  delivery_start: string;
-  delivery_end: string;
-  purchase_price_per_sc: string;
-  projected_margin_per_sc: string;
-  obligations: Array<{ code: string; status: string }>;
-};
-
-type ContractLoadResult =
-  | { summary: ContractSummary; error: null }
-  | { summary: null; error: string };
+import {
+  commodityLabel,
+  contractStatusLabel,
+  daysBetween,
+  formatDate,
+  formatQuantity,
+  loadContractSummary,
+  obligationLabel,
+  obligationStatus,
+  type ContractSummary,
+} from '../../lib/contracts';
 
 export default async function LoadsPage({
   searchParams,
@@ -63,7 +57,7 @@ function NoContractSelected() {
       <span className="loads-empty-mark" aria-hidden="true">CT</span>
       <p className="section-kicker">CONTRATO NECESSÁRIO</p>
       <h2 id="loads-empty-title">Selecione um contrato ativo</h2>
-      <p>A agenda começa no contrato. Ative uma oferta no Comercial e use a ação “Abrir agenda de cargas” para manter a rastreabilidade.</p>
+      <p>A agenda começa no contrato. Ative uma oferta no Comercial, abra o contrato e siga para a execução física sem perder a rastreabilidade.</p>
       <Link className="tt-button" data-variant="primary" data-size="md" href="/">Ir para ofertas</Link>
     </section>
   );
@@ -82,9 +76,9 @@ function ContractLoadAgenda({ summary }: { summary: ContractSummary }) {
           <div><dt>Commodity</dt><dd>{commodityLabel(summary.commodity)}</dd></div>
           <div><dt>Volume</dt><dd>{formatQuantity(summary.quantity_sc)} sc</dd></div>
           <div><dt>Janela contratual</dt><dd>{formatDate(summary.delivery_start)} a {formatDate(summary.delivery_end)}</dd></div>
-          <div><dt>Status</dt><dd><Status tone="positive">{statusLabel(summary.status)}</Status></dd></div>
+          <div><dt>Status</dt><dd><Status tone="positive">{contractStatusLabel(summary.status)}</Status></dd></div>
         </dl>
-        <Link href="/">Voltar ao contrato comercial</Link>
+        <Link href={`/contratos/${summary.id}`}>Abrir contrato</Link>
       </section>
 
       <section className="loads-metrics" aria-label="Resumo da agenda">
@@ -134,7 +128,7 @@ function ContractLoadAgenda({ summary }: { summary: ContractSummary }) {
             <h2>Programação e execução</h2>
             <p>O próximo desenvolvimento ligará cada carga a este contrato e preservará saldo, pesagem, qualidade e trilha de auditoria.</p>
             <dl>
-              <div><dt>Assinatura</dt><dd>{obligationStatus(obligationMap.get('CONTRACT_SIGNATURE'))}</dd></div>
+              <div><dt>Assinatura</dt><dd>{obligationStatus(obligationMap.get('SIGNED_CONTRACT'))}</dd></div>
               <div><dt>Agenda de entrega</dt><dd>{obligationStatus(obligationMap.get('DELIVERY_SCHEDULE'))}</dd></div>
             </dl>
           </section>
@@ -143,44 +137,3 @@ function ContractLoadAgenda({ summary }: { summary: ContractSummary }) {
     </div>
   );
 }
-
-async function loadContractSummary(contractId: string, identityHeaders: Record<string, string>): Promise<ContractLoadResult> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (!apiUrl || Object.keys(identityHeaders).length === 0) {
-    return { summary: null, error: 'A API ou a identidade do ambiente ainda não está configurada.' };
-  }
-  try {
-    const response = await fetch(`${apiUrl}/v1/contracts/${encodeURIComponent(contractId)}/summary`, {
-      headers: identityHeaders,
-      cache: 'no-store',
-    });
-    if (!response.ok) {
-      return {
-        summary: null,
-        error: response.status === 404
-          ? 'O contrato não existe ou não pertence ao tenant autenticado.'
-          : 'A API não conseguiu carregar o resumo do contrato.',
-      };
-    }
-    return { summary: await response.json() as ContractSummary, error: null };
-  } catch {
-    return { summary: null, error: 'Não foi possível acessar a API na porta configurada.' };
-  }
-}
-
-function formatQuantity(value: string): string {
-  return new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 }).format(Number(value));
-}
-
-function formatDate(value: string): string {
-  return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${value}T00:00:00Z`));
-}
-
-function daysBetween(start: string, end: string): number {
-  return Math.max(1, Math.round((Date.parse(`${end}T00:00:00Z`) - Date.parse(`${start}T00:00:00Z`)) / 86_400_000) + 1);
-}
-
-function commodityLabel(value: string): string { return value === 'MILHO' ? 'Milho' : value; }
-function statusLabel(value: string): string { return value === 'ACTIVE' ? 'Ativo' : value; }
-function obligationLabel(value: string): string { return value === 'CONTRACT_SIGNATURE' ? 'Assinatura contratual' : value === 'DELIVERY_SCHEDULE' ? 'Agenda de entrega' : value; }
-function obligationStatus(value?: string): string { return value === 'COMPLETED' ? 'Concluída' : value === 'PENDING' ? 'Pendente' : 'Não registrada'; }
