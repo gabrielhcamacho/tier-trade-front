@@ -74,8 +74,8 @@ function ContractLoadAgenda({ summary, agenda }: { summary: ContractSummary; age
 
       <section className="loads-metrics" aria-label="Resumo da agenda">
         <article><span>Cargas programadas</span><strong>{agenda.summary.count}</strong><small>{agenda.summary.count === 1 ? 'programação registrada' : 'programações registradas'}</small></article>
-        <article><span>Volume programado</span><strong>{formatQuantity(scheduledSc)} <em>sc</em></strong><small>de {formatQuantity(summary.quantity_sc)} sc contratadas</small></article>
-        <article><span>Volume recebido</span><strong>{formatQuantity(receivedSc)} <em>sc</em></strong><small>{Number(receivedSc) > 0 ? 'confirmadas na execução' : 'A execução ainda não começou'}</small></article>
+        <article><span>Volume programado</span><strong>{formatOperationalSacks(scheduledSc)} <em>sc</em></strong><small>de {formatQuantity(summary.quantity_sc)} sc contratadas</small></article>
+        <article><span>Volume recebido</span><strong>{formatOperationalSacks(receivedSc)} <em>sc</em></strong><small>{Number(receivedSc) > 0 ? 'confirmadas na execução' : 'A execução ainda não começou'}</small></article>
         <article><span>Janela disponível</span><strong>{daysBetween(summary.delivery_start, summary.delivery_end)}</strong><small>dias corridos no contrato</small></article>
       </section>
 
@@ -103,4 +103,8 @@ function ContractLoadAgenda({ summary, agenda }: { summary: ContractSummary; age
       </div>
     </div>
   );
+}
+
+function formatOperationalSacks(value: string): string {
+  return new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 3 }).format(Number(value));
 }
