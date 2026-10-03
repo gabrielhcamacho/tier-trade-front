@@ -18,20 +18,22 @@ export function FinancialWorkspace({ data }: { data: FinanceWorkspace }) {
   const [titleState, titleAction, titlePending] = useActionState(createTitleAction, initialFinanceActionState);
   const [settlementState, settlementAction, settlementPending] = useActionState(settleTitleAction, initialFinanceActionState);
   const [reversalState, reversalAction, reversalPending] = useActionState(reverseSettlementAction, initialFinanceActionState);
-  const issuable = data.events.filter((event) => !event.title && event.calculationStatus === 'READY');
-  const openTitles = data.events.flatMap((event) => event.title && Number(event.title.outstandingAmount) > 0
+  const salesEvents = data.events.filter((event) => event.direction === 'INFLOW');
+  const payableEvents = data.events.filter((event) => event.direction === 'OUTFLOW');
+  const issuable = salesEvents.filter((event) => !event.title && event.calculationStatus === 'READY');
+  const openTitles = salesEvents.flatMap((event) => event.title && Number(event.title.outstandingAmount) > 0
     ? [{ event, title: event.title }] : []);
   const reversible = data.settlements.filter((settlement) => !settlement.reversedAt);
   const [selectedTitleId, setSelectedTitleId] = useState(openTitles[0]?.title.id ?? '');
   const selectedTitle = openTitles.find((item) => item.title.id === selectedTitleId);
 
-  const forecastRows = data.events.map((event) => [
+  const forecastRows = salesEvents.map((event) => [
     <Link href={`/financeiro/liquidacoes/${event.id}`} key={event.id}>
       {event.dispatchDocumentReference}
     </Link>,
-    event.counterpartyName,
+    event.beneficiaryName,
     event.contractReference,
-    `${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 3 }).format(Number(event.quantityKg))} kg`,
+    `${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 3 }).format(Number(event.quantityKg ?? 0))} kg`,
     event.calculatedAmount ? formatMoney(event.calculatedAmount) : 'Política pendente',
     event.title
       ? <DemoStatus tone={event.title.status === 'SETTLED' ? 'positive' : 'info'} key={`${event.id}-status`}>
@@ -41,19 +43,24 @@ export function FinancialWorkspace({ data }: { data: FinanceWorkspace }) {
           {event.calculationStatus === 'READY' ? 'Emitir título' : 'Definir arredondamento'}
         </DemoStatus>,
   ]);
-  const titleRows = data.events.filter((event) => event.title).map((event) => {
+  const titleRows = salesEvents.filter((event) => event.title).map((event) => {
     const title = event.title!;
     return [
       title.number,
-      event.counterpartyName,
+      event.beneficiaryName,
       formatFinancialDate(title.dueDate),
       formatMoney(title.amount),
+      formatMoney(title.adjustedAmount),
       formatMoney(title.settledAmount),
       formatMoney(title.outstandingAmount),
       <DemoStatus tone={title.status === 'SETTLED' ? 'positive' : title.status === 'PARTIALLY_SETTLED' ? 'info' : 'attention'} key={title.id}>
         {titleStatusLabel(title.status)}
       </DemoStatus>,
     ];
+  });
+  const payableRows = payableEvents.filter((event) => event.title).map((event) => {
+    const title = event.title!;
+    return [title.number, event.beneficiaryName, title.documentReference, formatFinancialDate(title.dueDate), formatMoney(title.amount), formatMoney(title.outstandingAmount), <DemoStatus tone="attention" key={title.id}>{titleStatusLabel(title.status)}</DemoStatus>];
   });
   const settlementRows = data.settlements.map((settlement) => [
     settlement.titleNumber,
@@ -68,10 +75,10 @@ export function FinancialWorkspace({ data }: { data: FinanceWorkspace }) {
   return (
     <>
       <DemoMetricStrip items={[
-        { label: 'Previsto em vendas', value: formatMoney(data.summary.projectedAmount), detail: `${data.events.length} expedição(ões)` },
+        { label: 'Previsto em vendas', value: formatMoney(data.summary.projectedAmount), detail: `${salesEvents.length} expedição(ões)` },
         { label: 'A receber', value: formatMoney(data.summary.receivableAmount), detail: `${openTitles.length} título(s) com saldo`, tone: 'primary' },
         { label: 'Recebido', value: formatMoney(data.summary.receivedAmount), detail: 'baixas ativas e rastreáveis' },
-        { label: 'Pendências', value: String(data.summary.pendingForecastCount + data.summary.pendingRoundingCount), detail: `${data.summary.pendingRoundingCount} de arredondamento`, tone: 'attention' },
+        { label: 'A pagar em tributos', value: formatMoney(data.summary.payableAmount), detail: `${payableEvents.length} obrigação(ões)`, tone: 'attention' },
       ]} />
 
       <DemoSection kicker="OPERAÇÃO FINANCEIRA" title="Emitir, receber e estornar" id="acoes" aside="ações salvas e auditadas">
@@ -105,7 +112,7 @@ export function FinancialWorkspace({ data }: { data: FinanceWorkspace }) {
               <select name="titleId" value={selectedTitleId} onChange={(event) => setSelectedTitleId(event.target.value)} required>
                 <option value="" disabled>Selecione</option>
                 {openTitles.map(({ event, title }) => <option value={title.id} key={title.id}>
-                  {title.number} · {event.counterpartyName} · saldo {formatMoney(title.outstandingAmount)}
+                  {title.number} · {event.beneficiaryName} · saldo {formatMoney(title.outstandingAmount)}
                 </option>)}
               </select>
             </Field>
@@ -151,8 +158,13 @@ export function FinancialWorkspace({ data }: { data: FinanceWorkspace }) {
           </DemoSection>
           <DemoSection kicker="DIREITOS" title="Contas a receber" id="receber" aside="títulos e saldo">
             {titleRows.length
-              ? <DemoTable label="Contas a receber" columns={['Título', 'Cliente', 'Vencimento', 'Valor', 'Recebido', 'Saldo', 'Status']} rows={titleRows} />
+              ? <DemoTable label="Contas a receber" columns={['Título', 'Cliente', 'Vencimento', 'Valor', 'Ajustes', 'Recebido', 'Saldo', 'Status']} rows={titleRows} />
               : <p>Nenhum título emitido.</p>}
+          </DemoSection>
+          <DemoSection kicker="OBRIGAÇÕES FISCAIS" title="Contas a pagar" id="pagar" aside="autoridade fiscal separada da contraparte comercial">
+            {payableRows.length
+              ? <DemoTable label="Contas a pagar" columns={['Título', 'Favorecido', 'Referência', 'Vencimento', 'Valor', 'Saldo', 'Status']} rows={payableRows} />
+              : <p>Nenhum título fiscal a pagar.</p>}
           </DemoSection>
           <DemoSection kicker="CAIXA" title="Recebimentos e estornos" id="conciliacao" aside="referência bancária preservada">
             {settlementRows.length
@@ -163,7 +175,7 @@ export function FinancialWorkspace({ data }: { data: FinanceWorkspace }) {
         <aside className="demo-side-stack">
           <section><p className="section-kicker">RASTREABILIDADE</p><h2>Uma operação, uma história</h2><p>Contrato de venda, expedição, previsão, título e recebimento permanecem ligados pelo backend.</p></section>
           <section><p className="section-kicker">REGRA FINANCEIRA</p><h2>Sem arredondamento silencioso</h2><p>Valores que geram fração de centavo ficam bloqueados até existir uma política homologada para o tenant.</p></section>
-          <section><p className="section-kicker">LIMITES DESTA FATIA</p><h2>Tributos ainda não calculados</h2><p>A referência documental é registrada, mas impostos, retenções e contabilização só entram após homologação fiscal.</p></section>
+          <section><p className="section-kicker">TRIBUTOS</p><h2>Dois favorecidos, dois fluxos</h2><p>Ajustes sobre o título comercial e pagamentos à autoridade fiscal são registrados separadamente, com origem na obrigação aceita.</p></section>
         </aside>
       </div>
     </>

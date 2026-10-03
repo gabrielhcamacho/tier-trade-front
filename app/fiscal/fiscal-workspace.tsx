@@ -1,15 +1,16 @@
 'use client';
 
 import { Button, DecimalField, Field } from '@mountier/tier-trade-design-system';
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import type {
-  FiscalCalculation, FiscalConfiguration, FiscalDocument, FiscalEstablishment, FiscalTaxComponent, FiscalWorkspace,
+  FiscalAuthority, FiscalCalculation, FiscalConfiguration, FiscalDocument, FiscalEstablishment, FiscalTaxComponent, FiscalWorkspace,
 } from '../../lib/fiscal';
 import { formatFiscalDate, formatFiscalMoney } from '../../lib/fiscal';
 import { DemoMetricStrip, DemoSection, DemoStatus, DemoTable } from '../demo-ui';
 import {
   activateFiscalConfigurationAction, createFiscalConfigurationAction, createFiscalDocumentAction,
-  createFiscalCalculationAction, createFiscalEstablishmentAction, newFiscalConfigurationVersionAction, rejectFiscalDocumentAction,
+  acceptFiscalCalculationAction, createFiscalAuthorityAction, createFiscalCalculationAction,
+  createFiscalEstablishmentAction, newFiscalConfigurationVersionAction, rejectFiscalDocumentAction,
   updateFiscalConfigurationAction, updateFiscalDocumentAction, updateFiscalEstablishmentAction,
   validateFiscalDocumentAction,
 } from './actions';
@@ -27,6 +28,11 @@ export function FiscalWorkspaceView({ data }: { data: FiscalWorkspace }) {
   const [calculationState, calculationAction, calculationPending] = useActionState(
     createFiscalCalculationAction, initialState,
   );
+  const [authorityState, authorityAction, authorityPending] = useActionState(
+    createFiscalAuthorityAction, initialState,
+  );
+  const [calculationSourceId, setCalculationSourceId] = useState('');
+  const calculationSource = data.calculationSources.find((source) => source.id === calculationSourceId);
   const readyEvents = data.eligibleEvents.filter((event) => event.calculationStatus === 'READY');
   const rows = data.documents.map((document) => [
     document.documentNumber,
@@ -43,8 +49,8 @@ export function FiscalWorkspaceView({ data }: { data: FiscalWorkspace }) {
       <DemoMetricStrip items={[
         { label: 'Em conferência', value: String(data.summary.received), detail: 'documentos recebidos', tone: data.summary.received ? 'attention' : undefined },
         { label: 'Validados', value: String(data.summary.validated), detail: 'integridade confirmada', tone: 'primary' },
-        { label: 'Rejeitados', value: String(data.summary.rejected), detail: 'histórico preservado' },
-        { label: 'Títulos vinculados', value: String(data.summary.linkedTitles), detail: 'cadeia fiscal-financeira' },
+        { label: 'Obrigações abertas', value: String(data.summary.openObligations), detail: 'competência e vencimento preservados', tone: 'attention' },
+        { label: 'Títulos fiscais', value: String(data.summary.taxPayables), detail: 'pagamentos separados da contraparte' },
       ]} />
 
       <div className="fiscal-configuration-layout">
@@ -83,6 +89,21 @@ export function FiscalWorkspaceView({ data }: { data: FiscalWorkspace }) {
         configuration={configuration} establishments={data.establishments} key={configuration.id}
       />)}
 
+      <DemoSection kicker="DESTINATÁRIOS FISCAIS" title="Autoridades de recolhimento" id="autoridades" aside="o favorecido fiscal não é o fornecedor ou cliente">
+        <form action={authorityAction} className="fiscal-authority-form">
+          <Field label="Nome da autoridade" required><input name="authorityName" placeholder="Secretaria ou órgão arrecadador" required /></Field>
+          <Field label="CPF/CNPJ"><input name="authorityTaxId" inputMode="numeric" pattern="[0-9]{11,14}" /></Field>
+          <Field label="Jurisdição" required>
+            <select name="authorityJurisdiction" defaultValue="STATE" required>
+              <option value="FEDERAL">Federal</option><option value="STATE">Estadual</option><option value="MUNICIPAL">Municipal</option>
+            </select>
+          </Field>
+          <Field label="UF" hint="Obrigatória para jurisdição estadual"><input name="authorityUf" maxLength={2} pattern="[A-Za-z]{2}" /></Field>
+          <div className="fiscal-entry-action"><Feedback state={authorityState} /><Button type="submit" disabled={authorityPending}>{authorityPending ? 'Cadastrando…' : 'Cadastrar autoridade'}</Button></div>
+        </form>
+        {data.authorities.length ? <div className="fiscal-authority-list">{data.authorities.map((authority) => <span key={authority.id}>{authority.legalName} · {authority.jurisdiction}{authority.uf ? `/${authority.uf}` : ''}</span>)}</div> : null}
+      </DemoSection>
+
       <DemoSection kicker="MOTOR DETERMINÍSTICO" title="Calcular tributos e retenções" id="calculo" aside="a versão aplicável é escolhida pelo contexto e pela vigência">
         <form action={calculationAction} className="fiscal-calculation-form">
           <Field label="Estabelecimento" required>
@@ -94,7 +115,13 @@ export function FiscalWorkspaceView({ data }: { data: FiscalWorkspace }) {
           <Field label="Commodity" required><input name="calculationCommodity" defaultValue="MILHO" required /></Field>
           <Field label="UF de destino" required><input name="calculationDestinationUf" maxLength={2} pattern="[A-Za-z]{2}" required /></Field>
           <Field label="Data do fato" required><input type="date" name="calculationOccurredOn" required /></Field>
-          <DecimalField name="calculationGrossAmount" label="Valor bruto" prefix="R$" defaultValue="0" fractionDigits={2} emptyWhenZero required />
+          <Field label="Origem financeira" hint="Opcional. Vincule para permitir ajuste do título de origem.">
+            <select name="calculationSourceId" value={calculationSourceId} onChange={(event) => setCalculationSourceId(event.target.value)}>
+              <option value="">Cálculo manual</option>
+              {data.calculationSources.map((source) => <option key={source.id} value={source.id}>{source.reference} · {source.beneficiaryName} · {formatFiscalMoney(source.amount)}</option>)}
+            </select>
+          </Field>
+          <DecimalField name="calculationGrossAmount" label="Valor bruto" prefix="R$" defaultValue={calculationSource?.amount ?? '0'} fractionDigits={2} emptyWhenZero readOnly={Boolean(calculationSource)} hint={calculationSource ? 'Preenchido pela origem financeira vinculada.' : undefined} required />
           <div className="fiscal-entry-action">
             <Feedback state={calculationState} />
             <Button type="submit" disabled={calculationPending || data.taxCalculation.status !== 'READY'}>
@@ -109,8 +136,16 @@ export function FiscalWorkspaceView({ data }: { data: FiscalWorkspace }) {
 
       <DemoSection kicker="MEMÓRIA DE CÁLCULO" title="Resultados persistidos" id="memorias" aside="entrada, regra, versão e arredondamento preservados">
         {data.calculations.length
-          ? <div className="fiscal-calculation-list">{data.calculations.map((calculation) => <FiscalCalculationCard calculation={calculation} key={calculation.id} />)}</div>
+          ? <div className="fiscal-calculation-list">{data.calculations.map((calculation) => <FiscalCalculationCard calculation={calculation} authorities={data.authorities} key={calculation.id} />)}</div>
           : <p>Nenhum cálculo fiscal registrado para este tenant.</p>}
+      </DemoSection>
+
+      <DemoSection kicker="OBRIGAÇÕES CONFIRMADAS" title="Agenda fiscal e reflexos financeiros" id="obrigacoes" aside="recolhimentos do tenant e retenções da contraparte permanecem distintos">
+        {data.obligations.length ? <DemoTable label="Obrigações fiscais" columns={['Tributo', 'Autoridade', 'Competência', 'Vencimento', 'Valor', 'Responsável', 'Efeito financeiro']} rows={data.obligations.map((obligation) => [
+          obligation.tax, obligation.authority.name, formatFiscalDateOnly(obligation.competenceDate), formatFiscalDateOnly(obligation.dueDate), formatFiscalMoney(obligation.amount),
+          obligation.paymentResponsibility === 'TENANT' ? 'Tenant recolhe' : 'Contraparte recolhe',
+          obligation.payable ? `Título ${obligation.payable.titleNumber}` : obligation.titleAdjustment ? 'Título de origem reduzido' : 'Sem título a pagar',
+        ])} /> : <p>Nenhuma obrigação fiscal confirmada.</p>}
       </DemoSection>
 
       <DemoSection kicker="ENTRADA FISCAL" title="Registrar NF-e de saída" id="entrada" aside="salva no backend e isolada por tenant">
@@ -316,11 +351,13 @@ function FiscalConfigurationSummary({ configuration }: { configuration: FiscalCo
   </div>;
 }
 
-function FiscalCalculationCard({ calculation }: { calculation: FiscalCalculation }) {
+function FiscalCalculationCard({ calculation, authorities }: { calculation: FiscalCalculation; authorities: FiscalAuthority[] }) {
+  const [acceptanceState, acceptanceAction, acceptancePending] = useActionState(acceptFiscalCalculationAction, initialState);
+  const positiveComponents = calculation.result.components.filter((component) => Number(component.amount) > 0);
   return <article className="fiscal-calculation-card">
     <header>
       <div><p className="section-kicker">{calculation.context.commodity} · {calculation.context.destinationUf}</p><h3>{calculation.configuration.name}</h3></div>
-      <DemoStatus tone="positive">Calculado · v{calculation.configuration.version}</DemoStatus>
+      <DemoStatus tone="positive">{calculation.status === 'ACCEPTED' ? 'Aceito' : 'Calculado'} · v{calculation.configuration.version}</DemoStatus>
     </header>
     <dl className="summary-ledger">
       <div><dt>Valor bruto</dt><dd>{formatFiscalMoney(calculation.result.grossAmount)}</dd></div>
@@ -337,8 +374,37 @@ function FiscalCalculationCard({ calculation }: { calculation: FiscalCalculation
         <span>{formatFiscalMoney(component.amount)}{component.retained ? ' · retido' : ''}</span>
       </div>)}
     </div>
+    {calculation.status === 'CALCULATED' && positiveComponents.length > 0 ? <form action={acceptanceAction} className="fiscal-acceptance-form">
+      <input type="hidden" name="calculationId" value={calculation.id} />
+      <input type="hidden" name="obligationTaxes" value={positiveComponents.map((component) => component.tax).join(',')} />
+      <div className="fiscal-acceptance-heading"><div><p className="section-kicker">CONFIRMAÇÃO OPERACIONAL</p><h4>Gerar obrigações e efeitos financeiros</h4></div><p>Confirme quem recolhe e se há redução do título de origem. Nenhuma interpretação fiscal é presumida.</p></div>
+      {positiveComponents.map((component) => <FiscalObligationFields key={component.tax} component={component} authorities={authorities} />)}
+      <Feedback state={acceptanceState} />
+      <Button type="submit" disabled={acceptancePending || authorities.filter((item) => item.active).length === 0}>
+        {acceptancePending ? 'Confirmando…' : 'Aceitar cálculo e gerar obrigações'}
+      </Button>
+      {authorities.filter((item) => item.active).length === 0 ? <small>Cadastre uma autoridade fiscal ativa antes de aceitar.</small> : null}
+    </form> : null}
     <footer>Fato em {formatFiscalDateOnly(calculation.context.occurredOn)} · {roundingModeLabel(calculation.result.rounding.mode)} · {calculation.result.rounding.scale} casas</footer>
   </article>;
+}
+
+function FiscalObligationFields({ component, authorities }: {
+  component: FiscalCalculation['result']['components'][number]; authorities: FiscalAuthority[];
+}) {
+  const [responsibility, setResponsibility] = useState<'TENANT' | 'COUNTERPARTY'>('TENANT');
+  return <fieldset className="fiscal-obligation-fields">
+    <legend>{component.tax} · {formatFiscalMoney(component.amount)}{component.retained ? ' · retido' : ''}</legend>
+    <Field label="Autoridade" required><select name={`${component.tax}AuthorityId`} defaultValue="" required><option value="" disabled>Selecione</option>{authorities.filter((item) => item.active).map((authority) => <option value={authority.id} key={authority.id}>{authority.legalName}</option>)}</select></Field>
+    <Field label="Competência" required><input type="date" name={`${component.tax}CompetenceDate`} required /></Field>
+    <Field label="Vencimento" required><input type="date" name={`${component.tax}DueDate`} required /></Field>
+    <Field label="Efeito no título de origem" required><select name={`${component.tax}TitleEffect`} defaultValue="NONE" required><option value="NONE">Não altera o título</option><option value="REDUCE_SOURCE_TITLE">Reduz o título de origem</option></select></Field>
+    <Field label="Responsável pelo recolhimento" required><select name={`${component.tax}PaymentResponsibility`} value={responsibility} onChange={(event) => setResponsibility(event.target.value as 'TENANT' | 'COUNTERPARTY')} required><option value="TENANT">O tenant recolhe</option><option value="COUNTERPARTY">A contraparte recolhe</option></select></Field>
+    {responsibility === 'TENANT' ? <>
+      <Field label="Número do título fiscal" required><input name={`${component.tax}TitleNumber`} placeholder={`TF-${component.tax}-0001`} required /></Field>
+      <Field label="Referência documental" required><input name={`${component.tax}DocumentReference`} placeholder="Guia ou apuração" required /></Field>
+    </> : null}
+  </fieldset>;
 }
 
 function FiscalDocumentEditor({ document }: { document: FiscalDocument }) {

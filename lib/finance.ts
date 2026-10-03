@@ -6,21 +6,28 @@ export type FinancialTitle = {
   amount: string;
   status: string;
   settledAmount: string;
+  adjustedAmount: string;
   outstandingAmount: string;
 };
 
 export type FinancialEvent = {
   id: string;
+  eventType: 'SALE_DISPATCH_RECEIVABLE' | 'TAX_OBLIGATION_PAYABLE';
+  direction: 'INFLOW' | 'OUTFLOW';
   sourceId: string;
-  salesContractId: string;
-  contractReference: string;
-  counterpartyId: string;
-  counterpartyName: string;
-  dispatchDocumentReference: string;
-  dispatchedAt: string;
-  quantityKg: string;
-  unitPrice: string;
-  rawAmount: string;
+  salesContractId: string | null;
+  contractReference: string | null;
+  counterpartyId: string | null;
+  counterpartyName: string | null;
+  authorityId: string | null;
+  authorityName: string | null;
+  beneficiaryType: 'COUNTERPARTY' | 'FISCAL_AUTHORITY';
+  beneficiaryName: string;
+  dispatchDocumentReference: string | null;
+  dispatchedAt: string | null;
+  quantityKg: string | null;
+  unitPrice: string | null;
+  rawAmount: string | null;
   calculatedAmount: string | null;
   calculationStatus: string;
   expectedOn: string | null;
@@ -48,6 +55,7 @@ export type FinanceWorkspace = {
     projectedAmount: string;
     receivableAmount: string;
     receivedAmount: string;
+    payableAmount: string;
     pendingForecastCount: number;
     pendingRoundingCount: number;
   };

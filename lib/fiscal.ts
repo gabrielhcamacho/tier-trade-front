@@ -49,12 +49,13 @@ export type FiscalConfiguration = {
 
 export type FiscalCalculation = {
   id: string; requestKey: string;
+  status: 'CALCULATED' | 'ACCEPTED';
   configuration: { id: string; key: string; version: number; name: string };
   establishment: { id: string; name: string };
   context: {
     establishmentId: string; operationType: 'SALE_DISPATCH'; commodity: string;
     destinationUf: string; occurredOn: string; grossAmount: string; currency: 'BRL';
-    sourceType: 'MANUAL' | 'FISCAL_DOCUMENT'; sourceId: string | null;
+    sourceType: 'MANUAL' | 'FISCAL_DOCUMENT' | 'FINANCIAL_EVENT'; sourceId: string | null;
   };
   result: {
     grossAmount: string; taxTotal: string; retainedTotal: string; netAmount: string;
@@ -66,13 +67,37 @@ export type FiscalCalculation = {
   calculatedAt: string;
 };
 
+export type FiscalAuthority = {
+  id: string; legalName: string; taxId: string | null;
+  jurisdiction: 'FEDERAL' | 'STATE' | 'MUNICIPAL'; uf: string | null; active: boolean;
+};
+
+export type FiscalObligation = {
+  id: string; calculationId: string; tax: FiscalTaxComponent['tax']; amount: string;
+  competenceDate: string; dueDate: string; retained: boolean;
+  titleEffect: 'NONE' | 'REDUCE_SOURCE_TITLE';
+  paymentResponsibility: 'TENANT' | 'COUNTERPARTY';
+  status: 'OPEN' | 'SETTLED' | 'CANCELLED';
+  authority: { id: string; name: string };
+  payable: { eventId: string; titleId: string; titleNumber: string } | null;
+  titleAdjustment: { id: string; titleId: string } | null;
+};
+
 export type FiscalWorkspace = {
   tenant: { legalName: string; isDemo: boolean; demoSeedVersion: number | null };
-  summary: { received: number; validated: number; rejected: number; linkedTitles: number };
+  summary: {
+    received: number; validated: number; rejected: number; linkedTitles: number;
+    openObligations: number; taxPayables: number;
+  };
   documents: FiscalDocument[];
   establishments: FiscalEstablishment[];
   configurations: FiscalConfiguration[];
   calculations: FiscalCalculation[];
+  authorities: FiscalAuthority[];
+  obligations: FiscalObligation[];
+  calculationSources: Array<{
+    id: string; reference: string; beneficiaryName: string; amount: string;
+  }>;
   eligibleEvents: Array<{
     id: string; sourceId: string; salesContractId: string; contractReference: string;
     counterpartyName: string; dispatchReference: string; expectedAmount: string | null;

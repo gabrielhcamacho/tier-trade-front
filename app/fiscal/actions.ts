@@ -26,6 +26,18 @@ const messages: Record<string, string> = {
   FISCAL_CONFIGURATION_AMBIGUOUS: 'Mais de uma configuração ativa atende ao cálculo. Revise as vigências.',
   FISCAL_CONFIGURATION_INVALID: 'A configuração ativa está incompleta para cálculo.',
   FISCAL_CALCULATION_IDEMPOTENCY_CONFLICT: 'Esta solicitação já foi usada com dados diferentes.',
+  FISCAL_CALCULATION_SOURCE_NOT_READY: 'A origem financeira selecionada ainda não possui valor pronto para cálculo.',
+  FISCAL_CALCULATION_SOURCE_AMOUNT_MISMATCH: 'O valor bruto precisa ser exatamente o valor da origem financeira selecionada.',
+  FISCAL_AUTHORITY_ALREADY_EXISTS: 'Já existe uma autoridade fiscal igual neste tenant.',
+  FISCAL_AUTHORITY_NOT_FOUND: 'A autoridade fiscal selecionada não foi encontrada ou está inativa.',
+  FISCAL_CALCULATION_NOT_FOUND: 'O cálculo fiscal não foi encontrado.',
+  FISCAL_CALCULATION_ALREADY_ACCEPTED: 'Este cálculo já foi aceito com outra solicitação.',
+  FISCAL_OBLIGATION_COMPONENTS_MISMATCH: 'Informe exatamente uma obrigação para cada tributo calculado com valor positivo.',
+  FISCAL_CALCULATION_MEMORY_INVALID: 'A memória deste cálculo não pode ser aceita. Recalcule ou solicite suporte.',
+  FISCAL_TITLE_REDUCTION_REQUIRES_RETENTION: 'Somente um componente marcado como retido pode reduzir o título de origem.',
+  FISCAL_RETENTION_EXCEEDS_SOURCE_TITLE: 'A retenção supera o saldo disponível do título de origem.',
+  FISCAL_PAYABLE_TITLE_ALREADY_EXISTS: 'Já existe um título com esse número no financeiro.',
+  FISCAL_SOURCE_TITLE_REQUIRED: 'Para reduzir o título de origem, calcule usando um evento financeiro que já possua título.',
   FISCAL_RETENTION_EXCEEDS_GROSS: 'As retenções não podem superar o valor bruto.',
   CAPABILITY_NOT_FOUND: 'Seu usuário não possui permissão para esta operação.',
 };
@@ -35,6 +47,17 @@ export async function createFiscalEstablishmentAction(
 ): Promise<FiscalActionState> {
   return send('/v1/fiscal/establishments', 'POST', establishmentPayload(formData),
     'Estabelecimento fiscal cadastrado.');
+}
+
+export async function createFiscalAuthorityAction(
+  _state: FiscalActionState, formData: FormData,
+): Promise<FiscalActionState> {
+  return send('/v1/fiscal/authorities', 'POST', {
+    legalName: String(formData.get('authorityName') ?? ''),
+    taxId: nullable(formData.get('authorityTaxId')),
+    jurisdiction: String(formData.get('authorityJurisdiction') ?? ''),
+    uf: nullable(formData.get('authorityUf'))?.toUpperCase() ?? null,
+  }, 'Autoridade fiscal cadastrada.');
 }
 
 export async function updateFiscalEstablishmentAction(
@@ -71,6 +94,7 @@ export async function activateFiscalConfigurationAction(
 export async function createFiscalCalculationAction(
   _state: FiscalActionState, formData: FormData,
 ): Promise<FiscalActionState> {
+  const sourceId = nullable(formData.get('calculationSourceId'));
   return send('/v1/fiscal/calculations', 'POST', {
     requestKey: randomUUID(),
     establishmentId: String(formData.get('calculationEstablishmentId') ?? ''),
@@ -79,8 +103,28 @@ export async function createFiscalCalculationAction(
     destinationUf: String(formData.get('calculationDestinationUf') ?? '').trim().toUpperCase(),
     occurredOn: String(formData.get('calculationOccurredOn') ?? ''),
     grossAmount: decimal(formData.get('calculationGrossAmount')),
-    currency: 'BRL', sourceType: 'MANUAL', sourceId: null,
+    currency: 'BRL', sourceType: sourceId ? 'FINANCIAL_EVENT' : 'MANUAL', sourceId,
   }, 'Cálculo concluído e memória persistida.');
+}
+
+export async function acceptFiscalCalculationAction(
+  _state: FiscalActionState, formData: FormData,
+): Promise<FiscalActionState> {
+  const calculationId = encodeURIComponent(String(formData.get('calculationId') ?? ''));
+  const taxes = String(formData.get('obligationTaxes') ?? '').split(',').filter(Boolean);
+  return send(`/v1/fiscal/calculations/${calculationId}/accept`, 'POST', {
+    requestKey: randomUUID(),
+    obligations: taxes.map((tax) => ({
+      tax,
+      authorityId: String(formData.get(`${tax}AuthorityId`) ?? ''),
+      competenceDate: String(formData.get(`${tax}CompetenceDate`) ?? ''),
+      dueDate: String(formData.get(`${tax}DueDate`) ?? ''),
+      titleEffect: String(formData.get(`${tax}TitleEffect`) ?? ''),
+      paymentResponsibility: String(formData.get(`${tax}PaymentResponsibility`) ?? ''),
+      titleNumber: nullable(formData.get(`${tax}TitleNumber`)),
+      documentReference: nullable(formData.get(`${tax}DocumentReference`)),
+    })),
+  }, 'Cálculo aceito; obrigações e efeitos financeiros foram gerados.');
 }
 
 export async function newFiscalConfigurationVersionAction(
