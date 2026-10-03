@@ -13,8 +13,62 @@ const messages: Record<string, string> = {
   FISCAL_ACCESS_KEY_REQUIRED: 'Informe a chave de acesso de 44 dígitos antes da validação.',
   FISCAL_FINANCIAL_EVENT_NOT_READY: 'O valor financeiro ainda depende da política de arredondamento.',
   FISCAL_DOCUMENT_VALUE_DIVERGENCE: 'O valor da NF-e diverge do evento financeiro. Corrija o documento antes de validar.',
+  FISCAL_ESTABLISHMENT_ALREADY_EXISTS: 'Já existe um estabelecimento com esse CNPJ neste tenant.',
+  FISCAL_ESTABLISHMENT_NOT_FOUND: 'O estabelecimento selecionado não foi encontrado ou está inativo.',
+  FISCAL_CONFIGURATION_NOT_FOUND: 'A configuração fiscal não foi encontrada.',
+  FISCAL_CONFIGURATION_IMMUTABLE: 'Versões ativas ou encerradas não podem ser alteradas. Crie uma nova versão.',
+  FISCAL_CONFIGURATION_INCOMPLETE: 'Complete todos os campos obrigatórios e ao menos um tratamento tributário antes de ativar.',
+  FISCAL_CONFIGURATION_OVERLAP: 'Já existe uma configuração ativa para a mesma operação e vigência.',
+  FISCAL_CONFIGURATION_DRAFT_EXISTS: 'Já existe uma nova versão em rascunho para esta configuração.',
+  FISCAL_CONFIGURATION_VERSION_REQUIRES_ACTIVE: 'Ative a versão atual antes de criar sua sucessora.',
   CAPABILITY_NOT_FOUND: 'Seu usuário não possui permissão para esta operação.',
 };
+
+export async function createFiscalEstablishmentAction(
+  _state: FiscalActionState, formData: FormData,
+): Promise<FiscalActionState> {
+  return send('/v1/fiscal/establishments', 'POST', establishmentPayload(formData),
+    'Estabelecimento fiscal cadastrado.');
+}
+
+export async function updateFiscalEstablishmentAction(
+  _state: FiscalActionState, formData: FormData,
+): Promise<FiscalActionState> {
+  const id = encodeURIComponent(String(formData.get('establishmentId') ?? ''));
+  return send(`/v1/fiscal/establishments/${id}`, 'PATCH', establishmentPayload(formData),
+    'Estabelecimento fiscal atualizado.');
+}
+
+export async function createFiscalConfigurationAction(
+  _state: FiscalActionState, formData: FormData,
+): Promise<FiscalActionState> {
+  return send('/v1/fiscal/configurations', 'POST', configurationPayload(formData),
+    'Versão fiscal criada como rascunho.');
+}
+
+export async function updateFiscalConfigurationAction(
+  _state: FiscalActionState, formData: FormData,
+): Promise<FiscalActionState> {
+  const id = encodeURIComponent(String(formData.get('configurationId') ?? ''));
+  return send(`/v1/fiscal/configurations/${id}`, 'PATCH', configurationPayload(formData),
+    'Rascunho fiscal atualizado.');
+}
+
+export async function activateFiscalConfigurationAction(
+  _state: FiscalActionState, formData: FormData,
+): Promise<FiscalActionState> {
+  const id = encodeURIComponent(String(formData.get('configurationId') ?? ''));
+  return send(`/v1/fiscal/configurations/${id}/activate`, 'POST', undefined,
+    'Versão fiscal ativada. O motor de cálculo continua separado e entra na próxima etapa.');
+}
+
+export async function newFiscalConfigurationVersionAction(
+  _state: FiscalActionState, formData: FormData,
+): Promise<FiscalActionState> {
+  const id = encodeURIComponent(String(formData.get('configurationId') ?? ''));
+  return send(`/v1/fiscal/configurations/${id}/new-version`, 'POST', undefined,
+    'Nova versão criada como rascunho, preservando a versão anterior.');
+}
 
 export async function createFiscalDocumentAction(
   _state: FiscalActionState, formData: FormData,
@@ -60,6 +114,42 @@ function documentPayload(formData: FormData, includeEvent: boolean) {
   };
 }
 
+function establishmentPayload(formData: FormData) {
+  return {
+    legalName: String(formData.get('legalName') ?? ''),
+    taxId: String(formData.get('taxId') ?? '').replace(/\D/g, ''),
+    stateRegistration: nullable(formData.get('stateRegistration')),
+    uf: String(formData.get('uf') ?? '').toUpperCase(),
+    taxRegime: nullable(formData.get('taxRegime')),
+  };
+}
+
+function configurationPayload(formData: FormData) {
+  const taxes = ['ICMS', 'PIS', 'COFINS', 'FUNRURAL'] as const;
+  return {
+    establishmentId: nullable(formData.get('establishmentId')),
+    name: String(formData.get('configurationName') ?? ''),
+    commodity: nullable(formData.get('commodity')),
+    destinationUf: nullable(formData.get('destinationUf'))?.toUpperCase() ?? null,
+    cfop: nullable(formData.get('cfop')),
+    emissionStrategy: nullable(formData.get('emissionStrategy')),
+    technicalResponsible: nullable(formData.get('technicalResponsible')),
+    effectiveFrom: nullable(formData.get('effectiveFrom')),
+    effectiveTo: nullable(formData.get('effectiveTo')),
+    taxComponents: taxes.flatMap((tax) => {
+      const key = tax.toLowerCase();
+      const treatment = nullable(formData.get(`${key}Treatment`));
+      if (!treatment) return [];
+      return [{
+        tax,
+        treatment,
+        ratePct: treatment === 'TAXED' ? nullable(decimal(formData.get(`${key}RatePct`))) : null,
+        retained: formData.get(`${key}Retained`) === 'on',
+      }];
+    }),
+  };
+}
+
 async function send(path: string, method: 'POST' | 'PATCH', payload: unknown,
   success: string): Promise<FiscalActionState> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -94,4 +184,8 @@ async function send(path: string, method: 'POST' | 'PATCH', payload: unknown,
 
 function decimal(value: FormDataEntryValue | null): string {
   return String(value ?? '').replace(/\./g, '').replace(',', '.');
+}
+
+function nullable(value: FormDataEntryValue | null): string | null {
+  return String(value ?? '').trim() || null;
 }

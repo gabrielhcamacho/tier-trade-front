@@ -592,6 +592,25 @@ main { min-width: 0; }
 
 /* Fiscal */
 .fiscal-entry-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 20px; border-top: 1px solid var(--ink); padding-top: 20px; }
+.fiscal-configuration-layout { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: 24px; align-items: start; }
+.fiscal-establishment-form, .fiscal-configuration-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 20px; }
+.fiscal-establishment-form .fiscal-entry-action, .fiscal-configuration-form .fiscal-entry-action, .fiscal-tax-components { grid-column: 1 / -1; }
+.fiscal-establishment-list { display: grid; gap: 1px; margin-top: 24px; background: var(--line); border-block: 1px solid var(--line); }
+.fiscal-establishment-list article { padding: 14px 0; background: var(--canvas); font-size: 11px; }
+.fiscal-establishment-list article > div { display: grid; grid-template-columns: minmax(0, 1.4fr) 1fr 1fr; gap: 16px; }
+.fiscal-establishment-list article span { color: var(--ink-muted); }
+.fiscal-establishment-editor form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+.fiscal-establishment-editor form .fiscal-entry-action { grid-column: 1 / -1; }
+.fiscal-configuration-card { display: grid; gap: 24px; }
+.fiscal-tax-components { display: grid; gap: 12px; border-top: 1px solid var(--line); padding-top: 18px; }
+.fiscal-tax-row { display: grid; grid-template-columns: 72px minmax(150px, 1fr) minmax(130px, .65fr) 90px; gap: 14px; align-items: end; }
+.fiscal-tax-row > strong { align-self: center; font-family: var(--font-mono); font-size: 10px; }
+.fiscal-retention { min-height: 40px; display: flex; align-items: center; gap: 8px; font-size: 10px; color: var(--ink-muted); }
+.fiscal-configuration-actions { display: flex; gap: 16px; align-items: start; }
+.fiscal-configuration-actions form { display: grid; gap: 10px; }
+.fiscal-configuration-summary { border-top: 1px solid var(--line); padding-top: 18px; display: grid; gap: 8px; }
+.fiscal-configuration-summary p { margin: 0; }
+.fiscal-configuration-summary ul { margin: 4px 0 0; padding-left: 18px; color: var(--ink-muted); }
 .fiscal-entry-action { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 18px; }
 .fiscal-entry-action .fulfillment-feedback { flex: 1; }
 .fiscal-live-layout { margin-top: 10px; }
@@ -668,6 +687,7 @@ main { min-width: 0; }
   .finance-action-grid { grid-template-columns: 1fr; }
   .finance-action-grid form { border-right: 0; border-bottom: 1px solid var(--line); }
   .fiscal-entry-form { grid-template-columns: 1fr 1fr; }
+  .fiscal-configuration-layout { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 620px) {
@@ -752,7 +772,11 @@ main { min-width: 0; }
   .demo-catalog-note { grid-template-columns: 1fr; gap: 7px; }
   .cash-flow-bars { gap: 7px; overflow-x: auto; }
   .cash-flow-bars > div { min-width: 47px; }
-  .fiscal-entry-form, .fiscal-edit-form, .fiscal-decision-grid { grid-template-columns: 1fr; }
+  .fiscal-entry-form, .fiscal-edit-form, .fiscal-decision-grid, .fiscal-establishment-form, .fiscal-configuration-form { grid-template-columns: 1fr; }
+  .fiscal-establishment-form .fiscal-entry-action, .fiscal-configuration-form .fiscal-entry-action, .fiscal-tax-components { grid-column: auto; }
+  .fiscal-establishment-list article > div, .fiscal-establishment-editor form, .fiscal-tax-row { grid-template-columns: 1fr; }
+  .fiscal-establishment-editor form .fiscal-entry-action { grid-column: auto; }
+  .fiscal-configuration-actions { flex-direction: column; }
   .fiscal-edit-form > :nth-child(3), .fiscal-edit-form > :nth-child(6) { grid-column: auto; }
   .fiscal-entry-action { align-items: stretch; flex-direction: column; }
 }

@@ -22,16 +22,43 @@ export type FiscalDocument = {
   title: { id: string; number: string; status: string } | null;
 };
 
+export type FiscalEstablishment = {
+  id: string; legalName: string; taxId: string; stateRegistration: string | null;
+  uf: string; taxRegime: 'SIMPLES_NACIONAL' | 'LUCRO_PRESUMIDO' | 'LUCRO_REAL' | null;
+  active: boolean; updatedAt: string;
+};
+
+export type FiscalTaxComponent = {
+  tax: 'ICMS' | 'PIS' | 'COFINS' | 'FUNRURAL';
+  treatment: 'TAXED' | 'EXEMPT' | 'NON_TAXED' | 'DEFERRED' | 'SUSPENDED';
+  ratePct: string | null;
+  retained: boolean;
+};
+
+export type FiscalConfiguration = {
+  id: string; configurationKey: string; version: number; establishmentId: string | null;
+  establishmentName: string | null; establishmentUf: string | null; taxRegime: string | null;
+  name: string; operationType: 'SALE_DISPATCH'; commodity: string | null;
+  destinationUf: string | null; cfop: string | null; emissionStrategy: 'NATIVE' | 'INTEGRATED' | null;
+  technicalResponsible: string | null; effectiveFrom: string | null; effectiveTo: string | null;
+  taxComponents: FiscalTaxComponent[]; status: 'DRAFT' | 'ACTIVE' | 'RETIRED';
+  updatedAt: string; activatedAt: string | null;
+};
+
 export type FiscalWorkspace = {
   tenant: { legalName: string; isDemo: boolean; demoSeedVersion: number | null };
   summary: { received: number; validated: number; rejected: number; linkedTitles: number };
   documents: FiscalDocument[];
+  establishments: FiscalEstablishment[];
+  configurations: FiscalConfiguration[];
   eligibleEvents: Array<{
     id: string; sourceId: string; salesContractId: string; contractReference: string;
     counterpartyName: string; dispatchReference: string; expectedAmount: string | null;
     calculationStatus: string;
   }>;
-  taxCalculation: { status: 'BLOCKED_CONFIGURATION'; blockers: string[] };
+  taxCalculation: {
+    status: 'BLOCKED_CONFIGURATION' | 'BLOCKED_ENGINE'; activeConfigurationCount: number; blockers: string[];
+  };
 };
 
 export type FiscalResult = { data: FiscalWorkspace; error: null } | { data: null; error: string };

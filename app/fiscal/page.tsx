@@ -15,9 +15,9 @@ export default async function FiscalPage() {
       <DemoPageHeader
         domain="Fiscal"
         section="Documentos"
-        eyebrow="Recebimento e validação"
+        eyebrow="Configuração, recebimento e validação"
         title="Documentos fiscais"
-        description="NF-e vinculada à expedição, contrato, evento financeiro e título, sem cálculo tributário presumido."
+        description="Cadastros fiscais versionados e NF-e vinculada à operação, sem cálculo tributário presumido."
         scope={result.data ? `${result.data.tenant.legalName} · posição atual` : 'Dados indisponíveis'}
       />
       <div className="demo-page demo-workspace">
