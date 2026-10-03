@@ -4,7 +4,7 @@ import { signOut } from './auth/actions';
 import { BrandLogo } from './brand-logo';
 import { hasSupabaseConfiguration } from '../lib/supabase/configuration';
 
-type Domain = 'central' | 'commercial' | 'contracts' | 'operations' | 'inventory' | 'risk' | 'financial';
+type Domain = 'central' | 'commercial' | 'contracts' | 'operations' | 'inventory' | 'risk' | 'financial' | 'fiscal';
 
 export function AppShell({
   activeDomain,
@@ -30,6 +30,7 @@ export function AppShell({
           <Link className={activeDomain === 'inventory' ? 'active' : undefined} aria-current={activeDomain === 'inventory' ? 'page' : undefined} href="/estoque">Estoque</Link>
           <Link className={activeDomain === 'risk' ? 'active' : undefined} aria-current={activeDomain === 'risk' ? 'page' : undefined} href="/risco">Risco</Link>
           <Link className={activeDomain === 'financial' ? 'active' : undefined} aria-current={activeDomain === 'financial' ? 'page' : undefined} href="/financeiro">Financeiro</Link>
+          <Link className={activeDomain === 'fiscal' ? 'active' : undefined} aria-current={activeDomain === 'fiscal' ? 'page' : undefined} href="/fiscal">Fiscal</Link>
         </nav>
         <div className="user-menu">
           <span className="user-avatar" aria-hidden="true">{userLabel.slice(0, 1).toUpperCase()}</span>
@@ -84,13 +85,21 @@ export function AppShell({
           <Link href="/risco#cobertura">Cobertura</Link>
           <Link href="/risco#limites">Limites</Link>
         </nav>
-      ) : (
+      ) : activeDomain === 'financial' ? (
         <nav className="context-bar" aria-label="Financeiro">
           <Link className="active" aria-current="page" href="/financeiro#liquidacoes">Liquidações</Link>
           <Link href="/financeiro#pagar">Contas a pagar</Link>
           <Link href="/financeiro#receber">Contas a receber</Link>
           <Link href="/financeiro#conciliacao">Conciliação</Link>
           <Link href="/financeiro#fluxo-caixa">Fluxo de caixa</Link>
+        </nav>
+      ) : (
+        <nav className="context-bar" aria-label="Fiscal">
+          <Link className="active" aria-current="page" href="/fiscal">Documentos</Link>
+          <Link href="/fiscal#entrada">Entrada fiscal</Link>
+          <Link href="/fiscal#documentos">Validação</Link>
+          <span aria-disabled="true">Tributos</span>
+          <span aria-disabled="true">Obrigações</span>
         </nav>
       )}
 

@@ -590,6 +590,18 @@ main { min-width: 0; }
 .cash-flow-bars span { color: var(--ink-muted); font-family: var(--font-mono); font-size: 8px; }
 .cash-flow-bars strong { min-height: 28px; font-family: var(--font-mono); font-size: 8px; white-space: nowrap; }
 
+/* Fiscal */
+.fiscal-entry-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 20px; border-top: 1px solid var(--ink); padding-top: 20px; }
+.fiscal-entry-action { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.fiscal-entry-action .fulfillment-feedback { flex: 1; }
+.fiscal-live-layout { margin-top: 10px; }
+.fiscal-document-card { display: grid; gap: 22px; }
+.fiscal-edit-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 20px; padding-top: 20px; border-top: 1px solid var(--line); }
+.fiscal-edit-form > :nth-child(3), .fiscal-edit-form > :nth-child(6) { grid-column: 1 / -1; }
+.fiscal-decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border-block: 1px solid var(--line); }
+.fiscal-decision-grid form { padding: 18px; display: grid; align-content: start; gap: 14px; background: var(--canvas); }
+.fiscal-decision-grid .tt-button { justify-self: start; }
+
 /* Demonstration catalog */
 .demo-catalog-header { padding-bottom: 28px; }
 .demo-catalog-page { display: grid; gap: 32px; }
@@ -655,6 +667,7 @@ main { min-width: 0; }
   .settlement-header .trace-rail { grid-template-columns: repeat(5, minmax(120px, 1fr)); }
   .finance-action-grid { grid-template-columns: 1fr; }
   .finance-action-grid form { border-right: 0; border-bottom: 1px solid var(--line); }
+  .fiscal-entry-form { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 620px) {
@@ -739,4 +752,7 @@ main { min-width: 0; }
   .demo-catalog-note { grid-template-columns: 1fr; gap: 7px; }
   .cash-flow-bars { gap: 7px; overflow-x: auto; }
   .cash-flow-bars > div { min-width: 47px; }
+  .fiscal-entry-form, .fiscal-edit-form, .fiscal-decision-grid { grid-template-columns: 1fr; }
+  .fiscal-edit-form > :nth-child(3), .fiscal-edit-form > :nth-child(6) { grid-column: auto; }
+  .fiscal-entry-action { align-items: stretch; flex-direction: column; }
 }
