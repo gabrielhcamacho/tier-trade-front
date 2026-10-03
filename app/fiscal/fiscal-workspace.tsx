@@ -141,8 +141,11 @@ export function FiscalWorkspaceView({ data }: { data: FiscalWorkspace }) {
       </DemoSection>
 
       <DemoSection kicker="OBRIGAÇÕES CONFIRMADAS" title="Agenda fiscal e reflexos financeiros" id="obrigacoes" aside="recolhimentos do tenant e retenções da contraparte permanecem distintos">
-        {data.obligations.length ? <DemoTable label="Obrigações fiscais" columns={['Tributo', 'Autoridade', 'Competência', 'Vencimento', 'Valor', 'Responsável', 'Efeito financeiro']} rows={data.obligations.map((obligation) => [
+        {data.obligations.length ? <DemoTable label="Obrigações fiscais" columns={['Tributo', 'Autoridade', 'Competência', 'Vencimento', 'Valor', 'Pago', 'Saldo', 'Status', 'Responsável', 'Efeito financeiro']} rows={data.obligations.map((obligation) => [
           obligation.tax, obligation.authority.name, formatFiscalDateOnly(obligation.competenceDate), formatFiscalDateOnly(obligation.dueDate), formatFiscalMoney(obligation.amount),
+          obligation.payable ? formatFiscalMoney(obligation.payable.paidAmount) : '—',
+          obligation.payable ? formatFiscalMoney(obligation.payable.outstandingAmount) : '—',
+          fiscalObligationStatusLabel(obligation.status),
           obligation.paymentResponsibility === 'TENANT' ? 'Tenant recolhe' : 'Contraparte recolhe',
           obligation.payable ? `Título ${obligation.payable.titleNumber}` : obligation.titleAdjustment ? 'Título de origem reduzido' : 'Sem título a pagar',
         ])} /> : <p>Nenhuma obrigação fiscal confirmada.</p>}
@@ -468,6 +471,14 @@ function statusTone(status: FiscalDocument['status']): 'positive' | 'critical' |
   if (status === 'VALIDATED') return 'positive';
   if (status === 'REJECTED') return 'critical';
   return 'attention';
+}
+
+function fiscalObligationStatusLabel(status: string): string {
+  if (status === 'OPEN') return 'Em aberto';
+  if (status === 'PARTIALLY_SETTLED') return 'Pago parcialmente';
+  if (status === 'SETTLED') return 'Pago';
+  if (status === 'CANCELLED') return 'Cancelado';
+  return status;
 }
 
 function formatTaxId(value: string): string {

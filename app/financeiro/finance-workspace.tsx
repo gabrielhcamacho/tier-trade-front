@@ -4,10 +4,12 @@ import { Button, DecimalField, Field } from '@mountier/tier-trade-design-system'
 import Link from 'next/link';
 import { useActionState, useState } from 'react';
 import type { FinanceWorkspace } from '../../lib/finance';
-import { formatFinancialDate, formatMoney, titleStatusLabel } from '../../lib/finance';
+import { formatFinancialDate, formatMoney, payableStatusLabel, titleStatusLabel } from '../../lib/finance';
 import { DemoMetricStrip, DemoSection, DemoStatus, DemoTable } from '../demo-ui';
 import {
   createTitleAction,
+  payTitleAction,
+  reversePaymentAction,
   reverseSettlementAction,
   settleTitleAction,
 } from './actions';
@@ -18,14 +20,21 @@ export function FinancialWorkspace({ data }: { data: FinanceWorkspace }) {
   const [titleState, titleAction, titlePending] = useActionState(createTitleAction, initialFinanceActionState);
   const [settlementState, settlementAction, settlementPending] = useActionState(settleTitleAction, initialFinanceActionState);
   const [reversalState, reversalAction, reversalPending] = useActionState(reverseSettlementAction, initialFinanceActionState);
+  const [paymentState, paymentAction, paymentPending] = useActionState(payTitleAction, initialFinanceActionState);
+  const [paymentReversalState, paymentReversalAction, paymentReversalPending] = useActionState(reversePaymentAction, initialFinanceActionState);
   const salesEvents = data.events.filter((event) => event.direction === 'INFLOW');
   const payableEvents = data.events.filter((event) => event.direction === 'OUTFLOW');
   const issuable = salesEvents.filter((event) => !event.title && event.calculationStatus === 'READY');
   const openTitles = salesEvents.flatMap((event) => event.title && Number(event.title.outstandingAmount) > 0
     ? [{ event, title: event.title }] : []);
   const reversible = data.settlements.filter((settlement) => !settlement.reversedAt);
+  const openPayables = payableEvents.flatMap((event) => event.title && Number(event.title.outstandingAmount) > 0
+    ? [{ event, title: event.title }] : []);
+  const reversiblePayments = data.payments.filter((payment) => !payment.reversedAt);
   const [selectedTitleId, setSelectedTitleId] = useState(openTitles[0]?.title.id ?? '');
   const selectedTitle = openTitles.find((item) => item.title.id === selectedTitleId);
+  const [selectedPayableId, setSelectedPayableId] = useState(openPayables[0]?.title.id ?? '');
+  const selectedPayable = openPayables.find((item) => item.title.id === selectedPayableId);
 
   const forecastRows = salesEvents.map((event) => [
     <Link href={`/financeiro/liquidacoes/${event.id}`} key={event.id}>
@@ -60,7 +69,7 @@ export function FinancialWorkspace({ data }: { data: FinanceWorkspace }) {
   });
   const payableRows = payableEvents.filter((event) => event.title).map((event) => {
     const title = event.title!;
-    return [title.number, event.beneficiaryName, title.documentReference, formatFinancialDate(title.dueDate), formatMoney(title.amount), formatMoney(title.outstandingAmount), <DemoStatus tone="attention" key={title.id}>{titleStatusLabel(title.status)}</DemoStatus>];
+    return [title.number, event.beneficiaryName, title.documentReference, formatFinancialDate(title.dueDate), formatMoney(title.amount), formatMoney(title.settledAmount), formatMoney(title.outstandingAmount), <DemoStatus tone={title.status === 'SETTLED' ? 'positive' : title.status === 'PARTIALLY_SETTLED' ? 'info' : 'attention'} key={title.id}>{payableStatusLabel(title.status)}</DemoStatus>];
   });
   const settlementRows = data.settlements.map((settlement) => [
     settlement.titleNumber,
@@ -71,14 +80,24 @@ export function FinancialWorkspace({ data }: { data: FinanceWorkspace }) {
       ? <DemoStatus key={settlement.id}>Estornado</DemoStatus>
       : <DemoStatus tone="positive" key={settlement.id}>Confirmado</DemoStatus>,
   ]);
+  const paymentRows = data.payments.map((payment) => [
+    payment.titleNumber,
+    payment.authorityName,
+    payment.bankReference,
+    formatFinancialDate(payment.paidAt),
+    formatMoney(payment.amount),
+    payment.reversedAt
+      ? <DemoStatus key={payment.id}>Estornado</DemoStatus>
+      : <DemoStatus tone="positive" key={payment.id}>Confirmado</DemoStatus>,
+  ]);
 
   return (
     <>
       <DemoMetricStrip items={[
         { label: 'Previsto em vendas', value: formatMoney(data.summary.projectedAmount), detail: `${salesEvents.length} expedição(ões)` },
         { label: 'A receber', value: formatMoney(data.summary.receivableAmount), detail: `${openTitles.length} título(s) com saldo`, tone: 'primary' },
-        { label: 'Recebido', value: formatMoney(data.summary.receivedAmount), detail: 'baixas ativas e rastreáveis' },
-        { label: 'A pagar em tributos', value: formatMoney(data.summary.payableAmount), detail: `${payableEvents.length} obrigação(ões)`, tone: 'attention' },
+        { label: 'A pagar em tributos', value: formatMoney(data.summary.payableAmount), detail: `${openPayables.length} título(s) com saldo`, tone: 'attention' },
+        { label: 'Caixa realizado', value: formatMoney(data.summary.netCashFlowAmount), detail: `${formatMoney(data.summary.receivedAmount)} recebido · ${formatMoney(data.summary.paidAmount)} pago` },
       ]} />
 
       <DemoSection kicker="OPERAÇÃO FINANCEIRA" title="Emitir, receber e estornar" id="acoes" aside="ações salvas e auditadas">
@@ -149,6 +168,52 @@ export function FinancialWorkspace({ data }: { data: FinanceWorkspace }) {
         </div>
       </DemoSection>
 
+      <DemoSection kicker="CONTAS A PAGAR" title="Pagar e estornar obrigações fiscais" id="acoes-pagar" aside="caixa e obrigação atualizados juntos">
+        <div className="finance-action-grid">
+          <form action={paymentAction}>
+            <p className="section-kicker">1 · OBRIGAÇÃO → PAGAMENTO</p>
+            <h3>Registrar pagamento fiscal</h3>
+            <Field label="Título fiscal em aberto" required>
+              <select name="titleId" value={selectedPayableId} onChange={(event) => setSelectedPayableId(event.target.value)} required>
+                <option value="" disabled>Selecione</option>
+                {openPayables.map(({ event, title }) => <option value={title.id} key={title.id}>
+                  {title.number} · {event.beneficiaryName} · saldo {formatMoney(title.outstandingAmount)}
+                </option>)}
+              </select>
+            </Field>
+            <DecimalField name="amount" label="Valor pago" prefix="R$" defaultValue="0" fractionDigits={2} emptyWhenZero required />
+            {selectedPayable ? <small className="finance-form-hint">Saldo disponível: {formatMoney(selectedPayable.title.outstandingAmount)}</small> : null}
+            <Field label="Data e hora" required><input type="datetime-local" name="paidAt" required /></Field>
+            <Field label="Referência bancária" required><input name="bankReference" placeholder="PIX, extrato ou comprovante" required /></Field>
+            <Field label="Observações"><textarea name="notes" rows={2} /></Field>
+            <Feedback state={paymentState} />
+            <Button type="submit" disabled={paymentPending || openPayables.length === 0}>
+              {paymentPending ? 'Registrando…' : 'Registrar pagamento'}
+            </Button>
+          </form>
+
+          <form action={paymentReversalAction}>
+            <p className="section-kicker">2 · CORREÇÃO CONTROLADA</p>
+            <h3>Estornar pagamento fiscal</h3>
+            <Field label="Pagamento ativo" required>
+              <select name="paymentId" defaultValue="" required>
+                <option value="" disabled>Selecione</option>
+                {reversiblePayments.map((payment) => <option value={payment.id} key={payment.id}>
+                  {payment.titleNumber} · {payment.bankReference} · {formatMoney(payment.amount)}
+                </option>)}
+              </select>
+            </Field>
+            <Field label="Motivo do estorno" hint="O pagamento original permanece no histórico." required>
+              <textarea name="reason" rows={4} minLength={3} maxLength={500} required />
+            </Field>
+            <Feedback state={paymentReversalState} />
+            <Button type="submit" disabled={paymentReversalPending || reversiblePayments.length === 0}>
+              {paymentReversalPending ? 'Estornando…' : 'Confirmar estorno'}
+            </Button>
+          </form>
+        </div>
+      </DemoSection>
+
       <div className="demo-domain-layout finance-live-layout">
         <div className="demo-main-stack">
           <DemoSection kicker="PREVISÃO POR EXPEDIÇÃO" title="Eventos financeiros" id="liquidacoes" aside="contrato, expedição e cálculo">
@@ -163,13 +228,18 @@ export function FinancialWorkspace({ data }: { data: FinanceWorkspace }) {
           </DemoSection>
           <DemoSection kicker="OBRIGAÇÕES FISCAIS" title="Contas a pagar" id="pagar" aside="autoridade fiscal separada da contraparte comercial">
             {payableRows.length
-              ? <DemoTable label="Contas a pagar" columns={['Título', 'Favorecido', 'Referência', 'Vencimento', 'Valor', 'Saldo', 'Status']} rows={payableRows} />
+              ? <DemoTable label="Contas a pagar" columns={['Título', 'Favorecido', 'Referência', 'Vencimento', 'Valor', 'Pago', 'Saldo', 'Status']} rows={payableRows} />
               : <p>Nenhum título fiscal a pagar.</p>}
           </DemoSection>
           <DemoSection kicker="CAIXA" title="Recebimentos e estornos" id="conciliacao" aside="referência bancária preservada">
             {settlementRows.length
               ? <DemoTable label="Baixas financeiras" columns={['Título', 'Referência', 'Data', 'Valor', 'Status']} rows={settlementRows} />
               : <p>Nenhum recebimento registrado.</p>}
+          </DemoSection>
+          <DemoSection kicker="CAIXA" title="Pagamentos fiscais e estornos" id="pagamentos" aside="referência bancária preservada">
+            {paymentRows.length
+              ? <DemoTable label="Pagamentos fiscais" columns={['Título', 'Favorecido', 'Referência', 'Data', 'Valor', 'Status']} rows={paymentRows} />
+              : <p>Nenhum pagamento fiscal registrado.</p>}
           </DemoSection>
         </div>
         <aside className="demo-side-stack">

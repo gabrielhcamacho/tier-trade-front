@@ -77,9 +77,12 @@ export type FiscalObligation = {
   competenceDate: string; dueDate: string; retained: boolean;
   titleEffect: 'NONE' | 'REDUCE_SOURCE_TITLE';
   paymentResponsibility: 'TENANT' | 'COUNTERPARTY';
-  status: 'OPEN' | 'SETTLED' | 'CANCELLED';
+  status: 'OPEN' | 'PARTIALLY_SETTLED' | 'SETTLED' | 'CANCELLED';
   authority: { id: string; name: string };
-  payable: { eventId: string; titleId: string; titleNumber: string } | null;
+  payable: {
+    eventId: string; titleId: string; titleNumber: string; amount: string;
+    paidAmount: string; outstandingAmount: string; status: string;
+  } | null;
   titleAdjustment: { id: string; titleId: string } | null;
 };
 

@@ -49,18 +49,35 @@ export type FinancialSettlement = {
   reversalReason: string | null;
 };
 
+export type FinancialPayment = {
+  id: string;
+  titleId: string;
+  fiscalObligationId: string;
+  titleNumber: string;
+  authorityName: string;
+  amount: string;
+  paidAt: string;
+  bankReference: string;
+  notes: string | null;
+  reversedAt: string | null;
+  reversalReason: string | null;
+};
+
 export type FinanceWorkspace = {
   tenant: { legalName: string; isDemo: boolean; demoSeedVersion: number | null };
   summary: {
     projectedAmount: string;
     receivableAmount: string;
     receivedAmount: string;
+    paidAmount: string;
+    netCashFlowAmount: string;
     payableAmount: string;
     pendingForecastCount: number;
     pendingRoundingCount: number;
   };
   events: FinancialEvent[];
   settlements: FinancialSettlement[];
+  payments: FinancialPayment[];
 };
 
 export type FinanceResult =
@@ -101,5 +118,12 @@ export function titleStatusLabel(value: string): string {
   if (value === 'OPEN') return 'Em aberto';
   if (value === 'PARTIALLY_SETTLED') return 'Recebido parcialmente';
   if (value === 'SETTLED') return 'Liquidado';
+  return value;
+}
+
+export function payableStatusLabel(value: string): string {
+  if (value === 'OPEN') return 'Em aberto';
+  if (value === 'PARTIALLY_SETTLED') return 'Pago parcialmente';
+  if (value === 'SETTLED') return 'Pago';
   return value;
 }
