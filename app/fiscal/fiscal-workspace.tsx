@@ -3,13 +3,13 @@
 import { Button, DecimalField, Field } from '@mountier/tier-trade-design-system';
 import { useActionState } from 'react';
 import type {
-  FiscalConfiguration, FiscalDocument, FiscalEstablishment, FiscalTaxComponent, FiscalWorkspace,
+  FiscalCalculation, FiscalConfiguration, FiscalDocument, FiscalEstablishment, FiscalTaxComponent, FiscalWorkspace,
 } from '../../lib/fiscal';
 import { formatFiscalDate, formatFiscalMoney } from '../../lib/fiscal';
 import { DemoMetricStrip, DemoSection, DemoStatus, DemoTable } from '../demo-ui';
 import {
   activateFiscalConfigurationAction, createFiscalConfigurationAction, createFiscalDocumentAction,
-  createFiscalEstablishmentAction, newFiscalConfigurationVersionAction, rejectFiscalDocumentAction,
+  createFiscalCalculationAction, createFiscalEstablishmentAction, newFiscalConfigurationVersionAction, rejectFiscalDocumentAction,
   updateFiscalConfigurationAction, updateFiscalDocumentAction, updateFiscalEstablishmentAction,
   validateFiscalDocumentAction,
 } from './actions';
@@ -23,6 +23,9 @@ export function FiscalWorkspaceView({ data }: { data: FiscalWorkspace }) {
   );
   const [configurationState, configurationAction, configurationPending] = useActionState(
     createFiscalConfigurationAction, initialState,
+  );
+  const [calculationState, calculationAction, calculationPending] = useActionState(
+    createFiscalCalculationAction, initialState,
   );
   const readyEvents = data.eligibleEvents.filter((event) => event.calculationStatus === 'READY');
   const rows = data.documents.map((document) => [
@@ -80,6 +83,36 @@ export function FiscalWorkspaceView({ data }: { data: FiscalWorkspace }) {
         configuration={configuration} establishments={data.establishments} key={configuration.id}
       />)}
 
+      <DemoSection kicker="MOTOR DETERMINÍSTICO" title="Calcular tributos e retenções" id="calculo" aside="a versão aplicável é escolhida pelo contexto e pela vigência">
+        <form action={calculationAction} className="fiscal-calculation-form">
+          <Field label="Estabelecimento" required>
+            <select name="calculationEstablishmentId" defaultValue="" required>
+              <option value="" disabled>Selecione</option>
+              {data.establishments.filter((item) => item.active).map((item) => <option key={item.id} value={item.id}>{item.legalName} · {item.uf}</option>)}
+            </select>
+          </Field>
+          <Field label="Commodity" required><input name="calculationCommodity" defaultValue="MILHO" required /></Field>
+          <Field label="UF de destino" required><input name="calculationDestinationUf" maxLength={2} pattern="[A-Za-z]{2}" required /></Field>
+          <Field label="Data do fato" required><input type="date" name="calculationOccurredOn" required /></Field>
+          <DecimalField name="calculationGrossAmount" label="Valor bruto" prefix="R$" defaultValue="0" fractionDigits={2} emptyWhenZero required />
+          <div className="fiscal-entry-action">
+            <Feedback state={calculationState} />
+            <Button type="submit" disabled={calculationPending || data.taxCalculation.status !== 'READY'}>
+              {calculationPending ? 'Calculando…' : 'Calcular e salvar memória'}
+            </Button>
+          </div>
+        </form>
+        {data.taxCalculation.status !== 'READY'
+          ? <p className="fiscal-calculation-blocked">Ative uma configuração fiscal completa para liberar o cálculo.</p>
+          : null}
+      </DemoSection>
+
+      <DemoSection kicker="MEMÓRIA DE CÁLCULO" title="Resultados persistidos" id="memorias" aside="entrada, regra, versão e arredondamento preservados">
+        {data.calculations.length
+          ? <div className="fiscal-calculation-list">{data.calculations.map((calculation) => <FiscalCalculationCard calculation={calculation} key={calculation.id} />)}</div>
+          : <p>Nenhum cálculo fiscal registrado para este tenant.</p>}
+      </DemoSection>
+
       <DemoSection kicker="ENTRADA FISCAL" title="Registrar NF-e de saída" id="entrada" aside="salva no backend e isolada por tenant">
         <form action={createAction} className="fiscal-entry-form">
           <Field label="Expedição com evento financeiro" required>
@@ -117,7 +150,7 @@ export function FiscalWorkspaceView({ data }: { data: FiscalWorkspace }) {
         </div>
         <aside className="demo-side-stack">
           <section><p className="section-kicker">VALIDAÇÃO</p><h2>Conferência sem inferência</h2><p>A validação exige chave de acesso e igualdade exata com o evento financeiro da expedição.</p></section>
-          <section><p className="section-kicker">TRIBUTOS</p><h2>{data.taxCalculation.status === 'BLOCKED_ENGINE' ? 'Configuração ativa' : 'Configuração pendente'}</h2>{data.taxCalculation.blockers.map((blocker) => <p key={blocker}>{blocker}</p>)}</section>
+          <section><p className="section-kicker">TRIBUTOS</p><h2>{data.taxCalculation.status === 'READY' ? 'Motor disponível' : 'Configuração pendente'}</h2>{data.taxCalculation.blockers.map((blocker) => <p key={blocker}>{blocker}</p>)}</section>
           <section><p className="section-kicker">RASTREABILIDADE</p><h2>Cadeia preservada</h2><p>Documento, expedição, contrato, previsão e título permanecem ligados por identificadores persistidos.</p></section>
         </aside>
       </div>
@@ -222,6 +255,21 @@ function ConfigurationFields({ establishments, configuration }: {
     <Field label="Responsável técnico" required><input name="technicalResponsible" defaultValue={configuration?.technicalResponsible ?? ''} required /></Field>
     <Field label="Início da vigência" required><input type="date" name="effectiveFrom" defaultValue={configuration?.effectiveFrom ?? ''} required /></Field>
     <Field label="Fim da vigência"><input type="date" name="effectiveTo" defaultValue={configuration?.effectiveTo ?? ''} /></Field>
+    <Field label="Arredondamento" required>
+      <select name="roundingMode" defaultValue={configuration?.roundingMode ?? ''} required>
+        <option value="" disabled>Selecione</option>
+        <option value="HALF_UP">Meio para cima</option>
+        <option value="HALF_EVEN">Meio para o par</option>
+        <option value="DOWN">Sempre para baixo</option>
+        <option value="UP">Sempre para cima</option>
+      </select>
+    </Field>
+    <Field label="Casas decimais" required>
+      <select name="roundingScale" defaultValue={configuration?.roundingScale ?? ''} required>
+        <option value="" disabled>Selecione</option>
+        {[0, 1, 2, 3, 4, 5, 6].map((scale) => <option value={scale} key={scale}>{scale}</option>)}
+      </select>
+    </Field>
     <div className="fiscal-tax-components">
       <p className="section-kicker">TRATAMENTOS TRIBUTÁRIOS</p>
       {(['ICMS', 'PIS', 'COFINS', 'FUNRURAL'] as const).map((tax) => <TaxComponentFields
@@ -245,6 +293,12 @@ function TaxComponentFields({ tax, component }: { tax: FiscalTaxComponent['tax']
         <option value="SUSPENDED">Suspenso</option>
       </select>
     </Field>
+    <Field label="Base">
+      <select name={`${key}Basis`} defaultValue={component?.basis ?? ''}>
+        <option value="">Não configurada</option>
+        <option value="DOCUMENT_TOTAL">Valor total do documento</option>
+      </select>
+    </Field>
     <DecimalField name={`${key}RatePct`} label="Alíquota" suffix="%" defaultValue={component?.ratePct ?? '0'} fractionDigits={6} emptyWhenZero />
     <label className="fiscal-retention"><input type="checkbox" name={`${key}Retained`} defaultChecked={component?.retained ?? false} /> Retido</label>
   </div>;
@@ -255,10 +309,36 @@ function FiscalConfigurationSummary({ configuration }: { configuration: FiscalCo
     <p><strong>Vigência:</strong> {configuration.effectiveFrom ?? 'Pendente'} até {configuration.effectiveTo ?? 'sem término'}</p>
     <p><strong>Emissão:</strong> {configuration.emissionStrategy === 'NATIVE' ? 'Nativa' : 'Integrada'}</p>
     <p><strong>Responsável:</strong> {configuration.technicalResponsible}</p>
+    <p><strong>Arredondamento:</strong> {roundingModeLabel(configuration.roundingMode)} · {configuration.roundingScale} casas</p>
     <ul>{configuration.taxComponents.map((component) => <li key={component.tax}>
-      {component.tax}: {taxTreatmentLabel(component.treatment)}{component.ratePct ? ` · ${component.ratePct}%` : ''}{component.retained ? ' · retido' : ''}
+      {component.tax}: {taxTreatmentLabel(component.treatment)} · {component.basis === 'DOCUMENT_TOTAL' ? 'valor total do documento' : 'base pendente'}{component.ratePct ? ` · ${component.ratePct}%` : ''}{component.retained ? ' · retido' : ''}
     </li>)}</ul>
   </div>;
+}
+
+function FiscalCalculationCard({ calculation }: { calculation: FiscalCalculation }) {
+  return <article className="fiscal-calculation-card">
+    <header>
+      <div><p className="section-kicker">{calculation.context.commodity} · {calculation.context.destinationUf}</p><h3>{calculation.configuration.name}</h3></div>
+      <DemoStatus tone="positive">Calculado · v{calculation.configuration.version}</DemoStatus>
+    </header>
+    <dl className="summary-ledger">
+      <div><dt>Valor bruto</dt><dd>{formatFiscalMoney(calculation.result.grossAmount)}</dd></div>
+      <div><dt>Total tributário</dt><dd>{formatFiscalMoney(calculation.result.taxTotal)}</dd></div>
+      <div><dt>Retenções</dt><dd>{formatFiscalMoney(calculation.result.retainedTotal)}</dd></div>
+      <div><dt>Valor líquido</dt><dd>{formatFiscalMoney(calculation.result.netAmount)}</dd></div>
+    </dl>
+    <div className="fiscal-memory-components">
+      {calculation.result.components.map((component) => <div key={component.tax}>
+        <strong>{component.tax}</strong>
+        <span>{taxTreatmentLabel(component.treatment)}</span>
+        <span>Base {formatFiscalMoney(component.taxableBase)}</span>
+        <span>{component.ratePct ? `${component.ratePct}%` : 'sem alíquota'}</span>
+        <span>{formatFiscalMoney(component.amount)}{component.retained ? ' · retido' : ''}</span>
+      </div>)}
+    </div>
+    <footer>Fato em {formatFiscalDateOnly(calculation.context.occurredOn)} · {roundingModeLabel(calculation.result.rounding.mode)} · {calculation.result.rounding.scale} casas</footer>
+  </article>;
 }
 
 function FiscalDocumentEditor({ document }: { document: FiscalDocument }) {
@@ -346,4 +426,17 @@ function taxTreatmentLabel(treatment: FiscalTaxComponent['treatment']): string {
     DEFERRED: 'Diferido', SUSPENDED: 'Suspenso',
   };
   return labels[treatment];
+}
+
+function roundingModeLabel(mode: FiscalConfiguration['roundingMode']): string {
+  if (mode === 'HALF_UP') return 'Meio para cima';
+  if (mode === 'HALF_EVEN') return 'Meio para o par';
+  if (mode === 'DOWN') return 'Para baixo';
+  if (mode === 'UP') return 'Para cima';
+  return 'Pendente';
+}
+
+function formatFiscalDateOnly(value: string): string {
+  const [year, month, day] = value.split('-');
+  return `${day}/${month}/${year}`;
 }

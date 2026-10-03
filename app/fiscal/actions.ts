@@ -1,5 +1,6 @@
 'use server';
 
+import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { currentUserContext } from '../../lib/current-user';
 
@@ -21,6 +22,11 @@ const messages: Record<string, string> = {
   FISCAL_CONFIGURATION_OVERLAP: 'Já existe uma configuração ativa para a mesma operação e vigência.',
   FISCAL_CONFIGURATION_DRAFT_EXISTS: 'Já existe uma nova versão em rascunho para esta configuração.',
   FISCAL_CONFIGURATION_VERSION_REQUIRES_ACTIVE: 'Ative a versão atual antes de criar sua sucessora.',
+  FISCAL_CONFIGURATION_NOT_APPLICABLE: 'Nenhuma configuração ativa atende exatamente esse contexto e essa data.',
+  FISCAL_CONFIGURATION_AMBIGUOUS: 'Mais de uma configuração ativa atende ao cálculo. Revise as vigências.',
+  FISCAL_CONFIGURATION_INVALID: 'A configuração ativa está incompleta para cálculo.',
+  FISCAL_CALCULATION_IDEMPOTENCY_CONFLICT: 'Esta solicitação já foi usada com dados diferentes.',
+  FISCAL_RETENTION_EXCEEDS_GROSS: 'As retenções não podem superar o valor bruto.',
   CAPABILITY_NOT_FOUND: 'Seu usuário não possui permissão para esta operação.',
 };
 
@@ -59,7 +65,22 @@ export async function activateFiscalConfigurationAction(
 ): Promise<FiscalActionState> {
   const id = encodeURIComponent(String(formData.get('configurationId') ?? ''));
   return send(`/v1/fiscal/configurations/${id}/activate`, 'POST', undefined,
-    'Versão fiscal ativada. O motor de cálculo continua separado e entra na próxima etapa.');
+    'Versão fiscal ativada e disponível para cálculos compatíveis.');
+}
+
+export async function createFiscalCalculationAction(
+  _state: FiscalActionState, formData: FormData,
+): Promise<FiscalActionState> {
+  return send('/v1/fiscal/calculations', 'POST', {
+    requestKey: randomUUID(),
+    establishmentId: String(formData.get('calculationEstablishmentId') ?? ''),
+    operationType: 'SALE_DISPATCH',
+    commodity: String(formData.get('calculationCommodity') ?? '').trim().toUpperCase(),
+    destinationUf: String(formData.get('calculationDestinationUf') ?? '').trim().toUpperCase(),
+    occurredOn: String(formData.get('calculationOccurredOn') ?? ''),
+    grossAmount: decimal(formData.get('calculationGrossAmount')),
+    currency: 'BRL', sourceType: 'MANUAL', sourceId: null,
+  }, 'Cálculo concluído e memória persistida.');
 }
 
 export async function newFiscalConfigurationVersionAction(
@@ -136,6 +157,8 @@ function configurationPayload(formData: FormData) {
     technicalResponsible: nullable(formData.get('technicalResponsible')),
     effectiveFrom: nullable(formData.get('effectiveFrom')),
     effectiveTo: nullable(formData.get('effectiveTo')),
+    roundingMode: nullable(formData.get('roundingMode')),
+    roundingScale: nullableNumber(formData.get('roundingScale')),
     taxComponents: taxes.flatMap((tax) => {
       const key = tax.toLowerCase();
       const treatment = nullable(formData.get(`${key}Treatment`));
@@ -143,6 +166,7 @@ function configurationPayload(formData: FormData) {
       return [{
         tax,
         treatment,
+        basis: nullable(formData.get(`${key}Basis`)),
         ratePct: treatment === 'TAXED' ? nullable(decimal(formData.get(`${key}RatePct`))) : null,
         retained: formData.get(`${key}Retained`) === 'on',
       }];
@@ -188,4 +212,9 @@ function decimal(value: FormDataEntryValue | null): string {
 
 function nullable(value: FormDataEntryValue | null): string | null {
   return String(value ?? '').trim() || null;
+}
+
+function nullableNumber(value: FormDataEntryValue | null): number | null {
+  const normalized = String(value ?? '').trim();
+  return normalized === '' ? null : Number(normalized);
 }

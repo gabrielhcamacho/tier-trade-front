@@ -31,6 +31,7 @@ export type FiscalEstablishment = {
 export type FiscalTaxComponent = {
   tax: 'ICMS' | 'PIS' | 'COFINS' | 'FUNRURAL';
   treatment: 'TAXED' | 'EXEMPT' | 'NON_TAXED' | 'DEFERRED' | 'SUSPENDED';
+  basis: 'DOCUMENT_TOTAL' | null;
   ratePct: string | null;
   retained: boolean;
 };
@@ -41,8 +42,28 @@ export type FiscalConfiguration = {
   name: string; operationType: 'SALE_DISPATCH'; commodity: string | null;
   destinationUf: string | null; cfop: string | null; emissionStrategy: 'NATIVE' | 'INTEGRATED' | null;
   technicalResponsible: string | null; effectiveFrom: string | null; effectiveTo: string | null;
+  roundingMode: 'HALF_UP' | 'HALF_EVEN' | 'DOWN' | 'UP' | null; roundingScale: number | null;
   taxComponents: FiscalTaxComponent[]; status: 'DRAFT' | 'ACTIVE' | 'RETIRED';
   updatedAt: string; activatedAt: string | null;
+};
+
+export type FiscalCalculation = {
+  id: string; requestKey: string;
+  configuration: { id: string; key: string; version: number; name: string };
+  establishment: { id: string; name: string };
+  context: {
+    establishmentId: string; operationType: 'SALE_DISPATCH'; commodity: string;
+    destinationUf: string; occurredOn: string; grossAmount: string; currency: 'BRL';
+    sourceType: 'MANUAL' | 'FISCAL_DOCUMENT'; sourceId: string | null;
+  };
+  result: {
+    grossAmount: string; taxTotal: string; retainedTotal: string; netAmount: string;
+    rounding: { mode: NonNullable<FiscalConfiguration['roundingMode']>; scale: number };
+    components: Array<FiscalTaxComponent & {
+      taxableBase: string; unroundedAmount: string; amount: string; explanation: string;
+    }>;
+  };
+  calculatedAt: string;
 };
 
 export type FiscalWorkspace = {
@@ -51,13 +72,14 @@ export type FiscalWorkspace = {
   documents: FiscalDocument[];
   establishments: FiscalEstablishment[];
   configurations: FiscalConfiguration[];
+  calculations: FiscalCalculation[];
   eligibleEvents: Array<{
     id: string; sourceId: string; salesContractId: string; contractReference: string;
     counterpartyName: string; dispatchReference: string; expectedAmount: string | null;
     calculationStatus: string;
   }>;
   taxCalculation: {
-    status: 'BLOCKED_CONFIGURATION' | 'BLOCKED_ENGINE'; activeConfigurationCount: number; blockers: string[];
+    status: 'BLOCKED_CONFIGURATION' | 'READY'; activeConfigurationCount: number; blockers: string[];
   };
 };
 

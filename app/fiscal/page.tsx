@@ -17,7 +17,7 @@ export default async function FiscalPage() {
         section="Documentos"
         eyebrow="Configuração, recebimento e validação"
         title="Documentos fiscais"
-        description="Cadastros fiscais versionados e NF-e vinculada à operação, sem cálculo tributário presumido."
+        description="Configurações versionadas, cálculo determinístico com memória e NF-e vinculada à operação."
         scope={result.data ? `${result.data.tenant.legalName} · posição atual` : 'Dados indisponíveis'}
       />
       <div className="demo-page demo-workspace">
