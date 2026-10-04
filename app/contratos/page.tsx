@@ -4,30 +4,25 @@ import { loadContracts } from '../../lib/contracts';
 import { AppShell } from '../app-shell';
 import { ContractPortfolioView } from './contract-portfolio';
 
-export default async function ContractsPage() {
+export default async function ContractsPage({ searchParams }: { searchParams: Promise<{ commodity?: string; status?: string }> }) {
   const user = await currentUserContext();
-  const result = await loadContracts(user.identityHeaders);
-  const tenantName = result.portfolio?.tenant.legalName ?? 'Ambiente autenticado';
+  const [result, filters] = await Promise.all([loadContracts(user.identityHeaders), searchParams]);
+  const count = result.portfolio?.items.length;
 
   return (
     <AppShell activeDomain="contracts" userLabel={user.userLabel}>
-      <header className="page-header">
-        <p className="breadcrumbs">Contratos <span>›</span> Visão geral</p>
-        <div className="page-header-row">
-          <div>
-            <p className="entity-kind">Gestão contratual</p>
-            <h1>Contratos</h1>
-            <p className="page-description">Acompanhe as condições formalizadas, obrigações e o início da execução física.</p>
-          </div>
-          <span className="environment-label">{tenantName}</span>
-        </div>
-      </header>
-
-      {result.error ? <ContractPortfolioError message={result.error} /> : null}
-      {result.portfolio?.items.length === 0 ? <EmptyPortfolio isDemo={result.portfolio.tenant.isDemo} /> : null}
-      {result.portfolio && result.portfolio.items.length > 0
-        ? <ContractPortfolioView portfolio={result.portfolio} />
-        : null}
+      <div className="prototype-list-page">
+        <header className="prototype-list-header"><div>
+          <p className="prototype-breadcrumb">Contratos <span>›</span> Lista</p>
+          <h1>Contratos</h1>
+          <p>Compra · milho e soja · {count === undefined ? 'dados indisponíveis' : `${count} ${count === 1 ? 'contrato' : 'contratos'} na carteira`}</p>
+        </div></header>
+        {result.error ? <ContractPortfolioError message={result.error} /> : null}
+        {result.portfolio?.items.length === 0 ? <EmptyPortfolio isDemo={result.portfolio.tenant.isDemo} /> : null}
+        {result.portfolio && result.portfolio.items.length > 0
+          ? <ContractPortfolioView portfolio={result.portfolio} filters={filters} />
+          : null}
+      </div>
     </AppShell>
   );
 }
@@ -53,7 +48,7 @@ function EmptyPortfolio({ isDemo }: { isDemo: boolean }) {
       <p>{isDemo
         ? 'O tenant demonstrativo está vazio. Crie e aprove uma oferta para iniciar a carteira real de demonstração.'
         : 'Crie e aprove uma oferta para convertê-la em contrato e iniciar a execução.'}</p>
-      <Link className="tt-button" data-variant="primary" data-size="md" href="/#nova-oferta">Criar oferta</Link>
+      <Link className="tt-button" data-variant="primary" data-size="md" href="/ofertas/nova">Criar oferta</Link>
     </section>
   );
 }

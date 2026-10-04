@@ -1,114 +1,35 @@
 import Link from 'next/link';
-import type { ContractListItem, ContractPortfolio } from '../../lib/contracts';
+import type { ContractPortfolio } from '../../lib/contracts';
 import { commodityLabel, contractStatusLabel, formatCurrency, formatQuantity } from '../../lib/contracts';
-import { DemoNotice } from '../demo-notice';
-import { DemoMetricStrip, DemoSection, DemoStatus, DemoTable } from '../demo-ui';
 
-export function ContractPortfolioView({ portfolio }: { portfolio: ContractPortfolio }) {
-  const active = portfolio.items.filter((contract) => contract.status === 'ACTIVE');
-  const totalQuantitySc = portfolio.items.reduce((total, contract) => total + Number(contract.quantity_sc), 0);
-  const scheduledWeightKg = portfolio.items.reduce(
-    (total, contract) => total + Number(contract.scheduled_weight_kg),
-    0,
-  );
-  const receivedWeightKg = portfolio.items.reduce(
-    (total, contract) => total + Number(contract.received_weight_kg),
-    0,
-  );
-  const projectedMargin = portfolio.items.reduce(
-    (total, contract) => total + Number(contract.quantity_sc) * Number(contract.projected_margin_per_sc),
-    0,
-  );
-  const pendingObligations = portfolio.items.reduce(
-    (total, contract) => total + contract.pending_obligations,
-    0,
-  );
-
+export function ContractPortfolioView({ portfolio, filters }: { portfolio: ContractPortfolio; filters: { commodity?: string; status?: string } }) {
+  const items = portfolio.items.filter((contract) =>
+    (!filters.commodity || contract.commodity === filters.commodity) &&
+    (!filters.status || contract.status === filters.status));
   return (
-    <div className="demo-page demo-workspace">
-      {portfolio.tenant.isDemo ? <DemoNotice persisted /> : null}
-      <DemoMetricStrip items={[
-        {
-          label: 'Contratos ativos',
-          value: String(active.length),
-          detail: `${portfolio.items.length} na carteira`,
-          tone: 'primary' as const,
-        },
-        {
-          label: 'Volume contratado',
-          value: formatQuantity(String(totalQuantitySc)),
-          unit: 'sc',
-          detail: 'volume formalizado',
-        },
-        {
-          label: 'Volume programado',
-          value: formatWeightTonnes(scheduledWeightKg),
-          unit: 't',
-          detail: `${formatWeightTonnes(receivedWeightKg)} t recebidas`,
-        },
-        {
-          label: 'Margem projetada',
-          value: formatCurrency(String(projectedMargin)),
-          detail: `${pendingObligations} obrigações pendentes`,
-          tone: pendingObligations > 0 ? 'attention' as const : undefined,
-        },
-      ]} />
-
-      <div className="demo-main-stack">
-        <DemoSection kicker="CARTEIRA" title="Contratos recentes" aside={`${portfolio.items.length} contratos`}>
-          <DemoTable
-            label="Contratos reais do tenant"
-            columns={['Contrato', 'Operação', 'Commodity', 'Contraparte', 'Volume', 'Preço', 'Status']}
-            rows={portfolio.items.map((contract) => [
-              <Link key={contract.id} href={`/contratos/${contract.id}`}>{contractReference(contract.id)}</Link>,
-              'Compra',
-              commodityLabel(contract.commodity),
-              contract.counterparty_name,
-              `${formatQuantity(contract.quantity_sc)} sc`,
-              `${formatCurrency(contract.purchase_price_per_sc)}/sc`,
-              <DemoStatus key={`${contract.id}-status`} tone={contract.status === 'ACTIVE' ? 'positive' : 'neutral'}>
-                {contractStatusLabel(contract.status)}
-              </DemoStatus>,
-            ])}
-          />
-        </DemoSection>
-
-        <DemoSection
-          kicker="EXECUÇÃO CONTRATUAL"
-          title="Obrigações e programação"
-          aside="dados atualizados pela API"
-          id="obrigacoes"
-        >
-          <DemoTable
-            label="Execução dos contratos"
-            columns={['Contrato', 'Cargas', 'Programado', 'Recebido', 'Saldo disponível', 'Obrigações', 'Agenda']}
-            rows={portfolio.items.map((contract) => executionRow(contract))}
-          />
-        </DemoSection>
-      </div>
-    </div>
+    <>
+      <form className="prototype-filter-row" method="get" aria-label="Filtrar contratos">
+        <span><small>Tipo</small><strong>Compra</strong></span>
+        <label><small>Commodity</small><select name="commodity" defaultValue={filters.commodity ?? ''}><option value="">Milho e soja</option><option value="MILHO">Milho</option><option value="SOJA">Soja</option></select></label>
+        <label><small>Status</small><select name="status" defaultValue={filters.status ?? ''}><option value="">Todos</option><option value="ACTIVE">Ativo</option></select></label>
+        <button type="submit">Filtrar</button>
+        <span className="prototype-filter-actions">{portfolio.tenant.legalName}</span>
+      </form>
+      <div className="prototype-table-scroll"><table className="prototype-ledger">
+        <thead><tr><th>Contrato</th><th>Tipo</th><th>Contraparte</th><th>Commodity</th><th>Volume</th><th>Executado</th><th>Preço</th><th>Status</th><th></th></tr></thead>
+        <tbody>{items.map((contract) => <tr key={contract.id}>
+          <td className="prototype-id">CT-{contract.id.slice(-8).toUpperCase()}</td>
+          <td>Compra</td>
+          <td><strong>{contract.counterparty_name}</strong></td>
+          <td>{commodityLabel(contract.commodity)}</td>
+          <td className="prototype-number">{formatQuantity(contract.quantity_sc)} sc</td>
+          <td className="prototype-number">{formatQuantity(String(Number(contract.received_weight_kg) / 60))} sc</td>
+          <td className="prototype-number">{formatCurrency(contract.purchase_price_per_sc)}/sc</td>
+          <td><span className="prototype-status" data-status={contract.status}>{contractStatusLabel(contract.status)}</span></td>
+          <td><Link href={`/contratos/${contract.id}`}>Abrir →</Link></td>
+        </tr>)}</tbody>
+      </table></div>
+      {items.length === 0 ? <p className="prototype-empty">Nenhum contrato corresponde aos filtros. <Link href="/contratos">Limpar filtros</Link></p> : null}
+    </>
   );
-}
-
-function executionRow(contract: ContractListItem) {
-  return [
-    contractReference(contract.id),
-    String(contract.load_count),
-    `${formatWeightTonnes(Number(contract.scheduled_weight_kg))} t`,
-    `${formatWeightTonnes(Number(contract.received_weight_kg))} t`,
-    `${formatWeightTonnes(Number(contract.available_weight_kg))} t`,
-    contract.pending_obligations === 0 ? 'Em dia' : `${contract.pending_obligations} pendentes`,
-    <Link key={`${contract.id}-agenda`} href={`/cargas?contractId=${contract.id}`}>Abrir agenda</Link>,
-  ];
-}
-
-function contractReference(id: string): string {
-  return `CT-${id.slice(-8).toUpperCase()}`;
-}
-
-function formatWeightTonnes(weightKg: number): string {
-  return new Intl.NumberFormat('pt-BR', {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 3,
-  }).format(weightKg / 1_000);
 }

@@ -6,7 +6,6 @@ import { createContext, useEffect, useState, type Dispatch, type ReactNode, type
 import { signOut } from './auth/actions';
 import { BrandLogo } from './brand-logo';
 import { ContextNav } from './context-nav';
-import { PageSectionRail } from './page-section-rail';
 import { hasSupabaseConfiguration } from '../lib/supabase/configuration';
 
 type Domain = 'central' | 'commercial' | 'contracts' | 'operations' | 'inventory' | 'risk' | 'financial' | 'fiscal';
@@ -39,7 +38,7 @@ export function WorkspaceChrome({ children }: { children: ReactNode }) {
       <div className="app-shell">
         <a className="skip-link" href="#conteudo">Ir para o conteúdo</a>
         <header className="domain-bar">
-          <Link className="wordmark" href="/" aria-label="Tier Trade, início"><BrandLogo variant="light" /></Link>
+          <Link className="wordmark" href="/central" aria-label="Tier Trade, início"><BrandLogo variant="light" /></Link>
           <nav aria-label="Domínios">
             <Link className={activeDomain === 'central' ? 'active' : undefined} aria-current={activeDomain === 'central' ? 'page' : undefined} href="/central">Central</Link>
             <Link className={activeDomain === 'commercial' ? 'active' : undefined} aria-current={activeDomain === 'commercial' ? 'page' : undefined} href="/">Comercial</Link>
@@ -57,7 +56,6 @@ export function WorkspaceChrome({ children }: { children: ReactNode }) {
           </div>
         </header>
         <ContextNav activeDomain={activeDomain} />
-        <PageSectionRail />
         <main id="conteudo">{children}</main>
       </div>
     </UserLabelContext.Provider>

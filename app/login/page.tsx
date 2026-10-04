@@ -19,7 +19,7 @@ export default function LoginPage() {
       password: String(data.get('password')),
     });
     if (error) { setMessage('E-mail ou senha inválidos.'); setPending(false); return; }
-    window.location.assign('/');
+    window.location.assign('/central');
   }
 
   async function recover(event: FormEvent<HTMLFormElement>) {

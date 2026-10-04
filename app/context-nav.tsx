@@ -9,16 +9,16 @@ type Tab = { label: string; href?: string };
 // Only implemented screens receive a link. Planned screens stay visible and inert.
 const tabs: Record<Domain, Tab[]> = {
   central: [
-    { label: 'Minha fila', href: '/central' }, { label: 'Aprovações' },
+    { label: 'Visão geral', href: '/central' }, { label: 'Minha fila', href: '/central/fila' }, { label: 'Aprovações' },
     { label: 'Alertas' }, { label: 'Roteiro de demonstração', href: '/demonstracao' },
   ],
   commercial: [
-    { label: 'Ofertas', href: '/' }, { label: 'Política de margem' },
+    { label: 'Carteira' }, { label: 'Ofertas', href: '/' }, { label: 'Demandas' }, { label: 'Política de margem' },
     { label: 'Negociações' }, { label: 'Formação de preço' }, { label: 'Confirmações' },
   ],
   contracts: [
-    { label: 'Contratos', href: '/contratos' }, { label: 'Obrigações' },
-    { label: 'Documentos' }, { label: 'Auditoria' },
+    { label: 'Lista', href: '/contratos' }, { label: 'Obrigações' }, { label: 'Fixações' },
+    { label: 'Entregas' }, { label: 'Custos e margem' }, { label: 'Comissões' }, { label: 'Garantias' }, { label: 'Aditivos' }, { label: 'Assinaturas' },
   ],
   operations: [
     { label: 'Agenda de cargas', href: '/cargas' }, { label: 'Recebimento' },
@@ -52,7 +52,7 @@ export function ContextNav({ activeDomain }: { activeDomain: Domain }) {
   return (
     <nav className="context-bar" aria-label={`Telas de ${domainLabels[activeDomain]}`}>
       {tabs[activeDomain].map(({ label, href }) => href ? (
-        <Link key={label} className={pathname === href ? 'active' : undefined} aria-current={pathname === href ? 'page' : undefined} href={href}>{label}</Link>
+        <Link key={label} className={pathname === href || (href === '/' && pathname.startsWith('/ofertas/')) ? 'active' : undefined} aria-current={pathname === href ? 'page' : undefined} href={href}>{label}</Link>
       ) : (
         <span key={label} aria-disabled="true" title="Tela planejada, ainda indisponível">{label}</span>
       ))}
