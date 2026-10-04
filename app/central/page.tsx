@@ -7,6 +7,7 @@ import { loadFinance, formatFinancialDate } from '../../lib/finance';
 import { loadRisk, formatWeight } from '../../lib/risk';
 import { loadInventory } from '../../lib/inventory';
 import { projectedMarginExact } from '../../lib/projected-margin';
+import { CommodityFilter } from './commodity-filter';
 
 const tonnes = (kg: number) => `${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 }).format(kg / 1000)} t`;
 const percent = (part: number, total: number) => total > 0 ? Math.min(100, Math.max(0, part / total * 100)) : 0;
@@ -87,14 +88,13 @@ export default async function CentralPage({ searchParams }: { searchParams: Prom
     <header className="overview-head">
       <p className="overview-eyebrow">Central · Direção e gestão · {tenant} · carteira atual</p>
       <div className="overview-heading-line"><div><h1>Visão geral</h1><p>Resultado, execução, caixa e decisões que não podem esperar</p></div><div className="overview-updated"><span className={errors.length ? 'partial' : ''} /> Consultado em {consultedAt}<small>Horário de atualização das fontes não informado</small></div></div>
-      <form className="overview-filters" action="/central" method="get">
+      <div className="overview-filters">
         <div><small>Empresa</small><strong>{tenant} ⌁</strong></div>
-        <label><small>Commodity</small><select name="commodity" defaultValue={commodity} aria-label="Filtrar por commodity"><option value="ALL">Todas</option><option value="MILHO">Milho</option><option value="SOJA">Soja</option></select></label>
+        <CommodityFilter selected={commodity} />
         <div><small>Unidade de medida</small><strong>Saca de 60 kg</strong></div>
         <div className="overview-filter-unavailable" title="Unidade operacional ainda não fornecida para toda a carteira"><small>Unidade operacional</small><strong>Indisponível</strong></div>
         <div className="overview-filter-unavailable" title="Safra e período ainda não são fornecidos por todos os módulos"><small>Safra / período</small><strong>Carteira completa</strong></div>
-        <button type="submit">Aplicar filtro</button>
-      </form>
+      </div>
       {commodity !== 'ALL' ? <p className="overview-filter-hint">Filtro aplicado a ofertas, contratos, volumes e risco. O financeiro permanece consolidado, pois os títulos não trazem vínculo completo com commodity. <Link href="/central">Limpar</Link></p> : null}
     </header>
     {isDemo ? <div className="overview-demo-note">Ambiente de demonstração · dados salvos no backend deste tenant, editáveis e isolados das outras contas.</div> : null}

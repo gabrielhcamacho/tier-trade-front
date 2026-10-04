@@ -16,6 +16,8 @@ html { scroll-behavior: smooth; }
 .overview-filters small { color: #7d8880; font-size: 12px; }
 .overview-filters strong { color: #243129; font-size: 13px; font-weight: 650; }
 .overview-filters select { border: 0; background: #fff; color: #243129; font-size: 13px; font-weight: 650; cursor: pointer; }
+.overview-filters select:disabled { cursor: progress; opacity: .65; }
+.overview-filter-progress { min-height: 11px; color: #5d7b60; font-size: 10px; }
 .overview-filters .overview-filter-unavailable strong { color: #9aa59c; }
 .overview-filters button { margin-left: auto; padding: 8px 14px; border: 1px solid #819788; background: #fff; color: #113a2d; font-size: 12px; font-weight: 700; cursor: pointer; }
 .overview-filters button:hover { background: #ecf5e8; }
