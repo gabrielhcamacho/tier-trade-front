@@ -15,7 +15,8 @@ export const UserLabelContext = createContext<Dispatch<SetStateAction<string>> |
 function domainForPath(pathname: string): Domain {
   if (pathname.startsWith('/central') || pathname.startsWith('/demonstracao')) return 'central';
   if (pathname.startsWith('/contratos')) return 'contracts';
-  if (pathname.startsWith('/cargas') || pathname.startsWith('/patio') || pathname.startsWith('/ocorrencias')) return 'operations';
+  if (pathname.startsWith('/cargas') || pathname.startsWith('/patio') || pathname.startsWith('/recebimentos')
+    || pathname.startsWith('/qualidade') || pathname.startsWith('/ocorrencias')) return 'operations';
   if (pathname.startsWith('/estoque')) return 'inventory';
   if (pathname.startsWith('/risco')) return 'risk';
   if (pathname.startsWith('/financeiro')) return 'financial';
