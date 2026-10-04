@@ -14,6 +14,7 @@ const messages: Record<string, string> = {
   DISPATCH_EXCEEDS_ALLOCATION_BALANCE: 'A expedição ultrapassa o saldo ainda alocado.',
   DISPATCH_EXCEEDS_PHYSICAL_BALANCE: 'A expedição ultrapassa o estoque físico.',
   CAPABILITY_NOT_FOUND: 'Seu usuário não possui permissão para esta operação.',
+  COUNTERPARTY_PROFILE_REQUIRED: 'Classifique a contraparte antes de criar o contrato de venda.',
 };
 
 export async function saveSalesContractAction(
@@ -25,7 +26,8 @@ export async function saveSalesContractAction(
     contractId ? 'PUT' : 'POST',
     {
       counterpartyId: String(formData.get('counterpartyId') ?? ''),
-      reference: String(formData.get('reference') ?? ''), commodity: 'MILHO',
+      reference: String(formData.get('reference') ?? ''),
+      commodity: String(formData.get('commodity') ?? ''),
       quantityKg: decimal(formData.get('quantityKg')), salePricePerKg: decimal(formData.get('salePricePerKg')),
       destinationCode: String(formData.get('destinationCode') ?? ''),
       deliveryStart: String(formData.get('deliveryStart') ?? ''),

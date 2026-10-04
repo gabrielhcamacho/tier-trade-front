@@ -22,7 +22,12 @@ type MarginPolicy = {
   autoApprovalMarginPerSc: string;
   absoluteFloorMarginPerSc: string;
 };
-type Counterparty = { id: string; legalName: string; taxId?: string };
+type Commodity = 'MILHO' | 'SOJA';
+type PartyType = 'PERSON' | 'COMPANY' | 'COOPERATIVE' | 'UNCLASSIFIED';
+type Counterparty = {
+  id: string; legalName: string; partyType: PartyType;
+  taxIdLength?: number; taxIdLast4?: string; taxId?: string;
+};
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
@@ -31,9 +36,13 @@ export function OfferWorkspace() {
   const [submission, setSubmission] = useState<SubmissionResult | null>(null);
   const [contract, setContract] = useState<ContractResult | null>(null);
   const [summary, setSummary] = useState<ContractSummary | null>(null);
-  const [policy, setPolicy] = useState<MarginPolicy | null>(null);
+  const [commodity, setCommodity] = useState<Commodity>('MILHO');
+  const [policies, setPolicies] = useState<Partial<Record<Commodity, MarginPolicy>>>({});
   const [counterparties, setCounterparties] = useState<Counterparty[] | null>(null);
   const [counterpartyId, setCounterpartyId] = useState('');
+  const [showCounterpartyForm, setShowCounterpartyForm] = useState(false);
+  const [profileType, setProfileType] = useState<'PERSON' | 'COMPANY' | 'COOPERATIVE'>('COMPANY');
+  const [formResetKey, setFormResetKey] = useState(0);
   const [cancellationReason, setCancellationReason] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -44,6 +53,8 @@ export function OfferWorkspace() {
   const developmentTenantId = process.env.NEXT_PUBLIC_DEV_TENANT_ID;
   const envReady = Boolean(apiUrl && (authConfigured
     || (developmentTenantId && process.env.NEXT_PUBLIC_DEV_ACTOR_ID)));
+  const policy = policies[commodity] ?? null;
+  const selectedCounterparty = counterparties?.find((item) => item.id === counterpartyId);
 
   async function identityHeaders(): Promise<Record<string, string>> {
     if (authConfigured) {
@@ -87,13 +98,14 @@ export function OfferWorkspace() {
       setBootstrapFailed(false);
       setPending('bootstrap');
       try {
-        const [loadedCounterparties, loadedPolicy] = await Promise.all([
+        const [loadedCounterparties, cornPolicy, soyPolicy] = await Promise.all([
           request<Counterparty[]>('/v1/counterparties', 'GET'),
           request<MarginPolicy | null>('/v1/settings/margin-policy/MILHO', 'GET'),
+          request<MarginPolicy | null>('/v1/settings/margin-policy/SOJA', 'GET'),
         ]);
         if (!active) return;
         setCounterparties(loadedCounterparties);
-        setPolicy(loadedPolicy);
+        setPolicies({ ...(cornPolicy ? { MILHO: cornPolicy } : {}), ...(soyPolicy ? { SOJA: soyPolicy } : {}) });
         if (loadedCounterparties.length === 1) setCounterpartyId(loadedCounterparties[0]!.id);
       } catch (cause) {
         if (active) {
@@ -113,7 +125,7 @@ export function OfferWorkspace() {
   function offerInput(data: FormData) {
     return {
       counterpartyId: data.get('counterpartyId'),
-      commodity: 'MILHO',
+      commodity,
       unit: 'SC_60KG',
       quantitySc: decimalValue(data, 'quantitySc', 0),
       deliveryStart: data.get('deliveryStart'),
@@ -133,11 +145,28 @@ export function OfferWorkspace() {
     const data = new FormData(event.currentTarget);
     try {
       const created = await request<Counterparty>('/v1/counterparties', 'POST', {
-        legalName: data.get('legalName'), taxId: data.get('taxId'),
+        legalName: data.get('legalName'), taxId: data.get('taxId'), partyType: data.get('partyType'),
       });
-      setCounterparties((current) => [...(current ?? []), created]);
+      setCounterparties((current) => [...(current ?? []), {
+        ...created, taxIdLength: created.taxId?.length, taxIdLast4: created.taxId?.slice(-4),
+      }]);
       setCounterpartyId(created.id);
+      setShowCounterpartyForm(false);
       setNotice('Contraparte cadastrada e selecionada para a primeira oferta.');
+    } catch (cause) { setError(errorMessage(cause)); } finally { setPending(null); }
+  }
+
+  async function classifyCounterparty(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selectedCounterparty) return;
+    setError(null); setNotice(null); setPending('counterparty-profile');
+    try {
+      const updated = await request<Counterparty>(`/v1/counterparties/${selectedCounterparty.id}/profile`,
+        'PATCH', { partyType: profileType });
+      setCounterparties((current) => current?.map((item) => item.id === updated.id ? {
+        ...updated, taxIdLength: updated.taxId?.length, taxIdLast4: updated.taxId?.slice(-4),
+      } : item) ?? null);
+      setNotice('Perfil da contraparte confirmado e registrado na auditoria.');
     } catch (cause) { setError(errorMessage(cause)); } finally { setPending(null); }
   }
 
@@ -199,17 +228,24 @@ export function OfferWorkspace() {
     } catch (cause) { setError(errorMessage(cause)); } finally { setPending(null); }
   }
 
+  function startNewOffer() {
+    setOffer(null); setSubmission(null); setContract(null); setSummary(null);
+    setFormResetKey((current) => current + 1);
+    setCancellationReason(''); setError(null);
+    setNotice('Novo formulário iniciado. As ofertas anteriores permanecem salvas no backend.');
+  }
+
   async function configurePolicy(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null); setNotice(null); setPending('policy-save');
     const data = new FormData(event.currentTarget);
     try {
       const configured = await request<MarginPolicy>('/v1/settings/margin-policy', 'PATCH', {
-        commodity: 'MILHO',
+        commodity,
         autoApprovalMarginPerSc: decimalValue(data, 'autoApprovalMarginPerSc'),
         absoluteFloorMarginPerSc: decimalValue(data, 'absoluteFloorMarginPerSc'),
       });
-      setPolicy(configured);
+      setPolicies((current) => ({ ...current, [commodity]: configured }));
       setNotice(policy ? `Política de margem atualizada para a versão ${configured.version}.` : 'Primeira política de margem publicada.');
     } catch (cause) { setError(errorMessage(cause)); } finally { setPending(null); }
   }
@@ -217,7 +253,7 @@ export function OfferWorkspace() {
   const approved = submission?.status === 'APPROVED' || offer?.status === 'APPROVED';
   const editable = !offer || (offer.status === 'DRAFT' && !submission);
   const cancellable = Boolean(offer && !contract && offer.status !== 'CANCELLED');
-  const readyForOffer = Boolean(policy && counterparties?.length && counterpartyId);
+  const readyForOffer = Boolean(policy && selectedCounterparty && selectedCounterparty.partyType !== 'UNCLASSIFIED');
 
   return (
     <>
@@ -230,17 +266,19 @@ export function OfferWorkspace() {
       {error ? <div className="feedback critical" role="alert"><strong>Não foi possível concluir</strong><span>{error}</span>{bootstrapFailed ? <Button type="button" variant="tertiary" size="sm" onClick={() => setBootstrapAttempt((current) => current + 1)} disabled={pending !== null}>Tentar novamente</Button> : null}</div> : null}
       {notice ? <div className="feedback positive" role="status"><strong>Alteração salva</strong><span>{notice}</span></div> : null}
 
-      {counterparties?.length === 0 ? (
+      {counterparties?.length === 0 || showCounterpartyForm ? (
         <section className="setup-panel" aria-labelledby="primeira-contraparte">
           <div>
-            <p className="section-kicker">CONFIGURAÇÃO INICIAL · 1 DE 2</p>
-            <h2 id="primeira-contraparte">Cadastre a primeira contraparte</h2>
+            <p className="section-kicker">{counterparties?.length === 0 ? 'CONFIGURAÇÃO INICIAL · 1 DE 2' : 'CADASTRO COMERCIAL'}</p>
+            <h2 id="primeira-contraparte">{counterparties?.length === 0 ? 'Cadastre a primeira contraparte' : 'Nova contraparte'}</h2>
             <p>Use os dados reais da empresa ou do produtor. Nenhum cadastro fictício será criado automaticamente.</p>
           </div>
           <form onSubmit={createCounterparty} className="setup-form">
             <Field label="Razão social" required><input name="legalName" placeholder="Nome jurídico da contraparte" minLength={3} maxLength={200} required /></Field>
+            <Field label="Perfil da contraparte" required><select name="partyType" defaultValue="" required><option value="" disabled>Selecione o perfil</option><option value="PERSON">Pessoa física</option><option value="COMPANY">Pessoa jurídica</option><option value="COOPERATIVE">Cooperativa</option></select></Field>
             <Field label="CPF ou CNPJ" required hint="Digite somente os dados da contraparte que você está cadastrando."><input name="taxId" inputMode="numeric" placeholder="00.000.000/0000-00" minLength={11} maxLength={18} required /></Field>
             <Button type="submit" disabled={pending !== null}>{pending === 'counterparty-save' ? 'Salvando…' : 'Cadastrar contraparte'}</Button>
+            {counterparties && counterparties.length > 0 ? <Button type="button" variant="tertiary" onClick={() => setShowCounterpartyForm(false)} disabled={pending !== null}>Cancelar</Button> : null}
           </form>
         </section>
       ) : null}
@@ -253,9 +291,20 @@ export function OfferWorkspace() {
         </div>
       ) : null}
 
+      {selectedCounterparty?.partyType === 'UNCLASSIFIED' ? (
+        <form onSubmit={classifyCounterparty} className="onboarding-note">
+          <span>!</span>
+          <div><strong>Classificar {selectedCounterparty.legalName}</strong><p>Documento de {selectedCounterparty.taxIdLength} dígitos, final {selectedCounterparty.taxIdLast4}. Confirme o perfil sem inferência automática.</p></div>
+          <select aria-label="Perfil da contraparte" value={profileType} onChange={(event) => setProfileType(event.target.value as 'PERSON' | 'COMPANY' | 'COOPERATIVE')}>
+            <option value="PERSON">Pessoa física</option><option value="COMPANY">Pessoa jurídica</option><option value="COOPERATIVE">Cooperativa</option>
+          </select>
+          <Button type="submit" disabled={pending !== null}>Confirmar perfil</Button>
+        </form>
+      ) : null}
+
       <div className="offer-layout" id="nova-oferta">
         <section className="offer-form-panel">
-          <form onSubmit={saveOffer}>
+          <form key={formResetKey} onSubmit={saveOffer}>
             <FormSection number={1} title="Contraparte" hint="Cadastro pertencente ao tenant atual">
               <Field label="Contraparte" required className="field-span-2">
                 <select name="counterpartyId" value={counterpartyId} onChange={(event) => setCounterpartyId(event.target.value)} required disabled={!editable || !counterparties?.length}>
@@ -264,10 +313,12 @@ export function OfferWorkspace() {
                 </select>
               </Field>
               <Field label="Origem do cadastro" source="Rastreável"><input value="Cadastro do tenant" disabled /></Field>
+              {counterparties && counterparties.length > 0 ? <Button type="button" variant="tertiary" onClick={() => setShowCounterpartyForm(true)} disabled={pending !== null}>Nova contraparte</Button> : null}
+              {selectedCounterparty?.partyType === 'UNCLASSIFIED' ? <div className="field-span-2 feedback critical">Esta contraparte foi cadastrada antes dos perfis. Confirme o tipo abaixo para criar nova oferta.</div> : null}
             </FormSection>
 
-            <FormSection number={2} title="Condição comercial" hint="Milho · compra com entrega futura">
-              <Field label="Commodity" source="Escopo do piloto"><input value="Milho" disabled /></Field>
+            <FormSection number={2} title="Condição comercial" hint="Compra com entrega futura · soja ou milho">
+              <Field label="Commodity" source="Escopo do MVP"><select name="commodity" value={commodity} onChange={(event) => setCommodity(event.target.value as Commodity)} disabled={Boolean(offer)}><option value="MILHO">Milho</option><option value="SOJA">Soja</option></select></Field>
               <Field label="Unidade" source="Catálogo do piloto"><input value="Saca de 60 kg" disabled /></Field>
               <DecimalField name="quantitySc" label="Quantidade" suffix="sc" defaultValue="0" fractionDigits={0} required disabled={!editable} hint="Informe o volume negociado em sacas." />
               <Field label="Início da entrega" required><input name="deliveryStart" type="date" required disabled={!editable} /></Field>
@@ -284,6 +335,7 @@ export function OfferWorkspace() {
             <div className="form-action-bar">
               <div><strong>{readyForOffer ? 'Pronto para calcular' : 'Configuração inicial pendente'}</strong><span>Cada recálculo preserva a versão anterior do cenário.</span></div>
               {editable ? <Button type="submit" disabled={pending !== null || !readyForOffer}>{pending === 'save' ? 'Calculando…' : offer ? 'Salvar nova versão' : 'Registrar e calcular'}</Button> : null}
+              {offer ? <Button type="button" variant="tertiary" onClick={startNewOffer} disabled={pending !== null}>Nova oferta</Button> : null}
             </div>
           </form>
         </section>
@@ -330,11 +382,11 @@ export function OfferWorkspace() {
       <section className="policy-section" id="politica-margem">
         <div className="policy-intro">
           <p className="section-kicker">GOVERNANÇA COMERCIAL</p>
-          <h2>Política de margem do milho</h2>
+          <h2>Política de margem: {commodity === 'MILHO' ? 'milho' : 'soja'}</h2>
           <p>A publicação cria uma nova versão. Ofertas já calculadas preservam os limites usados no cenário.</p>
           {policy ? <Status tone="positive">Versão {policy.version} vigente</Status> : <Status tone="warning">Ainda não configurada</Status>}
         </div>
-        <form key={policy?.version ?? 'new-policy'} onSubmit={configurePolicy} className="policy-form">
+        <form key={`${commodity}-${policy?.version ?? 'new-policy'}`} onSubmit={configurePolicy} className="policy-form">
           <DecimalField name="autoApprovalMarginPerSc" label="Margem para aprovação automática" prefix="R$" suffix="/sc" defaultValue={policy?.autoApprovalMarginPerSc ?? '0'} emptyWhenZero={!policy} required hint="Acima deste valor, a oferta segue sem exceção." />
           <DecimalField name="absoluteFloorMarginPerSc" label="Piso absoluto de margem" prefix="R$" suffix="/sc" defaultValue={policy?.absoluteFloorMarginPerSc ?? '0'} emptyWhenZero={!policy} required hint="Abaixo deste valor, a submissão é bloqueada." />
           <div className="policy-actions"><span>O limite automático deve ser igual ou maior que o piso absoluto.</span><Button type="submit" disabled={pending !== null}>{pending === 'policy-save' ? 'Publicando…' : policy ? 'Publicar nova versão' : 'Publicar primeira política'}</Button></div>
@@ -358,6 +410,8 @@ function readableError(value: unknown) {
   const code = Array.isArray(value) ? value.join(' · ') : String(value ?? '');
   const messages: Record<string, string> = {
     COUNTERPARTY_TAX_ID_ALREADY_EXISTS: 'Já existe uma contraparte com este CPF ou CNPJ.',
+    COUNTERPARTY_PROFILE_REQUIRED: 'Confirme se a contraparte é pessoa física, jurídica ou cooperativa antes de registrar a oferta.',
+    PARTY_TYPE_TAX_ID_MISMATCH: 'O perfil selecionado não corresponde ao documento cadastrado.',
     AUTO_APPROVAL_BELOW_ABSOLUTE_FLOOR: 'A margem de aprovação automática não pode ficar abaixo do piso absoluto.',
     MARGIN_BELOW_ABSOLUTE_FLOOR: 'A margem calculada ficou abaixo do piso absoluto da política.',
     CAPABILITY_NOT_FOUND: 'Seu usuário não possui permissão para executar esta ação.',

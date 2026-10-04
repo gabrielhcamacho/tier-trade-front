@@ -131,7 +131,7 @@ export function daysBetween(start: string, end: string): number {
 }
 
 export function commodityLabel(value: string): string {
-  return value === 'MILHO' ? 'Milho' : value;
+  return value === 'MILHO' ? 'Milho' : value === 'SOJA' ? 'Soja' : value;
 }
 
 export function unitLabel(value: string): string {

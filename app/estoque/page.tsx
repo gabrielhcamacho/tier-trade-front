@@ -168,7 +168,7 @@ function LotCard({ lot }: { lot: InventoryLot }) {
 }
 
 function commodityLabel(value: string): string {
-  return value === 'MILHO' ? 'Milho' : value;
+  return value === 'MILHO' ? 'Milho' : value === 'SOJA' ? 'Soja' : value;
 }
 
 function ownershipLabel(value: string): string {

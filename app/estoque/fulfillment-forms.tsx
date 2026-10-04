@@ -28,6 +28,7 @@ export function FulfillmentForms({ data }: { data: FulfillmentData }) {
         <input type="hidden" name="contractId" value={editingId} />
         <Field label="Contraparte" required><select name="counterpartyId" defaultValue={editing?.counterparty_id ?? ''} required><option value="" disabled>Selecione</option>{data.counterparties.map((item) => <option value={item.id} key={item.id}>{item.legal_name}</option>)}</select></Field>
         <Field label="Referência" required><input name="reference" defaultValue={editing?.reference ?? ''} placeholder="CV-2026-0043" required /></Field>
+        <Field label="Commodity" required><select name="commodity" defaultValue={editing?.commodity ?? 'MILHO'} required><option value="MILHO">Milho</option><option value="SOJA">Soja</option></select></Field>
         <DecimalField name="quantityKg" label="Volume contratado" suffix="kg" defaultValue={editing?.quantity_kg ?? '0'} fractionDigits={3} emptyWhenZero={!editing} required />
         <DecimalField name="salePricePerKg" label="Preço de venda" prefix="R$" suffix="/kg" defaultValue={editing?.sale_price_per_kg ?? '0'} fractionDigits={6} emptyWhenZero={!editing} required />
         <Field label="Destino" required><input name="destinationCode" defaultValue={editing?.destination_code ?? ''} placeholder="IND_SP_01" required /></Field>

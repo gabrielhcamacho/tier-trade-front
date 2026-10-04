@@ -95,7 +95,7 @@ export function RiskWorkspaceView({ data }: { data: RiskWorkspace }) {
   );
 }
 
-function commodityLabel(value: string): string { return value === 'MILHO' ? 'Milho' : value; }
+function commodityLabel(value: string): string { return value === 'MILHO' ? 'Milho' : value === 'SOJA' ? 'Soja' : value; }
 function formatPercent(value: string): string { return `${new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value))}%`; }
 function formatSignedWeight(value: string): string { return `${Number(value) >= 0 ? '+' : '−'} ${formatWeight(String(Math.abs(Number(value))))}`; }
 function formatDateTime(value: string): string { return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo' }).format(new Date(value)); }
