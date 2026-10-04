@@ -31,7 +31,7 @@ export function ReceiptWorkspace({ loadId, status, receipt }: {
 
   if (status === 'SCHEDULED') {
     return (
-      <section className="detail-section receiving-start-section">
+      <section className="detail-section receiving-start-section" id="recebimento">
         <header><div><p className="section-kicker">RECEBIMENTO</p><h2>Chegada da carga</h2></div></header>
         <div className="operational-callout">
           <div><strong>Pronta para iniciar</strong><p>Ao iniciar, a carga entra em recebimento e a pesagem fica disponível para registro.</p></div>
@@ -45,7 +45,7 @@ export function ReceiptWorkspace({ loadId, status, receipt }: {
   if (status === 'CANCELLED') return null;
 
   return (
-    <section className="detail-section receipt-section">
+    <section className="detail-section receipt-section" id="recebimento">
       <header>
         <div><p className="section-kicker">RECEBIMENTO E QUALIDADE</p><h2>{receipt ? 'Registro vigente' : 'Registrar pesagem e classificação'}</h2></div>
         {receipt ? <Status tone={receipt.qualityDecision === 'ACCEPTED' ? 'positive' : 'warning'}>{receipt.qualityDecision === 'ACCEPTED' ? 'Aceita' : 'Revisão necessária'}</Status> : null}

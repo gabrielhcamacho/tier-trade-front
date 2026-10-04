@@ -128,6 +128,43 @@ export type OccurrenceBoard = {
   summary: { open: number; critical: number; resolved: number };
 };
 
+export type OperationalBoardReceipt = {
+  id: string;
+  version: number;
+  receivedAt: string;
+  inboundInvoiceNumber: string | null;
+  documentWeightKg: string | null;
+  arrivalWeightKg: string | null;
+  consideredWeightKg: string | null;
+  acceptedWeightKg: string | null;
+  scaleTicketNumber: string | null;
+  moisturePct: string | null;
+  impurityPct: string | null;
+  damagedPct: string | null;
+  qualityDecision: 'ACCEPTED' | 'REVIEW_REQUIRED';
+};
+
+export type OperationalBoardItem = ScheduledLoad & {
+  openOccurrences: number;
+  receipt: OperationalBoardReceipt | null;
+};
+
+export type ReceivingBoard = {
+  items: OperationalBoardItem[];
+  summary: { scheduled: number; inReceiving: number; received: number; acceptedWeightKg: string };
+};
+
+export type QualityBoard = {
+  items: OperationalBoardItem[];
+  summary: {
+    awaitingClassification: number;
+    reviewRequired: number;
+    accepted: number;
+    averageMoisturePct: string;
+    averageImpurityPct: string;
+  };
+};
+
 export type ApiResult<T> = { data: T; error: null } | { data: null; error: string };
 
 export async function loadContractLoads(
@@ -150,6 +187,14 @@ export async function loadYardBoard(identityHeaders: Record<string, string>): Pr
 
 export async function loadOccurrenceBoard(identityHeaders: Record<string, string>): Promise<ApiResult<OccurrenceBoard>> {
   return fetchOperational('/v1/operations/occurrences', identityHeaders);
+}
+
+export async function loadReceivingBoard(identityHeaders: Record<string, string>): Promise<ApiResult<ReceivingBoard>> {
+  return fetchOperational('/v1/operations/receiving', identityHeaders);
+}
+
+export async function loadQualityBoard(identityHeaders: Record<string, string>): Promise<ApiResult<QualityBoard>> {
+  return fetchOperational('/v1/operations/quality', identityHeaders);
 }
 
 async function fetchOperational<T>(
@@ -193,4 +238,8 @@ export function loadStatusLabel(value: string): string {
   if (value === 'RECEIVED') return 'Recebida';
   if (value === 'CANCELLED') return 'Cancelada';
   return value;
+}
+
+export function formatPercent(value: string | null): string {
+  return value === null ? '—' : `${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 4 }).format(Number(value))}%`;
 }

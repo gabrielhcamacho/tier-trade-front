@@ -22,7 +22,8 @@ const tabs: Record<Domain, Tab[]> = {
   ],
   operations: [
     { label: 'Agenda de cargas', href: '/cargas' }, { label: 'Pátio', href: '/patio' },
-    { label: 'Recebimento' }, { label: 'Qualidade' }, { label: 'Ocorrências', href: '/ocorrencias' },
+    { label: 'Recebimento', href: '/recebimentos' }, { label: 'Qualidade', href: '/qualidade' },
+    { label: 'Ocorrências', href: '/ocorrencias' },
   ],
   inventory: [
     { label: 'Posição de estoque', href: '/estoque' }, { label: 'Lotes' },
