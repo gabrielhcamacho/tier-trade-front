@@ -1,30 +1,15 @@
 import Link from 'next/link';
 import { AppShell } from '../app-shell';
 import { currentUserContext } from '../../lib/current-user';
-import { loadOffers } from '../../lib/offers';
-import { loadContracts, commodityLabel, formatCurrency, formatQuantity } from '../../lib/contracts';
-import { loadFinance, formatFinancialDate } from '../../lib/finance';
-import { loadRisk, formatWeight } from '../../lib/risk';
-import { loadInventory } from '../../lib/inventory';
-import { projectedMarginExact } from '../../lib/projected-margin';
+import { commodityLabel, formatCurrency, formatQuantity } from '../../lib/contracts';
+import { formatFinancialDate } from '../../lib/finance';
+import { formatWeight } from '../../lib/risk';
+import { loadOverview } from '../../lib/overview';
 import { CommodityFilter } from './commodity-filter';
 
 const tonnes = (kg: number) => `${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 }).format(kg / 1000)} t`;
 const percent = (part: number, total: number) => total > 0 ? Math.min(100, Math.max(0, part / total * 100)) : 0;
 const currency = (value: number | string) => formatCurrency(String(value));
-const micros = (value: string): bigint | null => {
-  const match = /^(-?)(\d+)(?:\.(\d{1,6}))?$/.exec(value);
-  if (!match) return null;
-  const amount = BigInt(match[2]) * BigInt(1_000_000) + BigInt((match[3] ?? '').padEnd(6, '0') || '0');
-  return match[1] ? -amount : amount;
-};
-const exactMoney = (value: bigint): string | null => {
-  if (value % BigInt(10_000) !== BigInt(0)) return null;
-  const cents = value / BigInt(10_000);
-  const absolute = cents < BigInt(0) ? -cents : cents;
-  const whole = (absolute / BigInt(100)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  return `${cents < BigInt(0) ? '-' : ''}R$ ${whole},${String(absolute % BigInt(100)).padStart(2, '0')}`;
-};
 
 function Empty({ title, detail }: { title: string; detail: string }) {
   return <div className="overview-empty"><strong>{title}</strong><span>{detail}</span></div>;
@@ -34,50 +19,41 @@ export default async function CentralPage({ searchParams }: { searchParams: Prom
   const user = await currentUserContext();
   const requested = (await searchParams).commodity;
   const commodity = requested === 'MILHO' || requested === 'SOJA' ? requested : 'ALL';
-  const [offers, contracts, finance, risk, inventory] = await Promise.all([
-    loadOffers(user.identityHeaders), loadContracts(user.identityHeaders), loadFinance(user.identityHeaders),
-    loadRisk(user.identityHeaders), loadInventory(user.identityHeaders),
-  ]);
+  const overview = await loadOverview(user.identityHeaders, commodity);
+  const sources = overview.data?.sources;
+  const offers = { data: sources?.offers ?? null, error: overview.error };
+  const contracts = { portfolio: sources?.contracts ?? null, error: overview.error };
+  const finance = { data: sources?.finance ?? null, error: overview.error };
+  const risk = { data: sources?.risk ?? null, error: overview.error };
+  const inventory = { data: sources?.inventory ?? null, error: overview.error };
   const offerItems = (offers.data?.items ?? []).filter((item) => commodity === 'ALL' || item.commodity === commodity);
   const contractItems = (contracts.portfolio?.items ?? []).filter((item) => commodity === 'ALL' || item.commodity === commodity);
-  const sales = (inventory.data?.salesContracts ?? []).filter((item) => commodity === 'ALL' || item.commodity === commodity);
   const positions = (risk.data?.positions ?? []).filter((item) => commodity === 'ALL' || item.commodity === commodity);
   const approvals = offerItems.filter((item) => item.status === 'IN_APPROVAL');
   const obligations = contractItems.reduce((sum, item) => sum + item.pending_obligations, 0);
   const riskExceptions = positions.filter((item) => item.limit.status === 'EXCEEDED' || item.limit.status === 'WARNING');
-  const contractedKg = contractItems.reduce((sum, item) => sum + Number(item.quantity_sc) * 60, 0);
-  const receivedKg = contractItems.reduce((sum, item) => sum + Number(item.received_weight_kg), 0);
-  const margin = contracts.portfolio ? projectedMarginExact(contractItems) : null;
-  const tenant = contracts.portfolio?.tenant.legalName ?? offers.data?.tenant.legalName ?? finance.data?.tenant.legalName ?? 'Ambiente autenticado';
-  const isDemo = Boolean(contracts.portfolio?.tenant.isDemo ?? offers.data?.tenant.isDemo ?? finance.data?.tenant.isDemo);
+  const contractedKg = Number(overview.data?.indicators.purchaseContractedKg ?? 0);
+  const receivedKg = Number(overview.data?.indicators.purchaseReceivedKg ?? 0);
+  const margin = overview.data?.indicators.projectedMarginAmount;
+  const tenant = overview.data?.tenant.legalName ?? 'Ambiente autenticado';
+  const isDemo = Boolean(overview.data?.tenant.isDemo);
   const errors = [...new Set([offers.error, contracts.error, finance.error, risk.error, inventory.error].filter(Boolean))];
-  const consultedAt = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo' }).format(new Date());
+  const consultedAt = overview.data ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: overview.data.tenant.timezone }).format(new Date(overview.data.assembledAt)) : '—';
 
-  const marginRows = contractItems.map((item) => {
-    const exact = projectedMarginExact([item]);
-    const value = exact ? Number(exact.replace(/[^\d,-]/g, '').replace(/\./g, '').replace(',', '.')) : null;
-    return { item, value, exact };
+  const marginRows = (overview.data?.charts.marginComponents ?? []).flatMap((component) => {
+    const item = contractItems.find((candidate) => candidate.id === component.contractId);
+    if (!item) return [];
+    return [{ item, value: component.amount === null ? null : Number(component.amount),
+      exact: component.amount === null ? null : currency(component.amount) }];
   });
   const maxMargin = Math.max(...marginRows.map((row) => Math.abs(row.value ?? 0)), 0);
-  const volumeRows = [...new Set([...contractItems.map((item) => item.commodity), ...sales.map((item) => item.commodity)])].sort().map((name) => ({
-    name,
-    purchase: contractItems.filter((item) => item.commodity === name).reduce((sum, item) => sum + Number(item.quantity_sc) * 60, 0),
-    received: contractItems.filter((item) => item.commodity === name).reduce((sum, item) => sum + Number(item.received_weight_kg), 0),
-    sold: sales.filter((item) => item.commodity === name).reduce((sum, item) => sum + Number(item.quantity_kg), 0),
-    dispatched: sales.filter((item) => item.commodity === name).reduce((sum, item) => sum + Number(item.dispatched_kg), 0),
+  const volumeRows = (overview.data?.charts.byCommodity ?? []).map((row) => ({
+    name: row.commodity,
+    purchase: Number(row.purchaseContractedKg), received: Number(row.purchaseReceivedKg),
+    sold: Number(row.salesContractedKg), dispatched: Number(row.salesDispatchedKg),
   }));
-  const due = new Map<string, { inflow: bigint; outflow: bigint }>();
-  let impreciseDueCount = 0;
-  for (const event of finance.data?.events ?? []) {
-    if (!event.title?.dueDate || Number(event.title.outstandingAmount) <= 0) continue;
-    const amount = micros(event.title.outstandingAmount);
-    if (amount === null || amount % BigInt(10_000) !== BigInt(0)) { impreciseDueCount++; continue; }
-    const current = due.get(event.title.dueDate) ?? { inflow: BigInt(0), outflow: BigInt(0) };
-    current[event.direction === 'INFLOW' ? 'inflow' : 'outflow'] += amount;
-    due.set(event.title.dueDate, current);
-  }
-  const dueRows = [...due].sort(([a], [b]) => a.localeCompare(b)).slice(0, 8);
-  const maxDue = Math.max(...dueRows.flatMap(([, value]) => [Number(value.inflow), Number(value.outflow)]), 0);
+  const dueRows = (overview.data?.charts.dueDates ?? []).slice(0, 8);
+  const maxDue = Math.max(...dueRows.flatMap((row) => [Number(row.inflowAmount), Number(row.outflowAmount)]), 0);
   const exceptions = [
     ...approvals.map((item) => ({ id: item.id, title: `Oferta aguardando aprovação · ${item.counterparty_name}`, impact: `${formatQuantity(item.quantity_sc)} sc`, owner: 'Alçada comercial', href: `/?status=IN_APPROVAL&commodity=${item.commodity}` })),
     ...riskExceptions.map((item) => ({ id: item.commodity, title: `Limite de posição ${item.limit.status === 'EXCEEDED' ? 'excedido' : 'em atenção'} · ${commodityLabel(item.commodity)}`, impact: item.limit.usagePct ? `${item.limit.usagePct}% utilizado` : formatWeight(item.physical.netContractualKg), owner: 'Risco e direção', href: '/risco' })),
@@ -100,7 +76,7 @@ export default async function CentralPage({ searchParams }: { searchParams: Prom
     {isDemo ? <div className="overview-demo-note">Ambiente de demonstração · dados salvos no backend deste tenant, editáveis e isolados das outras contas.</div> : null}
     {errors.length ? <div className="feedback critical"><strong>Dados parciais</strong><span>{errors.join(' ')}</span></div> : null}
     <section className="overview-kpis" aria-label="Indicadores prioritários">
-      <Link href="/contratos"><small>Margem projetada · contratos</small><strong>{contractItems.length ? margin ?? '—' : '—'}</strong><span>{contractItems.length ? margin ? `${contractItems.length} contrato(s) no recorte` : 'Arredondamento pendente' : contracts.portfolio ? 'Sem contratos no recorte' : 'Fonte indisponível'}</span></Link>
+      <Link href="/contratos"><small>Margem projetada · contratos</small><strong>{margin === null || margin === undefined ? '—' : currency(margin)}</strong><span>{contractItems.length ? margin !== null ? `${contractItems.length} contrato(s) no recorte` : 'Arredondamento pendente' : contracts.portfolio ? 'Sem contratos no recorte' : 'Fonte indisponível'}</span></Link>
       <Link href="/contratos"><small>Execução de compras</small><strong>{contracts.portfolio && contractedKg > 0 ? `${Math.round(percent(receivedKg, contractedKg))}%` : '—'}</strong><span>{contracts.portfolio && contractedKg > 0 ? `${tonnes(receivedKg)} de ${tonnes(contractedKg)}` : contracts.portfolio ? 'Sem volume no recorte' : 'Fonte indisponível'}</span></Link>
       <Link href="/financeiro"><small>Caixa realizado · líquido</small><strong>{finance.data ? currency(finance.data.summary.netCashFlowAmount) : '—'}</strong><span>Recebido − pago · consolidado</span></Link>
       <Link href="/financeiro"><small>Contas a receber</small><strong>{finance.data ? currency(finance.data.summary.receivableAmount) : '—'}</strong><span>Saldo em aberto · consolidado</span></Link>
@@ -112,8 +88,8 @@ export default async function CentralPage({ searchParams }: { searchParams: Prom
         <p className="overview-method">Memória: quantidade em sc × margem projetada por sc, valor de cada contrato retornado pela API. Frações de centavo não são arredondadas silenciosamente. A ponte prevista → realizada depende do motor de margem realizada e das causas homologadas.</p>
       </section>
       <div className="overview-chart-pair"><section className="overview-section"><div className="overview-section-title"><div><h2>Vencimentos conhecidos</h2><p>Saldo aberto por data · recebimentos e obrigações</p></div><Link href="/financeiro">Financeiro →</Link></div>
-        {finance.data && dueRows.length ? <div className="overview-due-bars">{dueRows.map(([date, amounts]) => <div className="overview-due-row" key={date}><time dateTime={date}>{formatFinancialDate(date)}</time><div><i style={{ width: `${percent(Number(amounts.inflow), maxDue)}%` }} title={`A receber ${exactMoney(amounts.inflow)}`} /><i className="outflow" style={{ width: `${percent(Number(amounts.outflow), maxDue)}%` }} title={`A pagar ${exactMoney(amounts.outflow)}`} /></div><strong>{exactMoney(amounts.inflow - amounts.outflow) ?? '—'}</strong></div>)}<div className="overview-legend"><span>■ A receber</span><span>■ A pagar</span></div></div> : <Empty title="Sem títulos abertos" detail="Os vencimentos surgem após emissão de títulos e obrigações." />}
-        <p className="overview-method">Não é projeção de caixa: não inclui saldo bancário inicial nem movimentos futuros sem título.{impreciseDueCount ? ` ${impreciseDueCount} título(s) com fração de centavo não exibido(s); aguardam política de arredondamento.` : ''}</p>
+        {finance.data && dueRows.length ? <div className="overview-due-bars">{dueRows.map((row) => <div className="overview-due-row" key={row.date}><time dateTime={row.date}>{formatFinancialDate(row.date)}</time><div><i style={{ width: `${percent(Number(row.inflowAmount), maxDue)}%` }} title={`A receber ${row.inflowAmount === null ? '—' : currency(row.inflowAmount)}`} /><i className="outflow" style={{ width: `${percent(Number(row.outflowAmount), maxDue)}%` }} title={`A pagar ${row.outflowAmount === null ? '—' : currency(row.outflowAmount)}`} /></div><strong>{row.netKnownAmount === null ? '—' : currency(row.netKnownAmount)}</strong></div>)}<div className="overview-legend"><span>■ A receber</span><span>■ A pagar</span></div></div> : <Empty title="Sem títulos abertos" detail="Os vencimentos surgem após emissão de títulos e obrigações." />}
+        <p className="overview-method">Não é projeção de caixa: não inclui saldo bancário inicial nem movimentos futuros sem título.</p>
       </section><section className="overview-section"><div className="overview-section-title"><div><h2>Contratado × executado</h2><p>Toneladas · recebimentos de compra e expedições de venda</p></div><Link href="/estoque">Estoque →</Link></div>
         {contracts.portfolio && inventory.data && volumeRows.length ? <div className="overview-volume-bars">{volumeRows.map((row) => <div className="overview-volume-group" key={row.name}><strong>{commodityLabel(row.name)}</strong><div><span>Compra</span><div className="overview-volume-track"><i /><b style={{ width: `${percent(row.received, row.purchase)}%` }} /></div><em>{tonnes(row.received)} / {tonnes(row.purchase)}</em></div>{row.sold > 0 ? <div><span>Venda</span><div className="overview-volume-track"><i /><b style={{ width: `${percent(row.dispatched, row.sold)}%` }} /></div><em>{tonnes(row.dispatched)} / {tonnes(row.sold)}</em></div> : null}</div>)}<div className="overview-legend"><span>□ Contratado</span><span>■ Executado</span></div></div> : <Empty title="Sem execução no recorte" detail="Contratos e movimentos físicos aparecerão aqui." />}
         <p className="overview-method">Compra em sc × 60 kg; execução conforme pesagens. Venda conforme contratos e expedições registradas.</p>
