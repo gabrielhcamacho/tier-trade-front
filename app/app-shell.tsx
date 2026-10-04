@@ -43,7 +43,7 @@ export function AppShell({
         </div>
       </header>
 
-      {activeDomain === 'central' ? <ContextNav /> : null}
+      <ContextNav activeDomain={activeDomain} />
 
       <PageSectionRail />
       <main id="conteudo">{children}</main>

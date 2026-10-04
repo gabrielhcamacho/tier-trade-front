@@ -18,8 +18,8 @@ export function NavigationProgress() {
       if (destination.origin !== window.location.origin || destination.pathname === window.location.pathname) return;
       setPending(true);
     };
-    document.addEventListener('click', onClick);
-    return () => document.removeEventListener('click', onClick);
+    document.addEventListener('click', onClick, true);
+    return () => document.removeEventListener('click', onClick, true);
   }, []);
 
   useEffect(() => {
@@ -28,5 +28,5 @@ export function NavigationProgress() {
     return () => window.clearTimeout(timeout);
   }, [pending]);
 
-  return <div className="navigation-progress" data-pending={pending ? 'true' : undefined} role="status" aria-live="polite"><span className="navigation-progress-bar" /><span className="sr-only">{pending ? 'Abrindo página…' : ''}</span></div>;
+  return <div className="navigation-progress" data-pending={pending ? 'true' : undefined} role="status" aria-live="polite"><span className="navigation-progress-bar" /><span className="navigation-progress-message" aria-hidden={!pending}><i aria-hidden="true" />{pending ? 'Abrindo página…' : ''}</span></div>;
 }

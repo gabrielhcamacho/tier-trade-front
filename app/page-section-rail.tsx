@@ -50,10 +50,12 @@ export function PageSectionRail() {
   const sections = sectionsByPath[pathname];
   const [activeId, setActiveId] = useState('');
   const [expanded, setExpanded] = useState(false);
+  const [availableIds, setAvailableIds] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!sections) return;
+    if (!sections) { setAvailableIds([]); return; }
     const available = sections.filter(({ id }) => document.getElementById(id));
+    setAvailableIds(available.map(({ id }) => id));
     if (available.length < 2) return;
 
     let frame = 0;
@@ -82,7 +84,8 @@ export function PageSectionRail() {
     };
   }, [sections]);
 
-  if (!sections) return null;
+  const visibleSections = sections?.filter(({ id }) => availableIds.includes(id));
+  if (!visibleSections || visibleSections.length < 2) return null;
 
   return (
     <nav
@@ -93,14 +96,21 @@ export function PageSectionRail() {
       onMouseLeave={() => setExpanded(false)}
       onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setExpanded(false); }}
     >
-      <button type="button" className="page-section-rail-trigger" aria-expanded={expanded} aria-controls="page-section-rail-links" aria-label={expanded ? 'Recolher atalhos' : 'Mostrar atalhos desta página'} onClick={() => setExpanded((current) => window.matchMedia('(hover: hover)').matches ? true : !current)}>
-        <span aria-hidden="true">{sections.map(({ id }) => <i key={id} data-active={activeId === id ? 'true' : undefined} />)}</span>
+      <button type="button" className="page-section-rail-trigger" aria-expanded={expanded} aria-controls="page-section-rail-links" aria-label="Mostrar atalhos desta página" onClick={() => setExpanded((current) => window.matchMedia('(hover: hover)').matches ? true : !current)}>
+        <span aria-hidden="true">≡</span><span className="page-section-rail-heading">Nesta página</span>
       </button>
-      <div id="page-section-rail-links" className="page-section-rail-links" aria-hidden={!expanded}>
-        <strong>Nesta página</strong>
-        {sections.map(({ id, label }) => (
-          <a key={id} href={`#${id}`} tabIndex={expanded ? 0 : -1} aria-current={activeId === id ? 'location' : undefined} onClick={() => { setActiveId(id); setExpanded(false); }}>
-            <span aria-hidden="true" />{label}
+      <div id="page-section-rail-links" className="page-section-rail-links">
+        {visibleSections.map(({ id, label }) => (
+          <a key={id} href={`#${id}`} aria-label={label} title={expanded ? undefined : label} aria-current={activeId === id ? 'location' : undefined} onClick={(event) => {
+            const section = document.getElementById(id);
+            if (!section) return;
+            event.preventDefault();
+            window.history.replaceState(null, '', `#${id}`);
+            section.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+            setActiveId(id);
+            setExpanded(false);
+          }}>
+            <span className="page-section-rail-mark" aria-hidden="true" /><span className="page-section-rail-label">{label}</span>
           </a>
         ))}
       </div>
