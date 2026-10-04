@@ -19,6 +19,7 @@ export function ReceiptWorkspace({ loadId, status, receipt }: {
 }) {
   const router = useRouter();
   const [weighingMode, setWeighingMode] = useState(receipt?.weighingMode ?? 'SCALE');
+  const [qualityDecision, setQualityDecision] = useState(receipt?.qualityDecision ?? 'REVIEW_REQUIRED');
   const [offset, setOffset] = useState(0);
   const [startState, startAction, starting] = useActionState(startReceivingAction, INITIAL_STATE);
   const [receiptState, receiptAction, saving] = useActionState(recordReceiptAction, INITIAL_STATE);
@@ -51,9 +52,13 @@ export function ReceiptWorkspace({ loadId, status, receipt }: {
       </header>
       {receipt ? (
         <dl className="receipt-summary">
+          <div><dt>NF de entrada</dt><dd>{receipt.inboundInvoiceNumber ?? 'Não informada'}{receipt.inboundInvoiceSeries ? ` · série ${receipt.inboundInvoiceSeries}` : ''}</dd></div>
+          <div><dt>Peso na NF</dt><dd>{receipt.documentWeightKg ? `${formatNumber(receipt.documentWeightKg)} kg` : 'Não informado'}</dd></div>
           <div><dt>Peso bruto</dt><dd>{formatNumber(receipt.grossWeightKg)} kg</dd></div>
           <div><dt>Tara</dt><dd>{formatNumber(receipt.tareWeightKg)} kg</dd></div>
-          <div className="receipt-net"><dt>Peso líquido</dt><dd>{formatNumber(receipt.netWeightKg)} kg</dd></div>
+          <div className="receipt-net"><dt>Peso de chegada</dt><dd>{formatNumber(receipt.arrivalWeightKg)} kg</dd></div>
+          <div><dt>Peso considerado</dt><dd>{receipt.consideredWeightKg ? `${formatNumber(receipt.consideredWeightKg)} kg` : 'Não informado'}</dd></div>
+          <div><dt>Peso aceito</dt><dd>{receipt.acceptedWeightKg ? `${formatNumber(receipt.acceptedWeightKg)} kg` : 'Em revisão'}</dd></div>
           <div><dt>Umidade</dt><dd>{formatNumber(receipt.moisturePct)}%</dd></div>
           <div><dt>Impurezas</dt><dd>{formatNumber(receipt.impurityPct)}%</dd></div>
           <div><dt>Avariados</dt><dd>{formatNumber(receipt.damagedPct)}%</dd></div>
@@ -65,6 +70,16 @@ export function ReceiptWorkspace({ loadId, status, receipt }: {
         <Field label="Data e horário do recebimento" required>
           <input name="receivedAtLocal" type="datetime-local" defaultValue={toLocalInput(receipt?.receivedAt)} required />
         </Field>
+        <Field label="Número da NF de entrada" required>
+          <input name="inboundInvoiceNumber" defaultValue={receipt?.inboundInvoiceNumber ?? ''} maxLength={40} required />
+        </Field>
+        <Field label="Série da NF" required>
+          <input name="inboundInvoiceSeries" defaultValue={receipt?.inboundInvoiceSeries ?? ''} maxLength={20} required />
+        </Field>
+        <Field label="Chave de acesso da NF-e" className="field-span-2">
+          <input name="inboundInvoiceAccessKey" inputMode="numeric" defaultValue={receipt?.inboundInvoiceAccessKey ?? ''} minLength={44} maxLength={44} placeholder="44 dígitos, quando disponível" />
+        </Field>
+        <DecimalField name="documentWeightKg" label="Peso líquido informado na NF" suffix="kg" defaultValue={receipt?.documentWeightKg ?? '0'} fractionDigits={3} emptyWhenZero required />
         <Field label="Origem da pesagem" required>
           <select name="weighingMode" value={weighingMode} onChange={(event) => setWeighingMode(event.target.value as 'SCALE' | 'MANUAL_CONTINGENCY')}>
             <option value="SCALE">Balança / ticket</option>
@@ -73,6 +88,7 @@ export function ReceiptWorkspace({ loadId, status, receipt }: {
         </Field>
         <DecimalField name="grossWeightKg" label="Peso bruto" suffix="kg" defaultValue={receipt?.grossWeightKg ?? '0'} fractionDigits={3} emptyWhenZero required />
         <DecimalField name="tareWeightKg" label="Tara" suffix="kg" defaultValue={receipt?.tareWeightKg ?? '0'} fractionDigits={3} emptyWhenZero required />
+        <DecimalField name="consideredWeightKg" label="Peso considerado" suffix="kg" defaultValue={receipt?.consideredWeightKg ?? receipt?.arrivalWeightKg ?? '0'} fractionDigits={3} emptyWhenZero required />
         {weighingMode === 'SCALE' ? (
           <Field label="Número do ticket" required className="field-span-2"><input name="scaleTicketNumber" defaultValue={receipt?.scaleTicketNumber ?? ''} maxLength={80} required /></Field>
         ) : (
@@ -82,13 +98,19 @@ export function ReceiptWorkspace({ loadId, status, receipt }: {
         <DecimalField name="impurityPct" label="Impurezas" suffix="%" defaultValue={receipt?.impurityPct ?? '0'} fractionDigits={4} emptyWhenZero required />
         <DecimalField name="damagedPct" label="Avariados" suffix="%" defaultValue={receipt?.damagedPct ?? '0'} fractionDigits={4} emptyWhenZero required />
         <Field label="Decisão humana de qualidade" required>
-          <select name="qualityDecision" defaultValue={receipt?.qualityDecision ?? 'REVIEW_REQUIRED'}>
+          <select name="qualityDecision" value={qualityDecision} onChange={(event) => setQualityDecision(event.target.value as 'ACCEPTED' | 'REVIEW_REQUIRED')}>
             <option value="REVIEW_REQUIRED">Manter em revisão</option>
             <option value="ACCEPTED">Aceitar recebimento</option>
           </select>
         </Field>
+        {qualityDecision === 'ACCEPTED' ? (
+          <DecimalField name="acceptedWeightKg" label="Peso aceito para estoque" suffix="kg" defaultValue={receipt?.acceptedWeightKg ?? receipt?.consideredWeightKg ?? '0'} fractionDigits={3} emptyWhenZero required />
+        ) : null}
+        <Field label="Justificativa de divergência" className="field-span-2">
+          <textarea name="weightDecisionReason" defaultValue={receipt?.weightDecisionReason ?? ''} minLength={10} maxLength={500} placeholder="Obrigatória quando qualquer um dos pesos for diferente." />
+        </Field>
         <Field label="Observações" className="field-span-2"><textarea name="notes" defaultValue={receipt?.notes ?? ''} maxLength={1000} /></Field>
-        <div className="quality-policy-note field-span-2"><strong>Sem desconto automático</strong><p>Os índices ficam registrados e versionados. O desconto será calculado somente quando a tabela de qualidade do piloto estiver homologada.</p></div>
+        <div className="quality-policy-note field-span-2"><strong>Conciliação explícita, sem regra presumida</strong><p>NF, balança, peso considerado e peso aceito ficam separados e versionados. Tolerância, desconto e tributos só serão calculados após homologação das regras do piloto.</p></div>
         {receiptState.message ? <div className="field-span-2"><ActionFeedback state={receiptState} /></div> : null}
         <div className="receipt-form-actions field-span-2"><Button type="submit" disabled={saving}>{saving ? 'Salvando…' : receipt ? 'Salvar nova versão' : 'Registrar recebimento'}</Button></div>
       </form>

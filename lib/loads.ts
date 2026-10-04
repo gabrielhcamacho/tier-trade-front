@@ -18,6 +18,14 @@ export type LoadReceipt = {
   grossWeightKg: string;
   tareWeightKg: string;
   netWeightKg: string;
+  arrivalWeightKg: string;
+  inboundInvoiceNumber: string | null;
+  inboundInvoiceSeries: string | null;
+  inboundInvoiceAccessKey: string | null;
+  documentWeightKg: string | null;
+  consideredWeightKg: string | null;
+  acceptedWeightKg: string | null;
+  weightDecisionReason: string | null;
   weighingMode: 'SCALE' | 'MANUAL_CONTINGENCY';
   scaleTicketNumber: string | null;
   contingencyReason: string | null;

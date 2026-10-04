@@ -11,6 +11,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   LOAD_NOT_SCHEDULED: 'Somente uma carga programada pode iniciar o recebimento.',
   LOAD_NOT_IN_RECEIVING: 'Inicie o recebimento antes de registrar a pesagem.',
   GROSS_WEIGHT_MUST_EXCEED_TARE: 'O peso bruto deve ser maior que a tara.',
+  WEIGHT_DIFFERENCE_REASON_REQUIRED: 'Explique por que os pesos documental, de chegada, considerado ou aceito são diferentes.',
   LOAD_EXCEEDS_CONTRACT_BALANCE: 'O peso informado ultrapassa o saldo disponível do contrato.',
   LOAD_OUTSIDE_CONTRACT_DELIVERY_WINDOW: 'A data está fora da janela de entrega do contrato.',
   LOAD_HAS_RECEIPT: 'Esta carga já possui pesagem registrada e não pode ser reprogramada ou cancelada.',
@@ -52,20 +53,28 @@ export async function recordReceiptAction(
   formData: FormData,
 ): Promise<ReceiptActionState> {
   const weighingMode = String(formData.get('weighingMode') ?? 'SCALE');
+  const qualityDecision = String(formData.get('qualityDecision') ?? 'REVIEW_REQUIRED');
   const payload = {
     receivedAt: localDateTimeWithOffset(
       String(formData.get('receivedAtLocal') ?? ''),
       Number(formData.get('timezoneOffsetMinutes') ?? 0),
     ),
+    inboundInvoiceNumber: String(formData.get('inboundInvoiceNumber') ?? '').trim(),
+    inboundInvoiceSeries: String(formData.get('inboundInvoiceSeries') ?? '').trim(),
+    inboundInvoiceAccessKey: nullableDigits(formData.get('inboundInvoiceAccessKey')),
+    documentWeightKg: decimal(formData.get('documentWeightKg')),
     grossWeightKg: decimal(formData.get('grossWeightKg')),
     tareWeightKg: decimal(formData.get('tareWeightKg')),
+    consideredWeightKg: decimal(formData.get('consideredWeightKg')),
+    acceptedWeightKg: qualityDecision === 'ACCEPTED' ? decimal(formData.get('acceptedWeightKg')) : null,
+    weightDecisionReason: nullable(formData.get('weightDecisionReason')),
     weighingMode,
     scaleTicketNumber: weighingMode === 'SCALE' ? nullable(formData.get('scaleTicketNumber')) : null,
     contingencyReason: weighingMode === 'MANUAL_CONTINGENCY' ? nullable(formData.get('contingencyReason')) : null,
     moisturePct: decimal(formData.get('moisturePct')),
     impurityPct: decimal(formData.get('impurityPct')),
     damagedPct: decimal(formData.get('damagedPct')),
-    qualityDecision: String(formData.get('qualityDecision') ?? 'REVIEW_REQUIRED'),
+    qualityDecision,
     notes: nullable(formData.get('notes')),
   };
   return mutateLoad(formData, 'receipt', 'PUT', payload, 'Pesagem e classificação registradas.');
@@ -111,6 +120,11 @@ function decimal(value: FormDataEntryValue | null): string {
 function nullable(value: FormDataEntryValue | null): string | null {
   const text = String(value ?? '').trim();
   return text || null;
+}
+
+function nullableDigits(value: FormDataEntryValue | null): string | null {
+  const digits = String(value ?? '').replace(/\D/g, '');
+  return digits || null;
 }
 
 function localDateTimeWithOffset(local: string, offsetMinutes: number): string {
