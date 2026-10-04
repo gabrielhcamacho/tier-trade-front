@@ -1,14 +1,15 @@
 import Image from 'next/image';
+import { brandAssets } from './brand-assets';
 
 const logos = {
-  light: '/images/tier-trade-light.png',
-  dark: '/images/tier-trade-dark.png',
+  light: brandAssets.wordmarkOnDark,
+  dark: brandAssets.wordmarkOnLight,
 };
 
 export function BrandLogo({ variant = 'dark' }: { variant?: keyof typeof logos }) {
   return <Image
     className="brand-logo"
-    src={logos[variant]}
+    src={encodeURI(logos[variant])}
     alt="Tier Trade"
     width={2172}
     height={724}

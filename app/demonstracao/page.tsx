@@ -20,7 +20,7 @@ export default async function DemonstrationPage() {
 
   return (
     <AppShell activeDomain="central" userLabel={userLabel}>
-      <header className="page-header demo-catalog-header"><p className="breadcrumbs">Central <span>›</span> Roteiro de demonstração</p><div className="page-header-row"><div><p className="entity-kind">Produto navegável</p><h1>Tier Trade, de ponta a ponta</h1><p className="page-description">Uma sequência visual para apresentar o valor do produto sem depender de integrações ainda não implementadas.</p></div><span className="environment-label">9 momentos · cerca de 12 minutos</span></div></header>
+      <header className="page-header demo-catalog-header"><p className="breadcrumbs"><Link href="/central">Central</Link> <span>›</span> Roteiro de demonstração</p><div className="page-header-row"><div><p className="entity-kind">Produto navegável</p><h1>Tier Trade, de ponta a ponta</h1><p className="page-description">Uma sequência visual para apresentar o valor do produto sem depender de integrações ainda não implementadas.</p><Link className="back-link" href="/central">← Voltar à minha fila</Link></div><span className="environment-label">9 momentos · cerca de 12 minutos</span></div></header>
       <div className="demo-page demo-catalog-page">
         <DemoNotice />
         <section className="demo-story-intro"><div><p className="section-kicker">NARRATIVA SUGERIDA</p><h2>Da oportunidade comercial ao caixa conciliado</h2></div><p>Comece pela fila do trader, avance pela oferta e pelo contrato, mostre a execução física e encerre com estoque, risco e liquidação. Cada tela mantém a referência do objeto de negócio anterior.</p></section>

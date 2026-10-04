@@ -93,7 +93,7 @@ function InventoryWorkspace({ data }: { data: InventoryPosition }) {
 
       <div className="demo-domain-layout">
         <div className="demo-main-stack">
-          <DemoSection kicker="EXECUÇÃO DE VENDA" title="Contrato, alocação e expedição" aside="fluxo conectado de ponta a ponta">
+          <DemoSection kicker="EXECUÇÃO DE VENDA" title="Contrato, alocação e expedição" id="execucao-venda" aside="fluxo conectado de ponta a ponta">
             <FulfillmentForms data={{
               salesContracts: data.salesContracts,
               counterparties: data.counterparties,
@@ -114,7 +114,7 @@ function InventoryWorkspace({ data }: { data: InventoryPosition }) {
               ])} />
               : <p>Nenhum contrato de venda cadastrado.</p>}
           </DemoSection>
-          <DemoSection kicker="POSIÇÃO CONSOLIDADA" title="Saldo por lote e localização" aside={`${data.lots.length} lotes visíveis`}>
+          <DemoSection kicker="POSIÇÃO CONSOLIDADA" title="Saldo por lote e localização" id="posicao-estoque" aside={`${data.lots.length} lotes visíveis`}>
             {positionRows.length > 0
               ? <DemoTable label="Posição de estoque" columns={['Localização', 'Lote', 'Produto', 'Titularidade', 'Físico', 'Custódia', 'Disponível', 'Situação']} rows={positionRows} />
               : <p>Nenhum recebimento aceito gerou estoque para este tenant.</p>}

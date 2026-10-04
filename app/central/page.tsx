@@ -75,7 +75,7 @@ export default async function CentralPage() {
 
         <div className="central-layout">
           <div className="central-main-column">
-            <section className="central-section" aria-labelledby="work-queue-title">
+            <section className="central-section" id="fila" aria-labelledby="work-queue-title">
               <header><div><p className="section-kicker">PRIORIDADES</p><h2 id="work-queue-title">Fila de trabalho</h2></div><span>Ordenada por prazo e impacto</span></header>
               <div className="work-queue">
                 {workItems.map((item, index) => (
@@ -102,10 +102,16 @@ export default async function CentralPage() {
                 <footer><p>Aprovação demonstrativa; a decisão real continua disponível no fluxo comercial conectado.</p><Link className="tt-button" data-variant="primary" data-size="md" href="/">Analisar no Comercial</Link></footer>
               </article>
             </section>
+            <section className="central-section" id="alertas" aria-labelledby="alerts-title">
+              <header><div><p className="section-kicker">EXCEÇÕES</p><h2 id="alerts-title">Alertas e integrações</h2></div></header>
+              <div className="central-alerts">
+                <div className="demo-alert" data-tone="attention"><strong>B3 com atraso de 15 min</strong><p>Preços de referência usam a última cotação registrada.</p></div>
+                <div className="demo-alert"><strong>Regra tributária não homologada</strong><p>RT-EX-01 aparece apenas no cenário demonstrativo de liquidação.</p></div>
+              </div>
+            </section>
           </div>
 
           <aside className="central-sidebar">
-            <section id="alertas"><p className="section-kicker">ALERTAS E INTEGRAÇÕES</p><div className="demo-alert" data-tone="attention"><strong>B3 com atraso de 15 min</strong><p>Preços de referência usam a última cotação registrada.</p></div><div className="demo-alert"><strong>Regra tributária não homologada</strong><p>RT-EX-01 aparece apenas no cenário demonstrativo de liquidação.</p></div></section>
             <section><p className="section-kicker">ATIVIDADE RECENTE</p><ol className="activity-list">{activities.map(([time, title, by]) => <li key={title}><time>{time}</time><div><strong>{title}</strong><span>{by}</span></div></li>)}</ol></section>
           </aside>
         </div>
