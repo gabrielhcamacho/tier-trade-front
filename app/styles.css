@@ -417,6 +417,8 @@ main { min-width: 0; }
 .load-schedule-form { margin-top: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
 .load-schedule-feedback { grid-column: 1 / -1; margin: 0; }
 .load-schedule-actions { grid-column: 1 / -1; padding-top: 18px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--line); }
+.load-schedule-controls { display: grid; gap: 14px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
+.load-schedule-control-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 
 .loads-sidebar { display: grid; gap: 28px; }
 .loads-sidebar > section { padding-left: 22px; border-left: 1px solid var(--line); }

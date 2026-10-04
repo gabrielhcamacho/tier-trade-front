@@ -11,7 +11,34 @@ const ERROR_MESSAGES: Record<string, string> = {
   LOAD_NOT_SCHEDULED: 'Somente uma carga programada pode iniciar o recebimento.',
   LOAD_NOT_IN_RECEIVING: 'Inicie o recebimento antes de registrar a pesagem.',
   GROSS_WEIGHT_MUST_EXCEED_TARE: 'O peso bruto deve ser maior que a tara.',
+  LOAD_EXCEEDS_CONTRACT_BALANCE: 'O peso informado ultrapassa o saldo disponível do contrato.',
+  LOAD_OUTSIDE_CONTRACT_DELIVERY_WINDOW: 'A data está fora da janela de entrega do contrato.',
+  LOAD_HAS_RECEIPT: 'Esta carga já possui pesagem registrada e não pode ser reprogramada ou cancelada.',
+  CONTRACT_NOT_ACTIVE: 'O contrato precisa estar ativo para reprogramar a carga.',
 };
+
+export async function rescheduleLoadAction(
+  _previousState: ReceiptActionState,
+  formData: FormData,
+): Promise<ReceiptActionState> {
+  return mutateLoad(formData, 'schedule', 'PUT', {
+    scheduledLocal: String(formData.get('scheduledLocal') ?? ''),
+    expectedWeightKg: decimal(formData.get('expectedWeightKg')),
+    vehiclePlate: String(formData.get('vehiclePlate') ?? ''),
+    carrierName: String(formData.get('carrierName') ?? ''),
+    destinationCode: String(formData.get('destinationCode') ?? ''),
+    reason: String(formData.get('reason') ?? '').trim(),
+  }, 'Programação atualizada. O saldo do contrato foi recalculado.');
+}
+
+export async function cancelLoadAction(
+  _previousState: ReceiptActionState,
+  formData: FormData,
+): Promise<ReceiptActionState> {
+  return mutateLoad(formData, 'cancel', 'POST', {
+    reason: String(formData.get('reason') ?? '').trim(),
+  }, 'Carga cancelada. O peso previsto voltou ao saldo do contrato.');
+}
 
 export async function startReceivingAction(
   _previousState: ReceiptActionState,

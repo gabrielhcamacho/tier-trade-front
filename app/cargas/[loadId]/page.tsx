@@ -6,6 +6,7 @@ import { currentUserContext } from '../../../lib/current-user';
 import { commodityLabel, formatDate, loadContractSummary, type ContractSummary } from '../../../lib/contracts';
 import { formatSchedule, formatWeightKg, loadLoadDetail, loadStatusLabel, type LoadDetail as LoadDetailData } from '../../../lib/loads';
 import { ReceiptWorkspace } from './receipt-workspace';
+import { ScheduleControls } from './schedule-controls';
 
 export default async function LoadDetailPage({ params, searchParams }: {
   params: Promise<{ loadId: string }>;
@@ -61,12 +62,13 @@ function LoadDetail({ load, summary }: { load: LoadDetailData; summary: Contract
       <div className="load-detail-layout">
         <div className="load-main-column">
           <section className="detail-section load-programming-section">
-            <header><div><p className="section-kicker">PROGRAMAÇÃO</p><h2>Dados previstos</h2></div><Status tone="positive">Saldo reservado</Status></header>
+            <header><div><p className="section-kicker">PROGRAMAÇÃO</p><h2>Dados previstos</h2></div><Status tone={load.status === 'CANCELLED' ? 'neutral' : 'positive'}>{load.status === 'CANCELLED' ? 'Saldo liberado' : 'Saldo reservado'}</Status></header>
             <dl className="detail-data-grid">
               <div><dt>Data e horário</dt><dd>{formatSchedule(load.scheduledAt, load.timezone)}</dd></div><div><dt>Veículo</dt><dd>{load.vehiclePlate}</dd></div>
               <div><dt>Transportadora</dt><dd>{load.carrierName}</dd></div><div><dt>Destino</dt><dd>{load.destinationCode}</dd></div>
               <div><dt>Peso previsto</dt><dd>{formatWeightKg(load.expectedWeightKg)} kg</dd></div><div><dt>Janela do contrato</dt><dd>{formatDate(summary.delivery_start)} a {formatDate(summary.delivery_end)}</dd></div>
             </dl>
+            <ScheduleControls load={load} deliveryStart={summary.delivery_start} deliveryEnd={summary.delivery_end} />
           </section>
           <ReceiptWorkspace key={`${load.id}-${load.receipt?.version ?? 0}`} loadId={load.id} status={load.status} receipt={load.receipt} />
         </div>
@@ -88,6 +90,8 @@ function TraceStep({ label, detail = '—', state = 'future' }: { label: string;
 
 function eventLabel(type: string): string {
   if (type === 'load.scheduled') return 'Carga programada';
+  if (type === 'load.rescheduled') return 'Carga reprogramada';
+  if (type === 'load.cancelled') return 'Carga cancelada';
   if (type === 'load.receiving_started') return 'Recebimento iniciado';
   if (type === 'load.receipt_recorded') return 'Pesagem e qualidade registradas';
   if (type === 'load.receipt_corrected') return 'Registro corrigido';
@@ -96,6 +100,8 @@ function eventLabel(type: string): string {
 
 function eventDescription(type: string, payload: Record<string, unknown>): string {
   if (type === 'load.scheduled') return `Saldo reservado para ${String(payload.expectedWeightKg ?? '—')} kg.`;
+  if (type === 'load.rescheduled') return `Motivo: ${String(payload.reason ?? '—')}.`;
+  if (type === 'load.cancelled') return `Motivo: ${String(payload.reason ?? '—')}. Peso liberado: ${String(payload.releasedWeightKg ?? '—')} kg.`;
   if (type === 'load.receiving_started') return 'A carga entrou no fluxo de recebimento.';
   if (type === 'load.receipt_recorded' || type === 'load.receipt_corrected') {
     return `Versão ${String(payload.version ?? '—')} · peso líquido ${String(payload.netWeightKg ?? '—')} kg · ${payload.qualityDecision === 'ACCEPTED' ? 'aceita' : 'em revisão'}.`;
