@@ -6,6 +6,7 @@ import { currentUserContext } from '../../../lib/current-user';
 import { commodityLabel, formatDate, loadContractSummary, type ContractSummary } from '../../../lib/contracts';
 import { formatSchedule, formatWeightKg, loadLoadDetail, loadStatusLabel, type LoadDetail as LoadDetailData } from '../../../lib/loads';
 import { ReceiptWorkspace } from './receipt-workspace';
+import { OperationalWorkspace } from './operational-workspace';
 import { ScheduleControls } from './schedule-controls';
 
 export default async function LoadDetailPage({ params, searchParams }: {
@@ -55,7 +56,9 @@ function LoadDetail({ load, summary }: { load: LoadDetailData; summary: Contract
           <TraceStep label="Programação" detail="Concluída" state="done" />
           <TraceStep label="Pesagem" detail={hasReceipt ? 'Registrada' : load.status === 'IN_RECEIVING' ? 'Em andamento' : '—'} state={hasReceipt ? 'done' : load.status === 'IN_RECEIVING' ? 'current' : 'future'} />
           <TraceStep label="Classificação" detail={accepted ? 'Aceita' : hasReceipt ? 'Em revisão' : '—'} state={accepted ? 'done' : hasReceipt ? 'current' : 'future'} />
-          <TraceStep label="Romaneio" /><TraceStep label="NF-e" /><TraceStep label="Liquidação" />
+          <TraceStep label="Romaneio" detail={load.romaneio ? `v${load.romaneio.version}` : '—'} state={load.romaneio ? 'done' : accepted ? 'current' : 'future'} />
+          <TraceStep label="NF-e" detail={load.receipt?.inboundInvoiceNumber ?? '—'} state={hasReceipt ? 'done' : 'future'} />
+          <TraceStep label="Liquidação" />
         </ol>
       </header>
 
@@ -71,11 +74,12 @@ function LoadDetail({ load, summary }: { load: LoadDetailData; summary: Contract
             <ScheduleControls load={load} deliveryStart={summary.delivery_start} deliveryEnd={summary.delivery_end} />
           </section>
           <ReceiptWorkspace key={`${load.id}-${load.receipt?.version ?? 0}`} loadId={load.id} status={load.status} receipt={load.receipt} />
+          <OperationalWorkspace load={load} />
         </div>
 
         <aside className="load-side-column" aria-label="Relações e histórico da carga">
           <section><p className="section-kicker">OBJETOS VINCULADOS</p><h2>Rastreabilidade</h2><dl className="linked-object-list">
-            <div><dt>Contrato</dt><dd><Link className="tt-mono" href={`/contratos/${summary.id}`}>{summary.id}</Link></dd></div><div><dt>Romaneio</dt><dd>Ainda não existe</dd></div><div><dt>NF-e</dt><dd>Ainda não existe</dd></div><div><dt>Lote</dt><dd>Ainda não existe</dd></div><div><dt>Liquidação</dt><dd>Ainda não existe</dd></div>
+            <div><dt>Contrato</dt><dd><Link className="tt-mono" href={`/contratos/${summary.id}`}>{summary.id}</Link></dd></div><div><dt>Romaneio</dt><dd>{load.romaneio ? `${load.romaneio.reference} · v${load.romaneio.version}` : 'Ainda não existe'}</dd></div><div><dt>NF-e</dt><dd>{load.receipt?.inboundInvoiceNumber ?? 'Ainda não existe'}</dd></div><div><dt>Pátio</dt><dd>{yardStateLabel(load.yardState)}</dd></div><div><dt>Liquidação</dt><dd>Ainda não existe</dd></div>
           </dl></section>
           <section><p className="section-kicker">HISTÓRICO DA CARGA</p><h2>Eventos</h2>{load.events.length ? load.events.map((event, index) => <div className="load-history-item" key={`${event.type}-${event.occurredAt}-${index}`}><span aria-hidden="true" /><div><strong>{eventLabel(event.type)}</strong><p>{eventDescription(event.type, event.payload)}</p><small>{formatSchedule(event.occurredAt, load.timezone)}</small></div></div>) : <div className="load-history-item"><span aria-hidden="true" /><div><strong>Carga programada</strong><p>Saldo reservado no contrato para {formatWeightKg(load.expectedWeightKg)} kg.</p><small>{formatSchedule(load.createdAt, load.timezone)}</small></div></div>}</section>
         </aside>
@@ -95,6 +99,11 @@ function eventLabel(type: string): string {
   if (type === 'load.receiving_started') return 'Recebimento iniciado';
   if (type === 'load.receipt_recorded') return 'Pesagem e qualidade registradas';
   if (type === 'load.receipt_corrected') return 'Registro corrigido';
+  if (type === 'load.yard_event_recorded') return 'Movimentação no pátio';
+  if (type === 'load.occurrence_created') return 'Ocorrência registrada';
+  if (type === 'load.occurrence_resolved') return 'Ocorrência resolvida';
+  if (type === 'load.romaneio_issued') return 'Romaneio emitido';
+  if (type === 'load.romaneio_corrected') return 'Nova versão do romaneio';
   return type;
 }
 
@@ -106,5 +115,13 @@ function eventDescription(type: string, payload: Record<string, unknown>): strin
   if (type === 'load.receipt_recorded' || type === 'load.receipt_corrected') {
     return `Versão ${String(payload.version ?? '—')} · peso líquido ${String(payload.netWeightKg ?? '—')} kg · ${payload.qualityDecision === 'ACCEPTED' ? 'aceita' : 'em revisão'}.`;
   }
+  if (type === 'load.yard_event_recorded') return `Etapa ${String(payload.eventType ?? '—')} registrada${payload.locationCode ? ` em ${String(payload.locationCode)}` : ''}.`;
+  if (type === 'load.occurrence_created') return `${String(payload.title ?? 'Ocorrência')} · ${String(payload.severity ?? '—')}.`;
+  if (type === 'load.occurrence_resolved') return 'A ocorrência foi resolvida sem remover seu registro original.';
+  if (type === 'load.romaneio_issued' || type === 'load.romaneio_corrected') return `${String(payload.reference ?? 'Romaneio')} · versão ${String(payload.version ?? '—')}.`;
   return 'Evento operacional auditado.';
+}
+
+function yardStateLabel(value: LoadDetailData['yardState']): string {
+  return ({ NOT_ARRIVED: 'Aguardando chegada', CHECKED_IN: 'Check-in realizado', QUEUED: 'Na fila', CALLED_TO_SCALE: 'Na balança', RELEASED: 'Liberada', DEPARTED: 'Saída registrada' })[value];
 }

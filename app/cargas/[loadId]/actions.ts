@@ -16,6 +16,12 @@ const ERROR_MESSAGES: Record<string, string> = {
   LOAD_OUTSIDE_CONTRACT_DELIVERY_WINDOW: 'A data está fora da janela de entrega do contrato.',
   LOAD_HAS_RECEIPT: 'Esta carga já possui pesagem registrada e não pode ser reprogramada ou cancelada.',
   CONTRACT_NOT_ACTIVE: 'O contrato precisa estar ativo para reprogramar a carga.',
+  INVALID_YARD_TRANSITION: 'A movimentação não corresponde à etapa atual do pátio.',
+  YARD_EVENT_OUT_OF_ORDER: 'O horário informado é anterior ao último evento do pátio.',
+  YARD_RELEASE_REQUIRES_ACCEPTED_RECEIPT: 'A liberação exige pesagem e classificação aceitas.',
+  LOAD_OCCURRENCE_ALREADY_RESOLVED: 'Esta ocorrência já foi resolvida.',
+  ROMANEIO_REQUIRES_ACCEPTED_RECEIPT: 'O romaneio só pode ser emitido após o aceite do recebimento.',
+  ROMANEIO_RECEIPT_DATA_INCOMPLETE: 'Complete NF, pesos e aceite antes de emitir o romaneio.',
 };
 
 export async function rescheduleLoadAction(
@@ -80,6 +86,54 @@ export async function recordReceiptAction(
   return mutateLoad(formData, 'receipt', 'PUT', payload, 'Pesagem e classificação registradas.');
 }
 
+export async function recordYardEventAction(
+  _previousState: ReceiptActionState,
+  formData: FormData,
+): Promise<ReceiptActionState> {
+  return mutateLoad(formData, 'yard-events', 'POST', {
+    eventType: String(formData.get('eventType') ?? ''),
+    occurredAt: localDateTimeWithOffset(
+      String(formData.get('occurredAtLocal') ?? ''),
+      Number(formData.get('timezoneOffsetMinutes') ?? 0),
+    ),
+    locationCode: nullableUpper(formData.get('locationCode')),
+    notes: nullable(formData.get('notes')),
+  }, 'Etapa do pátio registrada.');
+}
+
+export async function createOccurrenceAction(
+  _previousState: ReceiptActionState,
+  formData: FormData,
+): Promise<ReceiptActionState> {
+  return mutateLoad(formData, 'occurrences', 'POST', {
+    category: String(formData.get('category') ?? ''),
+    severity: String(formData.get('severity') ?? ''),
+    title: String(formData.get('title') ?? '').trim(),
+    description: String(formData.get('description') ?? '').trim(),
+    occurredAt: localDateTimeWithOffset(
+      String(formData.get('occurredAtLocal') ?? ''),
+      Number(formData.get('timezoneOffsetMinutes') ?? 0),
+    ),
+  }, 'Ocorrência registrada e incluída na trilha da carga.');
+}
+
+export async function resolveOccurrenceAction(
+  _previousState: ReceiptActionState,
+  formData: FormData,
+): Promise<ReceiptActionState> {
+  const occurrenceId = String(formData.get('occurrenceId') ?? '');
+  return mutateLoad(formData, `occurrences/${encodeURIComponent(occurrenceId)}/resolve`, 'POST', {
+    resolution: String(formData.get('resolution') ?? '').trim(),
+  }, 'Ocorrência resolvida sem apagar o registro original.');
+}
+
+export async function issueRomaneioAction(
+  _previousState: ReceiptActionState,
+  formData: FormData,
+): Promise<ReceiptActionState> {
+  return mutateLoad(formData, 'romaneio', 'POST', null, 'Romaneio emitido e versionado.');
+}
+
 async function mutateLoad(
   formData: FormData,
   suffix: string,
@@ -125,6 +179,11 @@ function nullable(value: FormDataEntryValue | null): string | null {
 function nullableDigits(value: FormDataEntryValue | null): string | null {
   const digits = String(value ?? '').replace(/\D/g, '');
   return digits || null;
+}
+
+function nullableUpper(value: FormDataEntryValue | null): string | null {
+  const text = String(value ?? '').trim().toUpperCase();
+  return text || null;
 }
 
 function localDateTimeWithOffset(local: string, offsetMinutes: number): string {

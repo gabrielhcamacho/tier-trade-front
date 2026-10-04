@@ -43,9 +43,58 @@ export type LoadEvent = {
   occurredAt: string;
 };
 
+export type YardEvent = {
+  id: string;
+  eventType: 'CHECKED_IN' | 'QUEUED' | 'CALLED_TO_SCALE' | 'RELEASED' | 'DEPARTED';
+  locationCode: string | null;
+  occurredAt: string;
+  notes: string | null;
+  createdAt: string;
+};
+
+export type LoadOccurrence = {
+  id: string;
+  category: 'DOCUMENT' | 'WEIGHT' | 'QUALITY' | 'VEHICLE' | 'YARD' | 'OTHER';
+  severity: 'INFO' | 'WARNING' | 'CRITICAL';
+  title: string;
+  description: string;
+  occurredAt: string;
+  status: 'OPEN' | 'RESOLVED';
+  resolution: string | null;
+  resolvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Romaneio = {
+  id: string;
+  receiptId: string;
+  reference: string;
+  version: number;
+  isCurrent: boolean;
+  issuedAt: string;
+  inboundInvoiceNumber: string;
+  inboundInvoiceSeries: string;
+  inboundInvoiceAccessKey: string | null;
+  documentWeightKg: string;
+  arrivalWeightKg: string;
+  consideredWeightKg: string;
+  acceptedWeightKg: string;
+  scaleTicketNumber: string | null;
+  moisturePct: string;
+  impurityPct: string;
+  damagedPct: string;
+  createdAt: string;
+};
+
 export type LoadDetail = ScheduledLoad & {
   receipt: LoadReceipt | null;
   receiptHistory: LoadReceipt[];
+  yardState: 'NOT_ARRIVED' | YardEvent['eventType'];
+  yardEvents: YardEvent[];
+  occurrences: LoadOccurrence[];
+  romaneio: Romaneio | null;
+  romaneioHistory: Romaneio[];
   events: LoadEvent[];
 };
 
@@ -57,6 +106,26 @@ export type LoadAgenda = {
     receivedWeightKg: string;
     availableWeightKg: string;
   };
+};
+
+export type YardBoard = {
+  items: Array<ScheduledLoad & {
+    yardState: LoadDetail['yardState'];
+    yardOccurredAt: string | null;
+    yardLocationCode: string | null;
+    openOccurrences: number;
+  }>;
+  summary: { awaitingArrival: number; inYard: number; departed: number; openOccurrences: number };
+};
+
+export type OccurrenceBoard = {
+  items: Array<LoadOccurrence & {
+    loadId: string;
+    vehiclePlate: string;
+    contractId: string;
+    timezone: string;
+  }>;
+  summary: { open: number; critical: number; resolved: number };
 };
 
 export type ApiResult<T> = { data: T; error: null } | { data: null; error: string };
@@ -73,6 +142,14 @@ export async function loadLoadDetail(
   identityHeaders: Record<string, string>,
 ): Promise<ApiResult<LoadDetail>> {
   return fetchOperational(`/v1/loads/${encodeURIComponent(loadId)}`, identityHeaders);
+}
+
+export async function loadYardBoard(identityHeaders: Record<string, string>): Promise<ApiResult<YardBoard>> {
+  return fetchOperational('/v1/operations/yard', identityHeaders);
+}
+
+export async function loadOccurrenceBoard(identityHeaders: Record<string, string>): Promise<ApiResult<OccurrenceBoard>> {
+  return fetchOperational('/v1/operations/occurrences', identityHeaders);
 }
 
 async function fetchOperational<T>(
