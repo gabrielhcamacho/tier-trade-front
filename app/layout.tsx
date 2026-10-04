@@ -4,6 +4,7 @@ import '@mountier/tier-trade-design-system/styles.css';
 import './styles.css';
 import { brandAssets } from './brand-assets';
 import { NavigationProgress } from './navigation-progress';
+import { WorkspaceChrome } from './workspace-chrome';
 
 export const metadata: Metadata = {
   title: 'Tier Trade',
@@ -20,7 +21,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="pt-BR" data-scroll-behavior="smooth" className={`${GeistSans.variable} ${GeistMono.variable}`}>
-      <body><NavigationProgress />{children}</body>
+      <body><NavigationProgress /><WorkspaceChrome>{children}</WorkspaceChrome></body>
     </html>
   );
 }

@@ -54,14 +54,16 @@ export function PageSectionRail() {
 
   useEffect(() => {
     if (!sections) { setAvailableIds([]); return; }
-    const available = sections.filter(({ id }) => document.getElementById(id));
-    setAvailableIds(available.map(({ id }) => id));
-    if (available.length < 2) return;
-
     let frame = 0;
     const update = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
+        const available = sections.filter(({ id }) => document.getElementById(id));
+        setAvailableIds((previous) => {
+          const ids = available.map(({ id }) => id);
+          return previous.length === ids.length && previous.every((id, index) => id === ids[index]) ? previous : ids;
+        });
+        if (available.length < 2) { setActiveId(''); return; }
         const threshold = Math.min(230, window.innerHeight * 0.35);
         const atBottom = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 8;
         if (atBottom) {
@@ -75,10 +77,14 @@ export function PageSectionRail() {
       });
     };
     update();
+    const main = document.getElementById('conteudo');
+    const observer = main ? new MutationObserver(update) : null;
+    if (main) observer?.observe(main, { childList: true, subtree: true });
     window.addEventListener('scroll', update, { passive: true });
     window.addEventListener('resize', update);
     return () => {
       cancelAnimationFrame(frame);
+      observer?.disconnect();
       window.removeEventListener('scroll', update);
       window.removeEventListener('resize', update);
     };
