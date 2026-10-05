@@ -558,6 +558,25 @@ main { min-width: 0; }
 .occurrence-card > small { color: var(--ink-muted); font-family: var(--font-mono); font-size: 9px; }
 .occurrence-resolution { margin-top: 12px; padding: 11px 13px; background: var(--leaf-soft); border-left: 2px solid var(--forest); }
 .occurrence-resolution strong { color: var(--forest); font-size: 9px; }
+
+/* Documents */
+.document-panel { min-width: 0; scroll-margin-top: 126px; }
+.document-panel > header { min-height: 58px; display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
+.document-panel > header h2 { margin: 0; font-size: 19px; line-height: 24px; font-weight: 650; letter-spacing: -.025em; }
+.document-panel > header > span { padding-top: 6px; color: var(--ink-muted); font-size: 9px; }
+.document-upload-form { padding: 18px; display: grid; grid-template-columns: .75fr 1.1fr 1.25fr auto; align-items: end; gap: 16px; background: var(--surface-sunken); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--line); }
+.document-upload-form input[type="file"] { max-width: 100%; padding: 7px 8px; background: white; border: 1px solid var(--line-strong); font-size: 10px; }
+.document-upload-action { min-width: 145px; display: grid; gap: 7px; justify-items: start; }
+.document-panel-error { margin: 10px 0 0; color: var(--state-critical); font-size: 10px; }
+.document-list { border-top: 1px solid var(--line); }
+.document-list > p { margin: 0; padding: 18px 0; color: var(--ink-muted); font-size: 10px; }
+.document-list article { min-height: 62px; padding: 12px 10px; display: flex; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 1px solid var(--line); }
+.document-list article strong, .document-list article span, .document-list article small { display: block; }
+.document-list article strong { overflow-wrap: anywhere; font-size: 11px; }
+.document-list article span, .document-list article small { margin-top: 3px; color: var(--ink-muted); font-size: 9px; }
+.document-list-meta { flex: none; text-align: right; }
+.document-list-meta a { display: inline-block; margin-top: 5px; color: var(--forest); font-size: 10px; font-weight: 700; text-decoration: none; }
+.document-list-meta a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .occurrence-resolution p { margin: 3px 0 0; color: var(--ink-secondary); font-size: 10px; line-height: 15px; }
 .occurrence-resolution-form { margin-top: 14px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 12px; }
 .occurrence-resolution-form textarea { min-height: 70px; resize: vertical; }
@@ -860,6 +879,8 @@ main { min-width: 0; }
 .finance-ledgers { display: grid; gap: 42px; }
 .finance-action-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--ink); }
 .finance-action-grid form { min-width: 0; padding: 20px; display: grid; align-content: start; gap: 14px; border-right: 1px solid var(--line); }
+.finance-action-grid > div { min-width: 0; padding: 20px; border-right: 1px solid var(--line); overflow-x: auto; }
+.finance-action-grid > :last-child { border-right: 0; }
 .finance-action-grid form:last-child { border-right: 0; }
 .finance-action-grid h3 { margin: 2px 0 0; font-size: 17px; letter-spacing: -.025em; }
 .finance-action-grid .tt-button { justify-self: start; margin-top: 4px; }
@@ -1003,6 +1024,8 @@ main { min-width: 0; }
   .settlement-header .trace-rail { grid-template-columns: repeat(5, minmax(120px, 1fr)); }
   .finance-action-grid { grid-template-columns: 1fr; }
   .finance-action-grid form { border-right: 0; border-bottom: 1px solid var(--line); }
+  .finance-action-grid > div { border-right: 0; border-bottom: 1px solid var(--line); }
+  .document-upload-form { grid-template-columns: 1fr 1fr; }
   .fiscal-entry-form { grid-template-columns: 1fr 1fr; }
   .fiscal-calculation-form { grid-template-columns: 1fr 1fr; }
   .fiscal-authority-form, .fiscal-obligation-fields { grid-template-columns: 1fr 1fr; }
@@ -1111,4 +1134,6 @@ main { min-width: 0; }
   .fiscal-configuration-actions { flex-direction: column; }
   .fiscal-edit-form > :nth-child(3), .fiscal-edit-form > :nth-child(6) { grid-column: auto; }
   .fiscal-entry-action { align-items: stretch; flex-direction: column; }
+  .document-upload-form { grid-template-columns: 1fr; }
+  .document-upload-action { min-width: 0; }
 }

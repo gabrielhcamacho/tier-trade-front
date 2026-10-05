@@ -6,6 +6,8 @@ import type {
   FiscalAuthority, FiscalCalculation, FiscalConfiguration, FiscalDocument, FiscalEstablishment, FiscalTaxComponent, FiscalWorkspace,
 } from '../../lib/fiscal';
 import { formatFiscalDate, formatFiscalMoney } from '../../lib/fiscal';
+import type { StoredDocument } from '../../lib/documents';
+import { DocumentPanel } from '../documents/document-panel';
 import { DemoMetricStrip, DemoSection, DemoStatus, DemoTable } from '../demo-ui';
 import {
   activateFiscalConfigurationAction, createFiscalConfigurationAction, createFiscalDocumentAction,
@@ -17,7 +19,9 @@ import {
 
 const initialState = { ok: false, message: '' };
 
-export function FiscalWorkspaceView({ data }: { data: FiscalWorkspace }) {
+export function FiscalWorkspaceView({ data, attachments, attachmentError }: {
+  data: FiscalWorkspace; attachments: StoredDocument[]; attachmentError: string | null;
+}) {
   const [createState, createAction, createPending] = useActionState(createFiscalDocumentAction, initialState);
   const [establishmentState, establishmentAction, establishmentPending] = useActionState(
     createFiscalEstablishmentAction, initialState,
@@ -185,7 +189,12 @@ export function FiscalWorkspaceView({ data }: { data: FiscalWorkspace }) {
               ? <DemoTable label="Documentos fiscais" columns={['Documento', 'Cliente', 'Contrato', 'Expedição', 'Valor', 'Status', 'Título']} rows={rows} />
               : <p>Nenhum documento fiscal recebido para este tenant.</p>}
           </DemoSection>
-          {data.documents.map((document) => <FiscalDocumentEditor document={document} key={document.id} />)}
+          {data.documents.map((document) => <FiscalDocumentEditor
+            document={document}
+            attachments={attachments.filter((item) => item.aggregate_id === document.id)}
+            attachmentError={attachmentError}
+            key={document.id}
+          />)}
         </div>
         <aside className="demo-side-stack">
           <section><p className="section-kicker">VALIDAÇÃO</p><h2>Conferência sem inferência</h2><p>A validação exige chave de acesso e igualdade exata com o evento financeiro da expedição.</p></section>
@@ -412,7 +421,9 @@ function FiscalObligationFields({ component, authorities }: {
   </fieldset>;
 }
 
-function FiscalDocumentEditor({ document }: { document: FiscalDocument }) {
+function FiscalDocumentEditor({ document, attachments, attachmentError }: {
+  document: FiscalDocument; attachments: StoredDocument[]; attachmentError: string | null;
+}) {
   const [editState, editAction, editPending] = useActionState(updateFiscalDocumentAction, initialState);
   const [validateState, validateAction, validatePending] = useActionState(validateFiscalDocumentAction, initialState);
   const [rejectState, rejectAction, rejectPending] = useActionState(rejectFiscalDocumentAction, initialState);
@@ -447,6 +458,14 @@ function FiscalDocumentEditor({ document }: { document: FiscalDocument }) {
             <Button type="submit" disabled={rejectPending}>{rejectPending ? 'Rejeitando…' : 'Rejeitar documento'}</Button>
           </form>
         </div>
+        <DocumentPanel
+          aggregateType="FISCAL_DOCUMENT"
+          aggregateId={document.id}
+          documents={attachments}
+          error={attachmentError}
+          returnPath="/fiscal"
+          allowedDocumentTypes={['INVOICE', 'OTHER']}
+        />
       </div>
     </DemoSection>
   );

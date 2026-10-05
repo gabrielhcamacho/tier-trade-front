@@ -8,7 +8,9 @@ import { formatFinancialDate, formatMoney, payableStatusLabel, titleStatusLabel 
 import { DemoMetricStrip, DemoSection, DemoStatus, DemoTable } from '../demo-ui';
 import {
   approvePaymentBatchAction,
+  accrueCommissionAction,
   configureFinancePolicyAction,
+  createCommissionPolicyAction,
   createBankAccountAction,
   createBankStatementEntryAction,
   createPaymentBatchAction,
@@ -40,6 +42,8 @@ export function FinancialWorkspace({ data }: { data: FinanceWorkspace }) {
   const [accountState, accountAction, accountPending] = useActionState(createBankAccountAction, initialFinanceActionState);
   const [entryState, entryAction, entryPending] = useActionState(createBankStatementEntryAction, initialFinanceActionState);
   const [reconcileState, reconcileAction, reconcilePending] = useActionState(reconcileBankStatementEntryAction, initialFinanceActionState);
+  const [commissionPolicyState, commissionPolicyAction, commissionPolicyPending] = useActionState(createCommissionPolicyAction, initialFinanceActionState);
+  const [commissionState, commissionAction, commissionPending] = useActionState(accrueCommissionAction, initialFinanceActionState);
   const salesEvents = data.events.filter((event) => event.direction === 'INFLOW');
   const payableEvents = data.events.filter((event) => event.direction === 'OUTFLOW');
   const issuable = salesEvents.filter((event) => !event.title && event.calculationStatus === 'READY');
@@ -54,6 +58,8 @@ export function FinancialWorkspace({ data }: { data: FinanceWorkspace }) {
   const pendingBatches = data.governance.paymentBatches.filter((batch) => batch.status === 'PENDING_APPROVAL');
   const approvedBatches = data.governance.paymentBatches.filter((batch) => batch.status === 'APPROVED');
   const unmatchedEntries = data.governance.bankStatementEntries.filter((entry) => entry.status === 'UNMATCHED');
+  const activeCommissionPolicies = data.governance.commissionPolicies.filter((policy) => policy.status === 'ACTIVE');
+  const commissionableEvents = data.events.filter((event) => event.calculationStatus === 'READY' && event.expectedOn);
   const [selectedTitleId, setSelectedTitleId] = useState(openTitles[0]?.title.id ?? '');
   const selectedTitle = openTitles.find((item) => item.title.id === selectedTitleId);
   const [selectedPayableId, setSelectedPayableId] = useState(openPayables[0]?.title.id ?? '');
@@ -154,6 +160,38 @@ export function FinancialWorkspace({ data }: { data: FinanceWorkspace }) {
                 formatMoney(item.amount), item.description, item.reversed_at ? 'Estornado' : 'Ativo'])} />
             : <p>Nenhum componente adicional registrado.</p>}</div>
         </div>
+      </DemoSection>
+
+      <DemoSection kicker="COMISSIONAMENTO" title="Políticas e apropriações" id="comissoes" aside="base, vigência e taxa preservadas por versão">
+        <div className="finance-action-grid">
+          <form action={commissionPolicyAction}>
+            <h3>Nova versão da política</h3>
+            <Field label="Código" required><input name="code" placeholder="CORRETOR_MILHO" pattern="[A-Za-z0-9][A-Za-z0-9_-]{1,39}" required /></Field>
+            <Field label="Nome" required><input name="name" placeholder="Comissão corretagem milho" required /></Field>
+            <Field label="Favorecido" required><input name="beneficiaryName" placeholder="Pessoa ou empresa comissionada" required /></Field>
+            <Field label="Commodity"><select name="commodity" defaultValue=""><option value="">Todas</option><option value="MILHO">Milho</option><option value="SOJA">Soja</option></select></Field>
+            <DecimalField name="ratePct" label="Taxa" suffix="%" defaultValue="0" fractionDigits={6} emptyWhenZero required />
+            <Field label="Início da vigência" required><input type="date" name="effectiveFrom" required /></Field>
+            <Field label="Fim da vigência"><input type="date" name="effectiveTo" /></Field>
+            <Field label="Situação" required><select name="status" defaultValue="DRAFT"><option value="DRAFT">Rascunho</option><option value="ACTIVE">Ativa</option></select></Field>
+            <Feedback state={commissionPolicyState} />
+            <Button type="submit" disabled={commissionPolicyPending}>{commissionPolicyPending ? 'Salvando…' : 'Salvar política'}</Button>
+          </form>
+          <form action={commissionAction}>
+            <h3>Apropriar comissão</h3>
+            <Field label="Política ativa" required><select name="policyId" defaultValue="" required><option value="" disabled>Selecione</option>{activeCommissionPolicies.map((policy) => <option value={policy.id} key={policy.id}>{policy.code} · v{policy.version} · {Number(policy.rate_pct).toLocaleString('pt-BR', { maximumFractionDigits: 6 })}%</option>)}</select></Field>
+            <Field label="Evento financeiro" required><select name="financialEventId" defaultValue="" required><option value="" disabled>Selecione</option>{commissionableEvents.map((event) => <option value={event.id} key={event.id}>{event.contractReference ?? event.sourceId} · {event.beneficiaryName} · {formatMoney(event.calculatedAmount ?? event.rawAmount ?? 0)}</option>)}</select></Field>
+            <p className="finance-form-hint">O backend confere commodity, vigência, duplicidade e precisão antes de apropriar.</p>
+            <Feedback state={commissionState} />
+            <Button type="submit" disabled={commissionPending || activeCommissionPolicies.length === 0 || commissionableEvents.length === 0}>{commissionPending ? 'Calculando…' : 'Calcular e apropriar'}</Button>
+          </form>
+          <div><h3>Políticas cadastradas</h3>{data.governance.commissionPolicies.length
+            ? <DemoTable label="Políticas de comissão" columns={['Código', 'Versão', 'Favorecido', 'Commodity', 'Taxa', 'Status']}
+              rows={data.governance.commissionPolicies.map((policy) => [policy.code, `v${policy.version}`, policy.beneficiary_name, policy.commodity ?? 'Todas', `${Number(policy.rate_pct).toLocaleString('pt-BR', { maximumFractionDigits: 6 })}%`, policy.status])} />
+            : <p>Nenhuma política de comissão cadastrada.</p>}</div>
+        </div>
+        {data.governance.commissionAccruals.length ? <DemoTable label="Comissões apropriadas" columns={['Política', 'Evento', 'Base', 'Comissão', 'Status', 'Data']}
+          rows={data.governance.commissionAccruals.map((item) => [item.policy_code, item.financial_event_id, formatMoney(item.basis_amount), formatMoney(item.commission_amount), item.status, formatFinancialDate(item.created_at)])} /> : null}
       </DemoSection>
 
       <DemoSection kicker="GOVERNANÇA FINANCEIRA" title="Alçadas e lotes de pagamento" id="lotes" aside="política versionada e quatro olhos">

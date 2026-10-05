@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { currentUserContext } from '../../lib/current-user';
 import { loadFiscal } from '../../lib/fiscal';
+import { loadDocuments } from '../../lib/documents';
 import { AppShell } from '../app-shell';
 import { DemoNotice } from '../demo-notice';
 import { DemoPageHeader } from '../demo-ui';
@@ -8,7 +9,10 @@ import { FiscalWorkspaceView } from './fiscal-workspace';
 
 export default async function FiscalPage() {
   const { userLabel, identityHeaders } = await currentUserContext();
-  const result = await loadFiscal(identityHeaders);
+  const [result, documentResult] = await Promise.all([
+    loadFiscal(identityHeaders),
+    loadDocuments(identityHeaders, 'FISCAL_DOCUMENT'),
+  ]);
 
   return (
     <AppShell activeDomain="fiscal" userLabel={userLabel}>
@@ -24,7 +28,7 @@ export default async function FiscalPage() {
         {result.data?.tenant.isDemo ? <DemoNotice persisted /> : null}
         {result.error || !result.data
           ? <div className="feedback critical"><strong>Não foi possível concluir</strong><span>{result.error}</span><Link href="/fiscal">Tentar novamente</Link></div>
-          : <FiscalWorkspaceView data={result.data} />}
+          : <FiscalWorkspaceView data={result.data} attachments={documentResult.items} attachmentError={documentResult.error} />}
       </div>
     </AppShell>
   );

@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { AppShell } from '../../app-shell';
 import { DemoLoadDetail } from './demo-load-detail';
 import { currentUserContext } from '../../../lib/current-user';
+import { loadDocuments, type StoredDocument } from '../../../lib/documents';
+import { DocumentPanel } from '../../documents/document-panel';
 import { commodityLabel, formatDate, loadContractSummary, type ContractSummary } from '../../../lib/contracts';
 import { formatSchedule, formatWeightKg, loadLoadDetail, loadStatusLabel, type LoadDetail as LoadDetailData } from '../../../lib/loads';
 import { ReceiptWorkspace } from './receipt-workspace';
@@ -16,16 +18,17 @@ export default async function LoadDetailPage({ params, searchParams }: {
   const [{ loadId }, { modo }, user] = await Promise.all([params, searchParams, currentUserContext()]);
   if (modo === 'demonstracao') return <AppShell activeDomain="operations" userLabel={user.userLabel}><DemoLoadDetail loadId={loadId} /></AppShell>;
 
-  const loadResult = await loadLoadDetail(loadId, user.identityHeaders);
-  const contractResult = loadResult.data
-    ? await loadContractSummary(loadResult.data.contractId, user.identityHeaders)
-    : null;
+  const [loadResult, documentResult] = await Promise.all([
+    loadLoadDetail(loadId, user.identityHeaders),
+    loadDocuments(user.identityHeaders, 'LOAD', loadId),
+  ]);
+  const contractResult = loadResult.data ? await loadContractSummary(loadResult.data.contractId, user.identityHeaders) : null;
 
   return (
     <AppShell activeDomain="operations" userLabel={user.userLabel}>
       {loadResult.error ? <LoadError message={loadResult.error} /> : null}
       {contractResult?.error ? <LoadError message={contractResult.error} /> : null}
-      {loadResult.data && contractResult?.summary ? <LoadDetail load={loadResult.data} summary={contractResult.summary} /> : null}
+      {loadResult.data && contractResult?.summary ? <LoadDetail load={loadResult.data} summary={contractResult.summary} documents={documentResult.items} documentError={documentResult.error} /> : null}
     </AppShell>
   );
 }
@@ -34,7 +37,9 @@ function LoadError({ message }: { message: string }) {
   return <div className="feedback critical detail-feedback" role="alert"><strong>Não foi possível abrir a carga</strong><span>{message}</span><Link href="/cargas">Voltar à agenda</Link></div>;
 }
 
-function LoadDetail({ load, summary }: { load: LoadDetailData; summary: ContractSummary }) {
+function LoadDetail({ load, summary, documents, documentError }: {
+  load: LoadDetailData; summary: ContractSummary; documents: StoredDocument[]; documentError: string | null;
+}) {
   const hasReceipt = Boolean(load.receipt);
   const accepted = load.receipt?.qualityDecision === 'ACCEPTED';
   return (
@@ -75,6 +80,15 @@ function LoadDetail({ load, summary }: { load: LoadDetailData; summary: Contract
           </section>
           <ReceiptWorkspace key={`${load.id}-${load.receipt?.version ?? 0}`} loadId={load.id} status={load.status} receipt={load.receipt} />
           <OperationalWorkspace load={load} />
+          <DocumentPanel
+            aggregateType="LOAD"
+            aggregateId={load.id}
+            documents={documents}
+            error={documentError}
+            returnPath={`/cargas/${load.id}`}
+            sectionId="documentos"
+            allowedDocumentTypes={['ROMANEIO', 'QUALITY_REPORT', 'WEIGHING_TICKET', 'INVOICE', 'OTHER']}
+          />
         </div>
 
         <aside className="load-side-column" aria-label="Relações e histórico da carga">

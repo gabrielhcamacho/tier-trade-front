@@ -2,6 +2,8 @@ import { Status } from '@mountier/tier-trade-design-system';
 import Link from 'next/link';
 import { AppShell } from '../../app-shell';
 import { currentUserContext } from '../../../lib/current-user';
+import { loadDocuments, type StoredDocument } from '../../../lib/documents';
+import { DocumentPanel } from '../../documents/document-panel';
 import {
   commodityLabel,
   contractStatusLabel,
@@ -21,12 +23,15 @@ export default async function ContractDetailPage({
   params: Promise<{ contractId: string }>;
 }) {
   const [{ contractId }, user] = await Promise.all([params, currentUserContext()]);
-  const result = await loadContractSummary(contractId, user.identityHeaders);
+  const [result, documentResult] = await Promise.all([
+    loadContractSummary(contractId, user.identityHeaders),
+    loadDocuments(user.identityHeaders, 'CONTRACT', contractId),
+  ]);
 
   return (
     <AppShell activeDomain="contracts" userLabel={user.userLabel}>
       {result.error ? <ContractError message={result.error} /> : null}
-      {result.summary ? <ContractDetail summary={result.summary} /> : null}
+      {result.summary ? <ContractDetail summary={result.summary} documents={documentResult.items} documentError={documentResult.error} /> : null}
     </AppShell>
   );
 }
@@ -47,7 +52,9 @@ function ContractError({ message }: { message: string }) {
   );
 }
 
-function ContractDetail({ summary }: { summary: ContractSummary }) {
+function ContractDetail({ summary, documents, documentError }: {
+  summary: ContractSummary; documents: StoredDocument[]; documentError: string | null;
+}) {
   const signed = summary.obligations.find((item) => item.code === 'SIGNED_CONTRACT');
   return (
     <>
@@ -87,7 +94,7 @@ function ContractDetail({ summary }: { summary: ContractSummary }) {
           <a className="active" aria-current="page" href="#visao-geral">Visão geral</a>
           <Link href={`/cargas?contractId=${summary.id}`}>Entregas</Link>
           <a href="#custos-margem">Custos e margem</a>
-          <span aria-disabled="true">Documentos e auditoria</span>
+          <a href="#documentos">Documentos e auditoria</a>
         </nav>
       </header>
 
@@ -126,6 +133,15 @@ function ContractDetail({ summary }: { summary: ContractSummary }) {
               ))}
             </div>
           </section>
+          <DocumentPanel
+            aggregateType="CONTRACT"
+            aggregateId={summary.id}
+            documents={documents}
+            error={documentError}
+            returnPath={`/contratos/${summary.id}`}
+            sectionId="documentos"
+            allowedDocumentTypes={['CONTRACT_DRAFT', 'SIGNED_CONTRACT', 'AMENDMENT', 'GUARANTEE', 'OTHER']}
+          />
         </div>
 
         <aside className="contract-side-column" aria-label="Situação do contrato">
@@ -140,7 +156,7 @@ function ContractDetail({ summary }: { summary: ContractSummary }) {
             <dl className="linked-object-list">
               <div><dt>Contrato</dt><dd className="tt-mono">{summary.id}</dd></div>
               <div><dt>Cargas</dt><dd>{summary.load_count}</dd></div>
-              <div><dt>Documentos</dt><dd>Backend pendente</dd></div>
+              <div><dt>Documentos</dt><dd>{documents.length}</dd></div>
             </dl>
           </section>
         </aside>

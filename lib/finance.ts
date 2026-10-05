@@ -92,6 +92,16 @@ export type FinanceGovernance = {
     byCommodity: Array<{ commodity: string; revenueAmount: string; acquisitionCostAmount: string;
       componentImpactAmount: string; totalCostAmount: string; realizedMarginAmount: string; dispatchedKg: string }>;
   };
+  commissionPolicies: Array<{
+    id: string; code: string; name: string; version: number; status: 'DRAFT' | 'ACTIVE' | 'RETIRED';
+    basis: 'FINANCIAL_EVENT_AMOUNT'; rate_pct: string; commodity: 'MILHO' | 'SOJA' | null;
+    beneficiary_name: string; effective_from: string; effective_to: string | null; created_at: string;
+  }>;
+  commissionAccruals: Array<{
+    id: string; policy_id: string; policy_code: string; financial_event_id: string;
+    basis_amount: string; commission_amount: string; status: 'ACCRUED' | 'REVERSED';
+    calculation_snapshot: Record<string, unknown>; created_at: string;
+  }>;
 };
 
 export type FinanceWorkspace = {

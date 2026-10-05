@@ -26,7 +26,34 @@ const messages: Record<string, string> = {
   FOUR_EYES_APPROVER_REQUIRED: 'Quem criou o lote não pode aprová-lo. É necessário outro aprovador.',
   PAYMENT_BATCH_ITEM_EXCEEDS_BALANCE: 'Um item do lote ultrapassa o saldo do título.',
   BANK_RECONCILIATION_MISMATCH: 'O valor ou a direção do extrato não corresponde ao movimento.',
+  COMMISSION_SOURCE_NOT_FOUND: 'A política e o evento selecionados não formam uma base válida de comissão.',
+  COMMISSION_POLICY_NOT_ACTIVE: 'A política de comissão precisa estar ativa.',
+  COMMISSION_POLICY_COMMODITY_MISMATCH: 'A commodity do evento não corresponde à política.',
+  COMMISSION_POLICY_OUTSIDE_EFFECTIVE_PERIOD: 'O evento está fora da vigência da política.',
+  COMMISSION_ROUNDING_POLICY_REQUIRED: 'O cálculo gera fração de centavo. A política de arredondamento precisa ser homologada.',
+  COMMISSION_ALREADY_ACCRUED: 'Este evento já possui comissão apropriada por essa política.',
 };
+
+export async function createCommissionPolicyAction(_state: FinanceActionState, formData: FormData) {
+  return send('/v1/finance/commission-policies', {
+    code: String(formData.get('code') ?? '').toUpperCase(),
+    name: String(formData.get('name') ?? ''),
+    status: String(formData.get('status') ?? 'DRAFT'),
+    basis: 'FINANCIAL_EVENT_AMOUNT',
+    ratePct: decimal(formData.get('ratePct')),
+    commodity: String(formData.get('commodity') ?? '').trim() || null,
+    beneficiaryName: String(formData.get('beneficiaryName') ?? ''),
+    effectiveFrom: String(formData.get('effectiveFrom') ?? ''),
+    effectiveTo: String(formData.get('effectiveTo') ?? '').trim() || null,
+  }, 'Política de comissão versionada e salva.');
+}
+
+export async function accrueCommissionAction(_state: FinanceActionState, formData: FormData) {
+  return send('/v1/finance/commission-accruals', {
+    policyId: String(formData.get('policyId') ?? ''),
+    financialEventId: String(formData.get('financialEventId') ?? ''),
+  }, 'Comissão calculada e apropriada com memória auditável.');
+}
 
 export async function createPurchaseCostComponentAction(_state: FinanceActionState, formData: FormData) {
   return send('/v1/finance/purchase-cost-components', {
