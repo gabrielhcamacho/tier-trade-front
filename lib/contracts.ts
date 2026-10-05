@@ -11,6 +11,31 @@ export type ContractObligation = {
   updated_at: string;
 };
 
+export type OpenContractObligation = Pick<ContractObligation,
+  'id' | 'code' | 'title' | 'description' | 'due_date' | 'responsible_name' | 'status'> & {
+    contract_id: string;
+    counterparty_name: string;
+    commodity: string;
+  };
+
+export async function loadOpenContractObligations(identityHeaders: Record<string, string>): Promise<{
+  items: OpenContractObligation[]; hasMore: boolean; error: string | null;
+}> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (!apiUrl || Object.keys(identityHeaders).length === 0) {
+    return { items: [], hasMore: false, error: 'A API ou a identidade do ambiente ainda não está configurada.' };
+  }
+  try {
+    const response = await fetch(`${apiUrl}/v1/contracts/obligations/open`, {
+      headers: identityHeaders, cache: 'no-store',
+    });
+    if (!response.ok) return { items: [], hasMore: false, error: 'A API não conseguiu carregar as obrigações abertas.' };
+    return { ...(await response.json() as { items: OpenContractObligation[]; hasMore: boolean }), error: null };
+  } catch {
+    return { items: [], hasMore: false, error: 'Não foi possível acessar as obrigações na API.' };
+  }
+}
+
 export type ContractSummary = {
   id: string;
   status: string;

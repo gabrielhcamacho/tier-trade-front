@@ -9,6 +9,7 @@ export type OverviewResponse = {
   assembledAt: string;
   consistency: 'MULTI_TRANSACTION';
   tenant: { id: string; legalName: string; isDemo: boolean; timezone: string };
+  access: { scope: 'TENANT'; capabilities: string[] };
   filters: { commodity: string | null; financeScope: 'TENANT_CONSOLIDATED' };
   indicators: {
     projectedMarginAmount: string | null;

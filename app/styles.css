@@ -733,6 +733,13 @@ main { min-width: 0; }
 .demo-alert[data-tone="attention"] { color: var(--ember-text); background: var(--ember-soft); border-color: #efd0bd; }
 .demo-alert strong { font-size: 10px; }
 .demo-alert p { margin: 4px 0 0; color: var(--ink-secondary); font-size: 9px; line-height: 14px; }
+.demo-alert a { display: inline-block; margin-top: 9px; color: var(--forest); font-size: 9px; font-weight: 700; text-decoration: none; }
+.demo-alert a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.central-empty-state { padding: 20px 14px; color: var(--ink-muted); border-top: 1px solid var(--line); font-size: 11px; }
+.central-list-note, .central-scope-note { color: var(--ink-muted); font-size: 10px; line-height: 1.6; }
+.central-sidebar .activity-list li { display: block; min-height: 0; }
+.central-sidebar .activity-list a { color: var(--forest); font-size: 10px; font-weight: 650; text-decoration: none; }
+.central-sidebar .activity-list a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .activity-list { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
 .activity-list li { min-height: 64px; display: grid; grid-template-columns: 42px 1fr; gap: 13px; align-items: start; padding: 12px 0; border-bottom: 1px solid var(--line); }
 .activity-list time { padding-top: 2px; color: var(--ink-muted); font-family: var(--font-mono); font-size: 9px; }

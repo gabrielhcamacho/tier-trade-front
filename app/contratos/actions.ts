@@ -51,6 +51,7 @@ export async function saveContractObligationAction(
     revalidatePath(`/contratos/${contractId}`);
     revalidatePath('/contratos');
     revalidatePath('/central');
+    revalidatePath('/central/fila');
     return {
       ok: true,
       message: obligationId ? 'Obrigação atualizada e auditada.' : 'Obrigação criada e vinculada ao contrato.',

@@ -1,121 +1,157 @@
 import Link from 'next/link';
 import { AppShell } from '../../app-shell';
-import { DemoNotice } from '../../demo-notice';
 import { currentUserContext } from '../../../lib/current-user';
+import { commodityLabel, formatCurrency, formatQuantity, loadOpenContractObligations, type OpenContractObligation } from '../../../lib/contracts';
+import { loadOverview, type OverviewResponse } from '../../../lib/overview';
 
-const workItems = [
-  {
-    kind: 'Decisão',
-    title: 'Comparar cenários e negociar OF-2026-0231',
-    description: 'Milho · 1.800 t · Agropecuária Boa Vista · condição pedida R$ 56,25/sc',
-    due: 'Hoje, 12:00',
-    status: 'Em análise',
-    tone: 'info',
-    href: '/',
-  },
-  {
-    kind: 'Documento',
-    title: 'OF-2026-0229 · Fazenda Primavera',
-    description: 'Soja · 2.400 t · aguardando comprovante de inscrição estadual',
-    due: '02/10',
-    status: 'Aguardando documento',
-    tone: 'neutral',
-    href: '/',
-  },
-  {
-    kind: 'Investigação',
-    title: 'Produtor contesta a umidade da CG-26-10422',
-    description: 'Desconto aplicado 2,40% · impacto estimado de R$ 1.071,56',
-    due: '06/10, 16:00',
-    status: 'Vence em breve',
-    tone: 'attention',
-    href: '/cargas/CG-26-10422?modo=demonstracao',
-  },
-];
+export const dynamic = 'force-dynamic';
 
-const activities = [
-  ['10:18', 'Contrato CT-2026-00512 ativado', 'Patrícia Nunes · Contratos'],
-  ['10:02', 'Condição comercial aprovada', 'Jorge Santos · Direção'],
-  ['09:48', 'Oferta enviada para aprovação', 'Camila Rocha · Originação GO'],
-  ['09:31', 'Cenário de margem recalculado', 'Política PC-MI-03 v2'],
-];
+type QueueItem = {
+  id: string; kind: string; title: string; description: string; dueDate: string | null;
+  status: string; tone: 'neutral' | 'info' | 'attention' | 'critical'; href: string; priority: number;
+};
+
+function localDate(timezone: string): string {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(new Date());
+  const value = (part: string) => parts.find((item) => item.type === part)?.value ?? '';
+  return `${value('year')}-${value('month')}-${value('day')}`;
+}
+
+function formatDue(value: string | null): string {
+  return value ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' })
+    .format(new Date(`${value}T00:00:00Z`)) : 'Não informado';
+}
+
+function obligationItem(item: OpenContractObligation, today: string): QueueItem {
+  const overdue = Boolean(item.due_date && item.due_date < today);
+  return {
+    id: item.id, kind: 'Obrigação contratual', title: item.title,
+    description: `${item.counterparty_name} · ${commodityLabel(item.commodity)} · ${item.responsible_name ?? 'sem responsável definido'}`,
+    dueDate: item.due_date, status: overdue ? 'Atrasada' : item.status === 'IN_PROGRESS' ? 'Em andamento' : 'Pendente',
+    tone: overdue ? 'critical' : item.status === 'IN_PROGRESS' ? 'info' : 'neutral',
+    href: `/contratos/${item.contract_id}#obrigacoes`, priority: overdue ? 0 : item.due_date ? 2 : 4,
+  };
+}
+
+function alertItems(data: OverviewResponse, capabilities: Set<string>): QueueItem[] {
+  const alerts: QueueItem[] = [];
+  if (capabilities.has('OPERATIONS_EDIT') && data.operational.openOccurrences > 0) alerts.push({
+    id: 'occurrences', kind: 'Operações', title: 'Ocorrências abertas',
+    description: `${data.operational.openOccurrences} ocorrência(s), ${data.operational.criticalOccurrences} crítica(s)`,
+    dueDate: null, status: 'Revisar', tone: data.operational.criticalOccurrences ? 'critical' : 'attention',
+    href: '/ocorrencias', priority: data.operational.criticalOccurrences ? 1 : 3,
+  });
+  if (capabilities.has('OPERATIONS_EDIT') && data.operational.qualityReviews > 0) alerts.push({
+    id: 'quality', kind: 'Qualidade', title: 'Recebimentos aguardando decisão',
+    description: `${data.operational.qualityReviews} revisão(ões) de qualidade`,
+    dueDate: null, status: 'Revisar', tone: 'attention', href: '/qualidade', priority: 3,
+  });
+  if (capabilities.has('FISCAL_EDIT') && (data.operational.fiscalPending || data.operational.fiscalRejected)) alerts.push({
+    id: 'fiscal', kind: 'Fiscal', title: 'Documentos fiscais para conferência',
+    description: `${data.operational.fiscalPending} recebido(s) · ${data.operational.fiscalRejected} rejeitado(s)`,
+    dueDate: null, status: 'Conferir', tone: 'attention', href: '/fiscal/entradas', priority: 3,
+  });
+  if (capabilities.has('FINANCE_APPROVE') && data.indicators.paymentBatchApprovalCount > 0) alerts.push({
+    id: 'payments', kind: 'Financeiro', title: 'Lotes de pagamento aguardando aprovação',
+    description: `${data.indicators.paymentBatchApprovalCount} lote(s) pendente(s)`,
+    dueDate: null, status: 'Aprovar', tone: 'attention', href: '/financeiro#lotes', priority: 3,
+  });
+  if (capabilities.has('FINANCE_EDIT') && data.indicators.unmatchedBankEntryCount > 0) alerts.push({
+    id: 'bank', kind: 'Financeiro', title: 'Lançamentos bancários sem conciliação',
+    description: `${data.indicators.unmatchedBankEntryCount} lançamento(s) pendente(s)`,
+    dueDate: null, status: 'Conciliar', tone: 'info', href: '/financeiro#conciliacao-bancaria', priority: 3,
+  });
+  if (capabilities.has('RISK_MANAGE')) for (const position of data.sources.risk.positions) {
+    if (position.limit.status !== 'WARNING' && position.limit.status !== 'EXCEEDED') continue;
+    alerts.push({ id: `risk-${position.commodity}`, kind: 'Risco',
+      title: `Limite de ${commodityLabel(position.commodity)} em atenção`,
+      description: position.limit.usagePct ? `${position.limit.usagePct}% do limite utilizado` : 'Ver posição de risco',
+      dueDate: null, status: position.limit.status === 'EXCEEDED' ? 'Excedido' : 'Atenção',
+      tone: position.limit.status === 'EXCEEDED' ? 'critical' : 'attention', href: '/risco', priority: 3 });
+  }
+  return alerts;
+}
 
 export default async function CentralPage() {
-  const { userLabel } = await currentUserContext();
+  const user = await currentUserContext();
+  const [overview, openObligations] = await Promise.all([
+    loadOverview(user.identityHeaders, 'ALL'), loadOpenContractObligations(user.identityHeaders),
+  ]);
+  const data = overview.data;
+  const capabilities = new Set(data?.access.capabilities ?? []);
+  const offers = data?.sources.offers.items ?? [];
+  const approvals = capabilities.has('COMMERCIAL_APPROVE')
+    ? offers.filter((item) => item.status === 'IN_APPROVAL') : [];
+  const obligations = capabilities.has('COMMERCIAL_EDIT') && !openObligations.error
+    ? openObligations.items.map((item) => obligationItem(item, data ? localDate(data.tenant.timezone) : '')) : [];
+  const approvalItems: QueueItem[] = approvals.map((item) => ({
+    id: `approval-${item.id}`, kind: 'Aprovação comercial',
+    title: `Oferta de ${commodityLabel(item.commodity)} · ${item.counterparty_name}`,
+    description: `${formatQuantity(item.quantity_sc)} sc · margem projetada ${formatCurrency(item.projected_margin_per_sc)}/sc`,
+    dueDate: null, status: 'Aguardando', tone: 'attention',
+    href: `/?status=IN_APPROVAL&commodity=${item.commodity}`, priority: 1,
+  }));
+  const alerts = data ? alertItems(data, capabilities) : [];
+  const queue = [...obligations, ...approvalItems, ...alerts].sort((a, b) =>
+    a.priority - b.priority || (a.dueDate ?? '9999-12-31').localeCompare(b.dueDate ?? '9999-12-31')
+    || a.title.localeCompare(b.title, 'pt-BR'));
+  const openOffers = offers.filter((item) => item.status !== 'CONVERTED' && item.status !== 'CANCELLED').length;
+  const errors = [overview.error, openObligations.error].filter(Boolean);
 
-  return (
-    <AppShell activeDomain="central" userLabel={userLabel}>
-      <header className="page-header central-header">
-        <p className="breadcrumbs">Central <span>›</span> Minha fila</p>
-        <div className="page-header-row">
-          <div>
-            <p className="entity-kind">Visão do trader</p>
-            <h1>O que precisa da sua atenção</h1>
-            <p className="page-description">Prioridades comerciais, decisões e exceções reunidas por prazo e impacto.</p>
-          </div>
-          <span className="environment-label">Mountier Agro · Unidade Rio Verde</span>
-        </div>
-      </header>
-
-      <div className="demo-page">
-        <DemoNotice />
-
-        <section className="central-metrics" aria-label="Indicadores da carteira">
-          <article><span>Ofertas abertas</span><strong>4</strong><small>1 originada pelo Mountier Agro</small></article>
-          <article data-primary="true"><span>Margem prevista</span><strong>R$ 3,62 <em>/sc</em></strong><small>carteira de milho GO 25/26</small></article>
-          <article><span>Volume em negociação</span><strong>8.700 <em>t</em></strong><small>compras e vendas em aberto</small></article>
-          <article data-tone="attention"><span>Aguardando aprovação</span><strong>1</strong><small>fora da política de margem</small></article>
+  return <AppShell activeDomain="central" userLabel={user.userLabel}>
+    <header className="page-header central-header"><p className="breadcrumbs">Central <span>›</span> Minha fila</p>
+      <div className="page-header-row"><div><p className="entity-kind">Visão de trabalho</p><h1>O que precisa da sua atenção</h1>
+        <p className="page-description">Pendências da carteira acessíveis conforme suas permissões. Prazos só aparecem quando registrados.</p></div>
+        <span className="environment-label">{data?.tenant.legalName ?? 'Ambiente autenticado'}</span></div></header>
+    <div className="demo-page">
+      {data?.tenant.isDemo ? <div className="overview-demo-note">Ambiente de demonstração · dados salvos no backend deste tenant e isolados das outras contas.</div> : null}
+      {errors.length ? <div className="feedback critical" role="alert"><strong>Dados parciais</strong><span>{errors.join(' ')}</span></div> : null}
+      <section className="central-metrics" aria-label="Indicadores da carteira">
+        <article><span>Ofertas abertas</span><strong>{data ? openOffers : '—'}</strong><small>Carteira comercial do tenant</small></article>
+        <article data-primary="true"><span>Obrigações em aberto</span><strong>{data ? data.indicators.pendingObligationCount : '—'}</strong><small>Contratos ativos</small></article>
+        <article><span>Ocorrências abertas</span><strong>{data ? data.operational.openOccurrences : '—'}</strong><small>{data ? `${data.operational.criticalOccurrences} crítica(s)` : 'Fonte indisponível'}</small></article>
+        <article data-tone="attention"><span>Aguardando aprovação</span><strong>{data ? approvals.length : '—'}</strong><small>Ofertas na sua alçada comercial</small></article>
+      </section>
+      {queue.some((item) => item.tone === 'critical') ? <section className="exception-summary" aria-label="Exceções críticas">
+        <span aria-hidden="true">!</span><div><strong>Existem pendências críticas</strong><p>Verifique obrigações vencidas, limites excedidos e ocorrências críticas abaixo.</p></div><a href="#fila">Ver fila</a>
+      </section> : null}
+      <div className="central-layout"><div className="central-main-column">
+        <section className="central-section" id="fila" aria-labelledby="work-queue-title">
+          <header><div><p className="section-kicker">PRIORIDADES</p><h2 id="work-queue-title">Fila de trabalho</h2></div><span>Prazos vencidos primeiro; demais itens por tipo e prazo conhecido</span></header>
+          <div className="work-queue">{queue.length ? queue.map((item, index) => <article key={item.id}>
+            <span className="queue-index">{String(index + 1).padStart(2, '0')}</span>
+            <div className="queue-copy"><small>{item.kind}</small><strong>{item.title}</strong><p>{item.description}</p></div>
+            <div className="queue-due"><small>Prazo</small><strong>{formatDue(item.dueDate)}</strong></div>
+            <span className="demo-status" data-tone={item.tone}>{item.status}</span><Link href={item.href}>Abrir</Link>
+          </article>) : <div className="central-empty-state">{errors.length ? 'A fila não pôde ser carregada por completo.' : 'Nenhuma pendência acionável para suas permissões neste momento.'}</div>}</div>
+          {openObligations.hasMore ? <p className="central-list-note">A lista mostra as primeiras 100 obrigações por prazo. Consulte os contratos para ver o restante.</p> : null}
         </section>
-
-        <section className="exception-summary" aria-label="Resumo de exceções">
-          <span aria-hidden="true">1</span>
-          <div><strong>Uma condição exige decisão da Direção</strong><p>R$ 102.000,00 de margem prevista vinculada à OF-2026-0231.</p></div>
-          <a href="#aprovacoes">Ver aprovação</a>
+        <section className="central-section" id="aprovacoes" aria-labelledby="approvals-title">
+          <header><div><p className="section-kicker">ALÇADA COMERCIAL</p><h2 id="approvals-title">Aprovações</h2></div><span>A decisão permanece humana e auditada no Comercial</span></header>
+          {approvals.length ? approvals.map((offer, index) => <article className="approval-preview" key={offer.id}>
+            <div className="approval-heading"><span className="approval-flag">{String(index + 1).padStart(2, '0')}</span>
+              <div><small>OFERTA EM APROVAÇÃO</small><h3>{commodityLabel(offer.commodity)} · {formatQuantity(offer.quantity_sc)} sc</h3><p>{offer.counterparty_name} · {offer.id.slice(0, 8)}</p></div>
+              <span className="demo-status" data-tone="attention">Aguardando</span></div>
+            <dl><div><dt>Preço de compra</dt><dd>{formatCurrency(offer.purchase_price_per_sc)}/sc</dd></div>
+              <div><dt>Margem projetada</dt><dd>{formatCurrency(offer.projected_margin_per_sc)}/sc</dd></div>
+              <div><dt>Janela de entrega</dt><dd>{formatDue(offer.delivery_start)} a {formatDue(offer.delivery_end)}</dd></div></dl>
+            <footer><p>Consulte o cenário e a política vigente antes de decidir.</p><Link className="tt-button" data-variant="primary" data-size="md" href={`/?status=IN_APPROVAL&commodity=${offer.commodity}`}>Analisar no Comercial</Link></footer>
+          </article>) : <div className="central-empty-state">{data ? 'Nenhuma oferta aguardando sua alçada comercial.' : 'Aprovações indisponíveis.'}</div>}
         </section>
-
-        <div className="central-layout">
-          <div className="central-main-column">
-            <section className="central-section" id="fila" aria-labelledby="work-queue-title">
-              <header><div><p className="section-kicker">PRIORIDADES</p><h2 id="work-queue-title">Fila de trabalho</h2></div><span>Ordenada por prazo e impacto</span></header>
-              <div className="work-queue">
-                {workItems.map((item, index) => (
-                  <article key={item.title}>
-                    <span className="queue-index">{String(index + 1).padStart(2, '0')}</span>
-                    <div className="queue-copy"><small>{item.kind}</small><strong>{item.title}</strong><p>{item.description}</p></div>
-                    <div className="queue-due"><small>Prazo</small><strong>{item.due}</strong></div>
-                    <span className="demo-status" data-tone={item.tone}>{item.status}</span>
-                    <Link href={item.href}>Abrir</Link>
-                  </article>
-                ))}
-              </div>
-            </section>
-
-            <section className="central-section" id="aprovacoes" aria-labelledby="approvals-title">
-              <header><div><p className="section-kicker">ALÇADA COMERCIAL</p><h2 id="approvals-title">Aprovações</h2></div><span>A decisão material permanece humana</span></header>
-              <article className="approval-preview">
-                <div className="approval-heading"><span className="approval-flag">01</span><div><small>CONDIÇÃO FORA DA POLÍTICA</small><h3>OF-2026-0231 · milho 1.800 t</h3><p>Agropecuária Boa Vista · submetida por Camila Rocha</p></div><span className="demo-status" data-tone="attention">Aguardando</span></div>
-                <dl>
-                  <div><dt>Margem calculada</dt><dd>R$ 3,40/sc</dd><small>mínimo R$ 3,80/sc</small></div>
-                  <div><dt>Margem no contrato</dt><dd>R$ 102.000,00</dd><small>30.000 sacas</small></div>
-                  <div><dt>Validade da oferta</dt><dd>Hoje, 12:00</dd><small>SLA da alçada às 11:00</small></div>
-                </dl>
-                <footer><p>Aprovação demonstrativa; a decisão real continua disponível no fluxo comercial conectado.</p><Link className="tt-button" data-variant="primary" data-size="md" href="/">Analisar no Comercial</Link></footer>
-              </article>
-            </section>
-            <section className="central-section" id="alertas" aria-labelledby="alerts-title">
-              <header><div><p className="section-kicker">EXCEÇÕES</p><h2 id="alerts-title">Alertas e integrações</h2></div></header>
-              <div className="central-alerts">
-                <div className="demo-alert" data-tone="attention"><strong>B3 com atraso de 15 min</strong><p>Preços de referência usam a última cotação registrada.</p></div>
-                <div className="demo-alert"><strong>Regra tributária não homologada</strong><p>RT-EX-01 aparece apenas no cenário demonstrativo de liquidação.</p></div>
-              </div>
-            </section>
-          </div>
-
-          <aside className="central-sidebar">
-            <section><p className="section-kicker">ATIVIDADE RECENTE</p><ol className="activity-list">{activities.map(([time, title, by]) => <li key={title}><time>{time}</time><div><strong>{title}</strong><span>{by}</span></div></li>)}</ol></section>
-          </aside>
-        </div>
-      </div>
-    </AppShell>
-  );
+        <section className="central-section" id="alertas" aria-labelledby="alerts-title">
+          <header><div><p className="section-kicker">EXCEÇÕES</p><h2 id="alerts-title">Alertas operacionais</h2></div></header>
+          <div className="central-alerts">{alerts.length ? alerts.map((item) => <div className="demo-alert" data-tone={item.tone === 'critical' || item.tone === 'attention' ? 'attention' : undefined} key={item.id}>
+            <strong>{item.title}</strong><p>{item.description}</p><Link href={item.href}>Abrir área responsável →</Link>
+          </div>) : <div className="central-empty-state">{data ? 'Nenhum alerta acionável nas áreas liberadas para seu usuário.' : 'Alertas indisponíveis.'}</div>}</div>
+        </section>
+      </div><aside className="central-sidebar"><section><p className="section-kicker">ACESSO RÁPIDO</p>
+        <ol className="activity-list"><li><Link href="/contratos">Contratos e obrigações →</Link></li>
+          <li><Link href="/ocorrencias">Ocorrências operacionais →</Link></li>
+          <li><Link href="/fiscal/entradas">Conferência fiscal →</Link></li></ol>
+        <p className="central-scope-note">Esta fila reúne dados do tenant. Responsável nominal ainda não é um vínculo de usuário; não representa uma caixa pessoal de tarefas.</p>
+      </section></aside></div>
+    </div>
+  </AppShell>;
 }
