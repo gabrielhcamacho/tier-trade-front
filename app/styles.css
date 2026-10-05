@@ -493,6 +493,28 @@ main { min-width: 0; }
 .obligation-ledger-head > *, .obligation-ledger-row > * { padding-inline: 14px; }
 .obligation-ledger-row > span { justify-self: start; }
 
+.contract-obligations > header > span { padding-top: 4px; color: var(--ink-muted); font-size: 10px; }
+.contract-pending-count { display: block; margin-top: 5px; color: var(--ink-muted); white-space: nowrap; }
+.contract-obligation-list { border-top: 1px solid var(--ink); }
+.contract-obligation-item { border-bottom: 1px solid var(--line); }
+.contract-obligation-item > summary { min-height: 64px; padding: 12px 14px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 18px; cursor: pointer; list-style: none; }
+.contract-obligation-item > summary::-webkit-details-marker { display: none; }
+.contract-obligation-item > summary::before { content: "+"; width: 18px; color: var(--forest); font-family: var(--font-mono); font-size: 14px; }
+.contract-obligation-item[open] > summary::before { content: "−"; }
+.contract-obligation-item > summary { grid-template-columns: 18px minmax(0, 1fr) auto; }
+.contract-obligation-item > summary > div { min-width: 0; display: grid; gap: 4px; }
+.contract-obligation-item > summary strong { overflow: hidden; text-overflow: ellipsis; font-size: 11px; white-space: nowrap; }
+.contract-obligation-item > summary span:not(.tt-status) { color: var(--ink-muted); font-size: 9px; }
+.contract-obligation-form { padding: 17px 14px 20px 50px; display: grid; grid-template-columns: 1fr 1fr 150px 160px; gap: 15px; background: var(--surface-sunken); border-top: 1px solid var(--line); }
+.contract-obligation-form > .tt-field:nth-of-type(5) { grid-column: 1 / -1; }
+.contract-obligation-form textarea { resize: vertical; }
+.contract-obligation-action { grid-column: 1 / -1; display: flex; align-items: center; justify-content: flex-end; gap: 12px; }
+.contract-obligation-action .fulfillment-feedback { flex: 1; }
+.contract-obligation-new { margin-top: 14px; border: 1px solid var(--line-strong); }
+.contract-obligation-new > summary { padding: 12px 14px; color: var(--forest); cursor: pointer; font-size: 10px; font-weight: 700; list-style: none; }
+.contract-obligation-new > summary::-webkit-details-marker { display: none; }
+.contract-obligation-new .contract-obligation-form { padding-left: 14px; }
+
 .contract-side-column, .load-side-column { display: grid; gap: 32px; }
 .contract-side-column > section, .load-side-column > section { padding-left: 22px; border-left: 1px solid var(--line); }
 .contract-side-column p:not(.section-kicker), .load-side-column p:not(.section-kicker) { margin: 9px 0 18px; color: var(--ink-secondary); font-size: 11px; line-height: 17px; }
@@ -1026,6 +1048,8 @@ main { min-width: 0; }
   .finance-action-grid form { border-right: 0; border-bottom: 1px solid var(--line); }
   .finance-action-grid > div { border-right: 0; border-bottom: 1px solid var(--line); }
   .document-upload-form { grid-template-columns: 1fr 1fr; }
+  .contract-obligation-form { grid-template-columns: 1fr 1fr; }
+  .contract-obligation-form > .tt-field:nth-of-type(5) { grid-column: 1 / -1; }
   .fiscal-entry-form { grid-template-columns: 1fr 1fr; }
   .fiscal-calculation-form { grid-template-columns: 1fr 1fr; }
   .fiscal-authority-form, .fiscal-obligation-fields { grid-template-columns: 1fr 1fr; }
@@ -1086,6 +1110,11 @@ main { min-width: 0; }
   .detail-tabs { gap: 22px; }
   .detail-data-grid { grid-template-columns: 1fr; }
   .detail-data-grid > div { border-right: 0; }
+  .contract-obligation-item > summary { grid-template-columns: 18px minmax(0, 1fr); }
+  .contract-obligation-item > summary > .tt-status { grid-column: 2; justify-self: start; }
+  .contract-obligation-form { padding-left: 14px; grid-template-columns: 1fr; }
+  .contract-obligation-form > .tt-field:nth-of-type(5), .contract-obligation-action { grid-column: auto; }
+  .contract-obligation-action { align-items: stretch; flex-direction: column; }
   .obligation-ledger-head, .obligation-ledger-row { grid-template-columns: minmax(0, 1fr) 120px; }
   .contract-side-column, .load-side-column { grid-template-columns: 1fr; }
   .unavailable-section > header { align-items: flex-start; flex-direction: column; }

@@ -4,6 +4,7 @@ import { AppShell } from '../../app-shell';
 import { currentUserContext } from '../../../lib/current-user';
 import { loadDocuments, type StoredDocument } from '../../../lib/documents';
 import { DocumentPanel } from '../../documents/document-panel';
+import { ContractObligations } from '../contract-obligations';
 import {
   commodityLabel,
   contractStatusLabel,
@@ -11,8 +12,6 @@ import {
   formatDate,
   formatQuantity,
   loadContractSummary,
-  obligationLabel,
-  obligationStatus,
   unitLabel,
   type ContractSummary,
 } from '../../../lib/contracts';
@@ -93,6 +92,7 @@ function ContractDetail({ summary, documents, documentError }: {
         <nav className="detail-tabs" aria-label="Seções do contrato">
           <a className="active" aria-current="page" href="#visao-geral">Visão geral</a>
           <Link href={`/cargas?contractId=${summary.id}`}>Entregas</Link>
+          <a href="#obrigacoes">Obrigações</a>
           <a href="#custos-margem">Custos e margem</a>
           <a href="#documentos">Documentos e auditoria</a>
         </nav>
@@ -121,18 +121,7 @@ function ContractDetail({ summary, documents, documentError }: {
             <p className="detail-note">Valores preservados pela versão {summary.policy_version} da política aplicada na conversão da oferta.</p>
           </section>
 
-          <section className="detail-section" aria-labelledby="contract-obligations-title">
-            <header><p className="section-kicker">EXECUÇÃO</p><h2 id="contract-obligations-title">Obrigações para iniciar</h2></header>
-            <div className="obligation-ledger" role="table" aria-label="Obrigações do contrato">
-              <div className="obligation-ledger-head" role="row"><span role="columnheader">Obrigação</span><span role="columnheader">Status</span></div>
-              {summary.obligations.map((item) => (
-                <div className="obligation-ledger-row" role="row" key={item.code}>
-                  <strong role="cell">{obligationLabel(item.code)}</strong>
-                  <span role="cell"><Status tone={item.status === 'COMPLETED' ? 'positive' : 'warning'}>{obligationStatus(item.status)}</Status></span>
-                </div>
-              ))}
-            </div>
-          </section>
+          <div id="obrigacoes"><ContractObligations contractId={summary.id} obligations={summary.obligations} /></div>
           <DocumentPanel
             aggregateType="CONTRACT"
             aggregateId={summary.id}

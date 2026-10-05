@@ -59,6 +59,8 @@ function NoContractSelected() {
 }
 
 function ContractLoadAgenda({ summary, agenda }: { summary: ContractSummary; agenda: LoadAgenda }) {
+  const preconditions = summary.obligations.filter((item) =>
+    item.code === 'SIGNED_CONTRACT' || item.code === 'DELIVERY_SCHEDULE');
   const obligationMap = new Map(summary.obligations.map((item) => [item.code, item.status]));
   const scheduledSc = String(Number(agenda.summary.scheduledWeightKg) / 60);
   const receivedSc = String(Number(agenda.summary.receivedWeightKg) / 60);
@@ -97,7 +99,7 @@ function ContractLoadAgenda({ summary, agenda }: { summary: ContractSummary; age
         </section>
 
         <aside className="loads-sidebar" aria-label="Pré-condições da execução">
-          <section><p className="section-kicker">PRÉ-CONDIÇÕES</p><h2>Obrigações do contrato</h2><div className="loads-obligations">{summary.obligations.map((item) => <div key={item.code}><span>{obligationLabel(item.code)}</span><Status tone={item.status === 'COMPLETED' ? 'positive' : 'warning'}>{obligationStatus(item.status)}</Status></div>)}</div></section>
+          <section><p className="section-kicker">PRÉ-CONDIÇÕES</p><h2>Obrigações do contrato</h2><div className="loads-obligations">{preconditions.map((item) => <div key={item.code}><span>{obligationLabel(item.code)}</span><Status tone={item.status === 'COMPLETED' ? 'positive' : item.status === 'CANCELLED' ? 'neutral' : 'warning'}>{obligationStatus(item.status)}</Status></div>)}</div></section>
           <section className="loads-next-step"><p className="section-kicker">FLUXO OPERACIONAL</p><h2>Recebimento e pesagem</h2><p>Abra uma carga para iniciar o recebimento, registrar bruto, tara, peso líquido, contingência e classificação.</p><dl><div><dt>Assinatura</dt><dd>{obligationStatus(obligationMap.get('SIGNED_CONTRACT'))}</dd></div><div><dt>Agenda de entrega</dt><dd>{obligationStatus(obligationMap.get('DELIVERY_SCHEDULE'))}</dd></div></dl></section>
         </aside>
       </div>

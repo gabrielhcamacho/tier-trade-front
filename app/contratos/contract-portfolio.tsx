@@ -25,7 +25,7 @@ export function ContractPortfolioView({ portfolio, filters }: { portfolio: Contr
           <td className="prototype-number">{formatQuantity(contract.quantity_sc)} sc</td>
           <td className="prototype-number">{formatQuantity(String(Number(contract.received_weight_kg) / 60))} sc</td>
           <td className="prototype-number">{formatCurrency(contract.purchase_price_per_sc)}/sc</td>
-          <td><span className="prototype-status" data-status={contract.status}>{contractStatusLabel(contract.status)}</span></td>
+          <td><span className="prototype-status" data-status={contract.status}>{contractStatusLabel(contract.status)}</span>{contract.pending_obligations > 0 ? <small className="contract-pending-count">{contract.pending_obligations} obrigaç{contract.pending_obligations === 1 ? 'ão' : 'ões'} em aberto</small> : null}</td>
           <td><Link href={`/contratos/${contract.id}`}>Abrir →</Link></td>
         </tr>)}</tbody>
       </table></div>

@@ -1,6 +1,14 @@
 export type ContractObligation = {
+  id: string;
   code: string;
+  title: string;
+  description: string | null;
+  due_date: string | null;
+  responsible_name: string | null;
   status: string;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type ContractSummary = {
@@ -150,6 +158,8 @@ export function obligationLabel(value: string): string {
 
 export function obligationStatus(value?: string): string {
   if (value === 'COMPLETED') return 'Concluída';
+  if (value === 'IN_PROGRESS') return 'Em andamento';
+  if (value === 'CANCELLED') return 'Cancelada';
   if (value === 'PENDING') return 'Pendente';
   return 'Não registrada';
 }
