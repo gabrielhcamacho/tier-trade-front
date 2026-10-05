@@ -21,7 +21,71 @@ const messages: Record<string, string> = {
   FINANCIAL_PAYMENT_NOT_FOUND: 'O pagamento não foi encontrado.',
   PAYMENT_ALREADY_REVERSED: 'Esse pagamento já foi estornado.',
   CAPABILITY_NOT_FOUND: 'Seu usuário não possui permissão para esta operação.',
+  PURCHASE_PAYABLE_TITLE_NOT_FOUND: 'A compra precisa ter nota fiscal validada e título emitido.',
+  FINANCE_POLICY_REQUIRED: 'Configure a alçada financeira antes de enviar o lote.',
+  FOUR_EYES_APPROVER_REQUIRED: 'Quem criou o lote não pode aprová-lo. É necessário outro aprovador.',
+  PAYMENT_BATCH_ITEM_EXCEEDS_BALANCE: 'Um item do lote ultrapassa o saldo do título.',
+  BANK_RECONCILIATION_MISMATCH: 'O valor ou a direção do extrato não corresponde ao movimento.',
 };
+
+export async function createPurchaseCostComponentAction(_state: FinanceActionState, formData: FormData) {
+  return send('/v1/finance/purchase-cost-components', {
+    financialEventId: String(formData.get('financialEventId') ?? ''),
+    componentType: String(formData.get('componentType') ?? ''),
+    payableImpact: String(formData.get('payableImpact') ?? ''),
+    amount: decimal(formData.get('amount')),
+    description: String(formData.get('description') ?? ''),
+    externalReference: String(formData.get('externalReference') ?? '').trim() || null,
+  }, 'Componente da compra registrado e saldo recalculado.');
+}
+
+export async function configureFinancePolicyAction(_state: FinanceActionState, formData: FormData) {
+  return send('/v1/finance/policies', {
+    paymentApprovalThreshold: decimal(formData.get('paymentApprovalThreshold')),
+  }, 'Política de alçada versionada e ativada.');
+}
+
+export async function createPaymentBatchAction(_state: FinanceActionState, formData: FormData) {
+  return send('/v1/finance/payment-batches', {
+    reference: String(formData.get('reference') ?? ''),
+    scheduledOn: String(formData.get('scheduledOn') ?? ''),
+    items: [{ titleId: String(formData.get('titleId') ?? ''), amount: decimal(formData.get('amount')) }],
+  }, 'Lote de pagamento criado em rascunho.');
+}
+
+export async function submitPaymentBatchAction(_state: FinanceActionState, formData: FormData) {
+  return send(`/v1/finance/payment-batches/${encodeURIComponent(String(formData.get('batchId') ?? ''))}/submit`, {}, 'Lote enviado para a alçada aplicável.');
+}
+
+export async function approvePaymentBatchAction(_state: FinanceActionState, formData: FormData) {
+  return send(`/v1/finance/payment-batches/${encodeURIComponent(String(formData.get('batchId') ?? ''))}/approve`, {}, 'Lote aprovado com segregação de função.');
+}
+
+export async function executePaymentBatchAction(_state: FinanceActionState, formData: FormData) {
+  return send(`/v1/finance/payment-batches/${encodeURIComponent(String(formData.get('batchId') ?? ''))}/execute`, {}, 'Lote executado e títulos atualizados.');
+}
+
+export async function createBankAccountAction(_state: FinanceActionState, formData: FormData) {
+  return send('/v1/finance/bank-accounts', {
+    code: String(formData.get('code') ?? '').toUpperCase(), name: String(formData.get('name') ?? ''),
+  }, 'Conta bancária cadastrada.');
+}
+
+export async function createBankStatementEntryAction(_state: FinanceActionState, formData: FormData) {
+  const local = String(formData.get('occurredAt') ?? '');
+  return send('/v1/finance/bank-statement-entries', {
+    bankAccountId: String(formData.get('bankAccountId') ?? ''), occurredAt: local ? `${local}:00-03:00` : '',
+    direction: String(formData.get('direction') ?? ''), amount: decimal(formData.get('amount')),
+    bankReference: String(formData.get('bankReference') ?? ''),
+    description: String(formData.get('description') ?? '').trim() || null,
+  }, 'Lançamento de extrato importado.');
+}
+
+export async function reconcileBankStatementEntryAction(_state: FinanceActionState, formData: FormData) {
+  return send(`/v1/finance/bank-statement-entries/${encodeURIComponent(String(formData.get('entryId') ?? ''))}/reconcile`, {
+    matchedType: String(formData.get('matchedType') ?? ''), matchedId: String(formData.get('matchedId') ?? ''),
+  }, 'Movimento conciliado com o extrato.');
+}
 
 export async function createTitleAction(
   _state: FinanceActionState, formData: FormData,

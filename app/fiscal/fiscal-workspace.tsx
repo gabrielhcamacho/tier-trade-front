@@ -112,13 +112,14 @@ export function FiscalWorkspaceView({ data }: { data: FiscalWorkspace }) {
               {data.establishments.filter((item) => item.active).map((item) => <option key={item.id} value={item.id}>{item.legalName} · {item.uf}</option>)}
             </select>
           </Field>
+          <Field label="Operação" required><select name="calculationOperationType" defaultValue="SALE_DISPATCH"><option value="SALE_DISPATCH">Venda · expedição</option><option value="PURCHASE_RECEIPT">Compra · recebimento</option></select></Field>
           <Field label="Commodity" required><input name="calculationCommodity" defaultValue="MILHO" required /></Field>
           <Field label="UF de destino" required><input name="calculationDestinationUf" maxLength={2} pattern="[A-Za-z]{2}" required /></Field>
           <Field label="Data do fato" required><input type="date" name="calculationOccurredOn" required /></Field>
           <Field label="Origem financeira" hint="Opcional. Vincule para permitir ajuste do título de origem.">
             <select name="calculationSourceId" value={calculationSourceId} onChange={(event) => setCalculationSourceId(event.target.value)}>
               <option value="">Cálculo manual</option>
-              {data.calculationSources.map((source) => <option key={source.id} value={source.id}>{source.reference} · {source.beneficiaryName} · {formatFiscalMoney(source.amount)}</option>)}
+              {data.calculationSources.map((source) => <option key={source.id} value={source.id}>{source.eventType === 'PURCHASE_RECEIPT_PAYABLE' ? 'Compra' : 'Venda'} · {source.reference} · {source.beneficiaryName} · {formatFiscalMoney(source.amount)}</option>)}
             </select>
           </Field>
           <DecimalField name="calculationGrossAmount" label="Valor bruto" prefix="R$" defaultValue={calculationSource?.amount ?? '0'} fractionDigits={2} emptyWhenZero readOnly={Boolean(calculationSource)} hint={calculationSource ? 'Preenchido pela origem financeira vinculada.' : undefined} required />
@@ -274,6 +275,7 @@ function ConfigurationFields({ establishments, configuration }: {
 }) {
   return <>
     <Field label="Nome da configuração" required><input name="configurationName" defaultValue={configuration?.name ?? ''} required /></Field>
+    <Field label="Operação" required><select name="operationType" defaultValue={configuration?.operationType ?? 'SALE_DISPATCH'}><option value="SALE_DISPATCH">Venda · expedição</option><option value="PURCHASE_RECEIPT">Compra · recebimento</option></select></Field>
     <Field label="Estabelecimento" required>
       <select name="establishmentId" defaultValue={configuration?.establishmentId ?? ''} required>
         <option value="" disabled>Selecione</option>

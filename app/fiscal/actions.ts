@@ -103,7 +103,7 @@ export async function createFiscalCalculationAction(
   return send('/v1/fiscal/calculations', 'POST', {
     requestKey: randomUUID(),
     establishmentId: String(formData.get('calculationEstablishmentId') ?? ''),
-    operationType: 'SALE_DISPATCH',
+    operationType: String(formData.get('calculationOperationType') ?? 'SALE_DISPATCH'),
     commodity: String(formData.get('calculationCommodity') ?? '').trim().toUpperCase(),
     destinationUf: String(formData.get('calculationDestinationUf') ?? '').trim().toUpperCase(),
     occurredOn: String(formData.get('calculationOccurredOn') ?? ''),
@@ -215,6 +215,7 @@ function configurationPayload(formData: FormData) {
   return {
     establishmentId: nullable(formData.get('establishmentId')),
     name: String(formData.get('configurationName') ?? ''),
+    operationType: String(formData.get('operationType') ?? 'SALE_DISPATCH'),
     commodity: nullable(formData.get('commodity')),
     destinationUf: nullable(formData.get('destinationUf'))?.toUpperCase() ?? null,
     cfop: nullable(formData.get('cfop')),

@@ -7,11 +7,20 @@ import type { FinanceWorkspace } from '../../lib/finance';
 import { formatFinancialDate, formatMoney, payableStatusLabel, titleStatusLabel } from '../../lib/finance';
 import { DemoMetricStrip, DemoSection, DemoStatus, DemoTable } from '../demo-ui';
 import {
+  approvePaymentBatchAction,
+  configureFinancePolicyAction,
+  createBankAccountAction,
+  createBankStatementEntryAction,
+  createPaymentBatchAction,
+  createPurchaseCostComponentAction,
   createTitleAction,
+  executePaymentBatchAction,
   payTitleAction,
+  reconcileBankStatementEntryAction,
   reversePaymentAction,
   reverseSettlementAction,
   settleTitleAction,
+  submitPaymentBatchAction,
 } from './actions';
 
 const initialFinanceActionState = { ok: false, message: '' };
@@ -22,6 +31,15 @@ export function FinancialWorkspace({ data }: { data: FinanceWorkspace }) {
   const [reversalState, reversalAction, reversalPending] = useActionState(reverseSettlementAction, initialFinanceActionState);
   const [paymentState, paymentAction, paymentPending] = useActionState(payTitleAction, initialFinanceActionState);
   const [paymentReversalState, paymentReversalAction, paymentReversalPending] = useActionState(reversePaymentAction, initialFinanceActionState);
+  const [componentState, componentAction, componentPending] = useActionState(createPurchaseCostComponentAction, initialFinanceActionState);
+  const [policyState, policyAction, policyPending] = useActionState(configureFinancePolicyAction, initialFinanceActionState);
+  const [batchState, batchAction, batchPending] = useActionState(createPaymentBatchAction, initialFinanceActionState);
+  const [submitState, submitAction, submitPending] = useActionState(submitPaymentBatchAction, initialFinanceActionState);
+  const [approveState, approveAction, approvePending] = useActionState(approvePaymentBatchAction, initialFinanceActionState);
+  const [executeState, executeAction, executePending] = useActionState(executePaymentBatchAction, initialFinanceActionState);
+  const [accountState, accountAction, accountPending] = useActionState(createBankAccountAction, initialFinanceActionState);
+  const [entryState, entryAction, entryPending] = useActionState(createBankStatementEntryAction, initialFinanceActionState);
+  const [reconcileState, reconcileAction, reconcilePending] = useActionState(reconcileBankStatementEntryAction, initialFinanceActionState);
   const salesEvents = data.events.filter((event) => event.direction === 'INFLOW');
   const payableEvents = data.events.filter((event) => event.direction === 'OUTFLOW');
   const issuable = salesEvents.filter((event) => !event.title && event.calculationStatus === 'READY');
@@ -31,6 +49,11 @@ export function FinancialWorkspace({ data }: { data: FinanceWorkspace }) {
   const openPayables = payableEvents.flatMap((event) => event.title && Number(event.title.outstandingAmount) > 0
     ? [{ event, title: event.title }] : []);
   const reversiblePayments = data.payments.filter((payment) => !payment.reversedAt);
+  const purchasePayables = payableEvents.filter((event) => event.eventType === 'PURCHASE_RECEIPT_PAYABLE' && event.title);
+  const draftBatches = data.governance.paymentBatches.filter((batch) => batch.status === 'DRAFT');
+  const pendingBatches = data.governance.paymentBatches.filter((batch) => batch.status === 'PENDING_APPROVAL');
+  const approvedBatches = data.governance.paymentBatches.filter((batch) => batch.status === 'APPROVED');
+  const unmatchedEntries = data.governance.bankStatementEntries.filter((entry) => entry.status === 'UNMATCHED');
   const [selectedTitleId, setSelectedTitleId] = useState(openTitles[0]?.title.id ?? '');
   const selectedTitle = openTitles.find((item) => item.title.id === selectedTitleId);
   const [selectedPayableId, setSelectedPayableId] = useState(openPayables[0]?.title.id ?? '');
@@ -99,6 +122,69 @@ export function FinancialWorkspace({ data }: { data: FinanceWorkspace }) {
         { label: 'Contas a pagar', value: formatMoney(data.summary.payableAmount), detail: `${openPayables.length} título(s) com saldo`, tone: 'attention' },
         { label: 'Caixa realizado', value: formatMoney(data.summary.netCashFlowAmount), detail: `${formatMoney(data.summary.receivedAmount)} recebido · ${formatMoney(data.summary.paidAmount)} pago` },
       ]} />
+
+      <DemoSection kicker="MARGEM REALIZADA" title="Receita, custo e composição da compra" id="margem-realizada" aside="somente dados persistidos e rastreáveis">
+        <DemoMetricStrip items={[
+          { label: 'Receita expedida', value: formatMoney(data.governance.realizedMargin.revenueAmount), detail: 'expedições com preço calculado' },
+          { label: 'Custo apropriado', value: formatMoney(data.governance.realizedMargin.totalCostAmount), detail: 'compra + componentes proporcionais' },
+          { label: 'Margem realizada', value: formatMoney(data.governance.realizedMargin.realizedMarginAmount), detail: data.governance.realizedMargin.status === 'COMPLETE' ? 'cobertura completa disponível' : 'aguardando compra e venda conectadas', tone: 'primary' },
+        ]} />
+        {data.governance.realizedMargin.byCommodity.length ? <DemoTable label="Margem realizada por commodity"
+          columns={['Commodity', 'Receita', 'Aquisição', 'Componentes', 'Custo total', 'Margem', 'Expedido']}
+          rows={data.governance.realizedMargin.byCommodity.map((row) => [row.commodity, formatMoney(row.revenueAmount),
+            formatMoney(row.acquisitionCostAmount), formatMoney(row.componentImpactAmount), formatMoney(row.totalCostAmount),
+            formatMoney(row.realizedMarginAmount), `${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 3 }).format(Number(row.dispatchedKg))} kg`])} /> : null}
+      </DemoSection>
+
+      <DemoSection kicker="COMPOSIÇÃO DA COMPRA" title="Qualidade, frete, armazenagem e retenções" id="composicao-compra" aside="regras configuradas, nunca presumidas">
+        <div className="finance-action-grid">
+          <form action={componentAction}>
+            <Field label="Título de compra" required><select name="financialEventId" defaultValue="" required><option value="" disabled>Selecione</option>
+              {purchasePayables.map((event) => <option value={event.id} key={event.id}>{event.title!.number} · {event.beneficiaryName}</option>)}</select></Field>
+            <Field label="Componente" required><select name="componentType" defaultValue="QUALITY_DISCOUNT"><option value="QUALITY_DISCOUNT">Desconto de qualidade</option><option value="FREIGHT">Frete</option><option value="STORAGE">Armazenagem</option><option value="TAX_WITHHOLDING">Retenção</option><option value="OTHER">Outro</option></select></Field>
+            <Field label="Efeito no título" required><select name="payableImpact" defaultValue="REDUCE_PAYABLE"><option value="REDUCE_PAYABLE">Reduz a pagar</option><option value="INCREASE_PAYABLE">Aumenta a pagar</option><option value="MEMO_ONLY">Somente memória</option></select></Field>
+            <DecimalField name="amount" label="Valor" prefix="R$" defaultValue="0" fractionDigits={2} emptyWhenZero required />
+            <Field label="Descrição" required><input name="description" placeholder="Motivo e base documental" required /></Field>
+            <Field label="Referência"><input name="externalReference" placeholder="Laudo, CTe ou documento" /></Field>
+            <Feedback state={componentState} /><Button type="submit" disabled={componentPending || purchasePayables.length === 0}>{componentPending ? 'Registrando…' : 'Registrar componente'}</Button>
+          </form>
+          <div>{data.governance.purchaseCostComponents.length
+            ? <DemoTable label="Componentes da compra" columns={['Título', 'Tipo', 'Efeito', 'Valor', 'Descrição', 'Status']}
+              rows={data.governance.purchaseCostComponents.map((item) => [item.title_number, item.component_type, item.payable_impact,
+                formatMoney(item.amount), item.description, item.reversed_at ? 'Estornado' : 'Ativo'])} />
+            : <p>Nenhum componente adicional registrado.</p>}</div>
+        </div>
+      </DemoSection>
+
+      <DemoSection kicker="GOVERNANÇA FINANCEIRA" title="Alçadas e lotes de pagamento" id="lotes" aside="política versionada e quatro olhos">
+        <div className="finance-action-grid">
+          <form action={policyAction}><h3>Política de aprovação</h3>
+            <DecimalField name="paymentApprovalThreshold" label="Aprovação obrigatória acima de" prefix="R$" defaultValue={data.governance.activePolicy?.payment_approval_threshold ?? '0'} fractionDigits={2} required />
+            <Feedback state={policyState} /><Button type="submit" disabled={policyPending}>{policyPending ? 'Salvando…' : 'Versionar política'}</Button>
+          </form>
+          <form action={batchAction}><h3>Novo lote</h3><Field label="Referência" required><input name="reference" placeholder="PG-2026-0001" required /></Field>
+            <Field label="Agendamento" required><input type="date" name="scheduledOn" required /></Field>
+            <Field label="Título" required><select name="titleId" defaultValue="" required><option value="" disabled>Selecione</option>{openPayables.map(({ event, title }) => <option value={title.id} key={title.id}>{title.number} · {event.beneficiaryName} · {formatMoney(title.outstandingAmount)}</option>)}</select></Field>
+            <DecimalField name="amount" label="Valor do lote" prefix="R$" defaultValue="0" fractionDigits={2} emptyWhenZero required />
+            <Feedback state={batchState} /><Button type="submit" disabled={batchPending || openPayables.length === 0}>{batchPending ? 'Criando…' : 'Criar lote'}</Button>
+          </form>
+          <div><h3>Fluxo de aprovação</h3>
+            <BatchAction title="Enviar rascunho" batches={draftBatches} action={submitAction} state={submitState} pending={submitPending} />
+            <BatchAction title="Aprovar pendente" batches={pendingBatches} action={approveAction} state={approveState} pending={approvePending} />
+            <BatchAction title="Executar aprovado" batches={approvedBatches} action={executeAction} state={executeState} pending={executePending} />
+          </div>
+        </div>
+        {data.governance.paymentBatches.length ? <DemoTable label="Lotes de pagamento" columns={['Referência', 'Data', 'Total', 'Status', 'Política']}
+          rows={data.governance.paymentBatches.map((batch) => [batch.reference, formatFinancialDate(batch.scheduled_on), formatMoney(batch.total_amount), batch.status, batch.policy_version ? `v${batch.policy_version}` : 'Não aplicada'])} /> : null}
+      </DemoSection>
+
+      <DemoSection kicker="CONCILIAÇÃO" title="Extrato e movimentos financeiros" id="conciliacao-bancaria" aside="valor e direção conferidos pelo backend">
+        <div className="finance-action-grid">
+          <form action={accountAction}><h3>Conta bancária</h3><Field label="Código" required><input name="code" placeholder="BB01" required /></Field><Field label="Nome" required><input name="name" placeholder="Banco do Brasil · operacional" required /></Field><Feedback state={accountState} /><Button type="submit" disabled={accountPending}>{accountPending ? 'Salvando…' : 'Cadastrar conta'}</Button></form>
+          <form action={entryAction}><h3>Importar lançamento</h3><Field label="Conta" required><select name="bankAccountId" defaultValue="" required><option value="" disabled>Selecione</option>{data.governance.bankAccounts.map((account) => <option value={account.id} key={account.id}>{account.code} · {account.name}</option>)}</select></Field><Field label="Direção" required><select name="direction" defaultValue="CREDIT"><option value="CREDIT">Crédito</option><option value="DEBIT">Débito</option></select></Field><DecimalField name="amount" label="Valor" prefix="R$" defaultValue="0" fractionDigits={2} emptyWhenZero required /><Field label="Data e hora" required><input type="datetime-local" name="occurredAt" required /></Field><Field label="Referência" required><input name="bankReference" required /></Field><Field label="Descrição"><input name="description" /></Field><Feedback state={entryState} /><Button type="submit" disabled={entryPending || data.governance.bankAccounts.length === 0}>{entryPending ? 'Importando…' : 'Importar lançamento'}</Button></form>
+          <form action={reconcileAction}><h3>Conciliar</h3><Field label="Lançamento" required><select name="entryId" defaultValue="" required><option value="" disabled>Selecione</option>{unmatchedEntries.map((entry) => <option value={entry.id} key={entry.id}>{entry.bank_account_code} · {entry.bank_reference} · {formatMoney(entry.amount)}</option>)}</select></Field><Field label="Tipo" required><select name="matchedType" defaultValue="SETTLEMENT"><option value="SETTLEMENT">Recebimento</option><option value="PAYMENT">Pagamento</option></select></Field><Field label="Movimento" required><select name="matchedId" defaultValue="" required><option value="" disabled>Selecione</option>{reversible.map((item) => <option value={item.id} key={item.id}>Recebimento · {item.bankReference} · {formatMoney(item.amount)}</option>)}{reversiblePayments.map((item) => <option value={item.id} key={item.id}>Pagamento · {item.bankReference} · {formatMoney(item.amount)}</option>)}</select></Field><Feedback state={reconcileState} /><Button type="submit" disabled={reconcilePending || unmatchedEntries.length === 0}>{reconcilePending ? 'Conciliando…' : 'Conciliar movimento'}</Button></form>
+        </div>
+      </DemoSection>
 
       <DemoSection kicker="OPERAÇÃO FINANCEIRA" title="Emitir, receber e estornar" id="acoes" aside="ações salvas e auditadas">
         <div className="finance-action-grid">
@@ -256,4 +342,20 @@ function Feedback({ state }: { state: { ok: boolean; message: string } }) {
   return state.message
     ? <p className="fulfillment-feedback" data-ok={state.ok || undefined}>{state.message}</p>
     : null;
+}
+
+function BatchAction({ title, batches, action, state, pending }: {
+  title: string;
+  batches: FinanceWorkspace['governance']['paymentBatches'];
+  action: (payload: FormData) => void;
+  state: { ok: boolean; message: string };
+  pending: boolean;
+}) {
+  return <form action={action} className="finance-inline-action">
+    <Field label={title} required><select name="batchId" defaultValue="" required><option value="" disabled>Selecione</option>
+      {batches.map((batch) => <option value={batch.id} key={batch.id}>{batch.reference} · {formatMoney(batch.total_amount)}</option>)}
+    </select></Field>
+    <Feedback state={state} />
+    <Button type="submit" disabled={pending || batches.length === 0}>{pending ? 'Processando…' : title}</Button>
+  </form>;
 }

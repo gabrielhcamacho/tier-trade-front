@@ -39,7 +39,7 @@ export type FiscalTaxComponent = {
 export type FiscalConfiguration = {
   id: string; configurationKey: string; version: number; establishmentId: string | null;
   establishmentName: string | null; establishmentUf: string | null; taxRegime: string | null;
-  name: string; operationType: 'SALE_DISPATCH'; commodity: string | null;
+  name: string; operationType: 'SALE_DISPATCH' | 'PURCHASE_RECEIPT'; commodity: string | null;
   destinationUf: string | null; cfop: string | null; emissionStrategy: 'NATIVE' | 'INTEGRATED' | null;
   technicalResponsible: string | null; effectiveFrom: string | null; effectiveTo: string | null;
   roundingMode: 'HALF_UP' | 'HALF_EVEN' | 'DOWN' | 'UP' | null; roundingScale: number | null;
@@ -53,7 +53,7 @@ export type FiscalCalculation = {
   configuration: { id: string; key: string; version: number; name: string };
   establishment: { id: string; name: string };
   context: {
-    establishmentId: string; operationType: 'SALE_DISPATCH'; commodity: string;
+    establishmentId: string; operationType: 'SALE_DISPATCH' | 'PURCHASE_RECEIPT'; commodity: string;
     destinationUf: string; occurredOn: string; grossAmount: string; currency: 'BRL';
     sourceType: 'MANUAL' | 'FISCAL_DOCUMENT' | 'FINANCIAL_EVENT'; sourceId: string | null;
   };
@@ -114,7 +114,8 @@ export type FiscalWorkspace = {
   authorities: FiscalAuthority[];
   obligations: FiscalObligation[];
   calculationSources: Array<{
-    id: string; reference: string; beneficiaryName: string; amount: string;
+    id: string; eventType: 'SALE_DISPATCH_RECEIVABLE' | 'PURCHASE_RECEIPT_PAYABLE';
+    reference: string; beneficiaryName: string; amount: string;
   }>;
   eligibleEvents: Array<{
     id: string; sourceId: string; salesContractId: string; contractReference: string;

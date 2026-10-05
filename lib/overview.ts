@@ -13,6 +13,8 @@ export type OverviewResponse = {
   indicators: {
     projectedMarginAmount: string | null;
     projectedMarginStatus: 'READY' | 'NO_DATA' | 'PENDING_ROUNDING_POLICY';
+    realizedMarginAmount: string;
+    realizedMarginStatus: 'COMPLETE' | 'NO_DATA';
     purchaseContractedKg: string;
     purchaseReceivedKg: string;
     salesContractedKg: string;
@@ -30,6 +32,8 @@ export type OverviewResponse = {
     fiscalPendingCount: number;
     fiscalRejectedCount: number;
     purchasePayableOpenCount: number;
+    paymentBatchApprovalCount: number;
+    unmatchedBankEntryCount: number;
   };
   operational: {
     openOccurrences: number; criticalOccurrences: number; qualityReviews: number;
@@ -39,6 +43,9 @@ export type OverviewResponse = {
     marginComponents: Array<{ contractId: string; counterpartyName: string; commodity: string;
       policyVersion: number | null; quantitySc: string; marginPerSc: string; amount: string | null;
       calculationStatus: string }>;
+    realizedMarginByCommodity: Array<{ commodity: string; revenueAmount: string;
+      acquisitionCostAmount: string; componentImpactAmount: string; totalCostAmount: string;
+      realizedMarginAmount: string; dispatchedKg: string }>;
     dueDates: Array<{ date: string; inflowAmount: string | null; outflowAmount: string | null;
       netKnownAmount: string | null; titleIds: string[] }>;
     byCommodity: Array<{ commodity: string; purchaseContractedKg: string; purchaseReceivedKg: string;

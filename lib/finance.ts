@@ -67,6 +67,33 @@ export type FinancialPayment = {
   reversalReason: string | null;
 };
 
+export type FinanceGovernance = {
+  activePolicy: { id: string; version: number; payment_approval_threshold: string; active: boolean } | null;
+  purchaseCostComponents: Array<{
+    id: string; financial_event_id: string; title_id: string; title_number: string;
+    component_type: string; payable_impact: string; amount: string; description: string;
+    external_reference: string | null; reversed_at: string | null; reversal_reason: string | null;
+  }>;
+  paymentBatches: Array<{
+    id: string; reference: string; scheduled_on: string; status: string; total_amount: string;
+    policy_version: number | null; approval_threshold: string | null;
+    items: Array<{ id: string; titleId: string; titleNumber: string; amount: string; paymentId: string | null }>;
+  }>;
+  bankAccounts: Array<{ id: string; code: string; name: string; active: boolean }>;
+  bankStatementEntries: Array<{
+    id: string; bank_account_id: string; bank_account_code: string; occurred_at: string;
+    direction: 'CREDIT' | 'DEBIT'; amount: string; bank_reference: string;
+    description: string | null; status: 'UNMATCHED' | 'MATCHED'; matched_type: string | null;
+    matched_id: string | null;
+  }>;
+  realizedMargin: {
+    status: 'COMPLETE' | 'NO_DATA'; revenueAmount: string; totalCostAmount: string;
+    realizedMarginAmount: string;
+    byCommodity: Array<{ commodity: string; revenueAmount: string; acquisitionCostAmount: string;
+      componentImpactAmount: string; totalCostAmount: string; realizedMarginAmount: string; dispatchedKg: string }>;
+  };
+};
+
 export type FinanceWorkspace = {
   tenant: { legalName: string; isDemo: boolean; demoSeedVersion: number | null };
   summary: {
@@ -82,6 +109,7 @@ export type FinanceWorkspace = {
   events: FinancialEvent[];
   settlements: FinancialSettlement[];
   payments: FinancialPayment[];
+  governance: FinanceGovernance;
 };
 
 export type FinanceResult =
