@@ -82,7 +82,7 @@ export function FinancialWorkspace({ data }: { data: FinanceWorkspace }) {
   ]);
   const paymentRows = data.payments.map((payment) => [
     payment.titleNumber,
-    payment.authorityName,
+    payment.beneficiaryName,
     payment.bankReference,
     formatFinancialDate(payment.paidAt),
     formatMoney(payment.amount),
@@ -96,7 +96,7 @@ export function FinancialWorkspace({ data }: { data: FinanceWorkspace }) {
       <DemoMetricStrip items={[
         { label: 'Previsto em vendas', value: formatMoney(data.summary.projectedAmount), detail: `${salesEvents.length} expedição(ões)` },
         { label: 'A receber', value: formatMoney(data.summary.receivableAmount), detail: `${openTitles.length} título(s) com saldo`, tone: 'primary' },
-        { label: 'A pagar em tributos', value: formatMoney(data.summary.payableAmount), detail: `${openPayables.length} título(s) com saldo`, tone: 'attention' },
+        { label: 'Contas a pagar', value: formatMoney(data.summary.payableAmount), detail: `${openPayables.length} título(s) com saldo`, tone: 'attention' },
         { label: 'Caixa realizado', value: formatMoney(data.summary.netCashFlowAmount), detail: `${formatMoney(data.summary.receivedAmount)} recebido · ${formatMoney(data.summary.paidAmount)} pago` },
       ]} />
 
@@ -168,12 +168,12 @@ export function FinancialWorkspace({ data }: { data: FinanceWorkspace }) {
         </div>
       </DemoSection>
 
-      <DemoSection kicker="CONTAS A PAGAR" title="Pagar e estornar obrigações fiscais" id="acoes-pagar" aside="caixa e obrigação atualizados juntos">
+      <DemoSection kicker="CONTAS A PAGAR" title="Pagar e estornar obrigações" id="acoes-pagar" aside="fornecedor ou autoridade e caixa atualizados juntos">
         <div className="finance-action-grid">
           <form action={paymentAction}>
             <p className="section-kicker">1 · OBRIGAÇÃO → PAGAMENTO</p>
-            <h3>Registrar pagamento fiscal</h3>
-            <Field label="Título fiscal em aberto" required>
+            <h3>Registrar pagamento</h3>
+            <Field label="Título a pagar em aberto" required>
               <select name="titleId" value={selectedPayableId} onChange={(event) => setSelectedPayableId(event.target.value)} required>
                 <option value="" disabled>Selecione</option>
                 {openPayables.map(({ event, title }) => <option value={title.id} key={title.id}>
@@ -194,7 +194,7 @@ export function FinancialWorkspace({ data }: { data: FinanceWorkspace }) {
 
           <form action={paymentReversalAction}>
             <p className="section-kicker">2 · CORREÇÃO CONTROLADA</p>
-            <h3>Estornar pagamento fiscal</h3>
+            <h3>Estornar pagamento</h3>
             <Field label="Pagamento ativo" required>
               <select name="paymentId" defaultValue="" required>
                 <option value="" disabled>Selecione</option>
@@ -226,7 +226,7 @@ export function FinancialWorkspace({ data }: { data: FinanceWorkspace }) {
               ? <DemoTable label="Contas a receber" columns={['Título', 'Cliente', 'Vencimento', 'Valor', 'Ajustes', 'Recebido', 'Saldo', 'Status']} rows={titleRows} />
               : <p>Nenhum título emitido.</p>}
           </DemoSection>
-          <DemoSection kicker="OBRIGAÇÕES FISCAIS" title="Contas a pagar" id="pagar" aside="autoridade fiscal separada da contraparte comercial">
+          <DemoSection kicker="OBRIGAÇÕES" title="Contas a pagar" id="pagar" aside="fornecedores e autoridades identificados pela origem">
             {payableRows.length
               ? <DemoTable label="Contas a pagar" columns={['Título', 'Favorecido', 'Referência', 'Vencimento', 'Valor', 'Pago', 'Saldo', 'Status']} rows={payableRows} />
               : <p>Nenhum título fiscal a pagar.</p>}

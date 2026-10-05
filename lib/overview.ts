@@ -24,6 +24,16 @@ export type OverviewResponse = {
     payableAmount: string;
     pendingApprovalCount: number;
     pendingObligationCount: number;
+    openOccurrenceCount: number;
+    criticalOccurrenceCount: number;
+    qualityReviewCount: number;
+    fiscalPendingCount: number;
+    fiscalRejectedCount: number;
+    purchasePayableOpenCount: number;
+  };
+  operational: {
+    openOccurrences: number; criticalOccurrences: number; qualityReviews: number;
+    fiscalPending: number; fiscalRejected: number; purchasePayablesOpen: number;
   };
   charts: {
     marginComponents: Array<{ contractId: string; counterpartyName: string; commodity: string;

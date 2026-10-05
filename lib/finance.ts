@@ -12,10 +12,13 @@ export type FinancialTitle = {
 
 export type FinancialEvent = {
   id: string;
-  eventType: 'SALE_DISPATCH_RECEIVABLE' | 'TAX_OBLIGATION_PAYABLE';
+  eventType: 'SALE_DISPATCH_RECEIVABLE' | 'TAX_OBLIGATION_PAYABLE' | 'PURCHASE_RECEIPT_PAYABLE';
   direction: 'INFLOW' | 'OUTFLOW';
   sourceId: string;
   salesContractId: string | null;
+  purchaseContractId: string | null;
+  loadId: string | null;
+  loadReceiptId: string | null;
   contractReference: string | null;
   counterpartyId: string | null;
   counterpartyName: string | null;
@@ -52,9 +55,10 @@ export type FinancialSettlement = {
 export type FinancialPayment = {
   id: string;
   titleId: string;
-  fiscalObligationId: string;
+  fiscalObligationId: string | null;
+  purchaseReceiptId: string | null;
   titleNumber: string;
-  authorityName: string;
+  beneficiaryName: string;
   amount: string;
   paidAt: string;
   bankReference: string;

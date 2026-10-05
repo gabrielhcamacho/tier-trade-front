@@ -93,6 +93,21 @@ export type FiscalWorkspace = {
     openObligations: number; taxPayables: number;
   };
   documents: FiscalDocument[];
+  purchaseDocuments: Array<{
+    id: string; financialEventId: string; purchaseContractId: string; loadId: string;
+    loadReceiptId: string; counterpartyName: string; commodity: string; documentNumber: string;
+    invoiceSeries: string | null; accessKey: string | null; issuedAt: string; totalAmount: string;
+    expectedAmount: string | null; differenceAmount: string | null; dueDate: string;
+    titleNumber: string; scaleTicketNumber: string | null; acceptedWeightKg: string;
+    status: 'RECEIVED' | 'VALIDATED' | 'REJECTED'; validationNotes: string | null;
+    rejectionReason: string | null; updatedAt: string; validatedAt: string | null;
+    payable: { id: string; status: string; paidAmount: string; outstandingAmount: string } | null;
+  }>;
+  eligiblePurchaseReceipts: Array<{
+    id: string; loadId: string; contractId: string; counterpartyName: string; commodity: string;
+    invoiceNumber: string; invoiceSeries: string | null; accessKey: string | null;
+    acceptedWeightKg: string; purchasePricePerSc: string; receivedAt: string;
+  }>;
   establishments: FiscalEstablishment[];
   configurations: FiscalConfiguration[];
   calculations: FiscalCalculation[];

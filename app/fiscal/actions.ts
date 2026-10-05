@@ -14,6 +14,11 @@ const messages: Record<string, string> = {
   FISCAL_ACCESS_KEY_REQUIRED: 'Informe a chave de acesso de 44 dígitos antes da validação.',
   FISCAL_FINANCIAL_EVENT_NOT_READY: 'O valor financeiro ainda depende da política de arredondamento.',
   FISCAL_DOCUMENT_VALUE_DIVERGENCE: 'O valor da NF-e diverge do evento financeiro. Corrija o documento antes de validar.',
+  ACCEPTED_CURRENT_RECEIPT_REQUIRED: 'Selecione um recebimento atual, aceito e com peso aprovado.',
+  ROUNDING_POLICY_REQUIRED: 'O valor calculado possui fração de centavo e exige política de arredondamento.',
+  PURCHASE_PAYABLE_ALREADY_EXISTS: 'Já existe um contas a pagar para esse recebimento ou essa numeração.',
+  PURCHASE_DOCUMENT_CORRECTION_REQUIRES_REJECTION: 'Rejeite a entrada fiscal antes de substituí-la por um novo documento.',
+  VALIDATED_FISCAL_DOCUMENT_IMMUTABLE: 'Um documento validado não pode ser rejeitado ou alterado.',
   FISCAL_ESTABLISHMENT_ALREADY_EXISTS: 'Já existe um estabelecimento com esse CNPJ neste tenant.',
   FISCAL_ESTABLISHMENT_NOT_FOUND: 'O estabelecimento selecionado não foi encontrado ou está inativo.',
   FISCAL_CONFIGURATION_NOT_FOUND: 'A configuração fiscal não foi encontrada.',
@@ -158,6 +163,22 @@ export async function validateFiscalDocumentAction(
     'Documento validado e título financeiro vinculado.');
 }
 
+export async function createPurchaseFiscalDocumentAction(
+  _state: FiscalActionState, formData: FormData,
+): Promise<FiscalActionState> {
+  const local = String(formData.get('issuedAt') ?? '');
+  return send('/v1/fiscal/purchase-documents', 'POST', {
+    loadReceiptId: String(formData.get('loadReceiptId') ?? ''),
+    documentNumber: String(formData.get('documentNumber') ?? ''),
+    accessKey: String(formData.get('accessKey') ?? '').replace(/\D/g, '') || null,
+    issuedAt: local ? `${local}:00-03:00` : '',
+    totalAmount: decimal(formData.get('totalAmount')),
+    dueDate: String(formData.get('dueDate') ?? ''),
+    titleNumber: String(formData.get('titleNumber') ?? ''),
+    validationNotes: String(formData.get('validationNotes') ?? '').trim() || null,
+  }, 'NF-e de compra registrada. Valide para emitir o contas a pagar.');
+}
+
 export async function rejectFiscalDocumentAction(
   _state: FiscalActionState, formData: FormData,
 ): Promise<FiscalActionState> {
@@ -243,7 +264,9 @@ async function send(path: string, method: 'POST' | 'PATCH', payload: unknown,
       };
     }
     revalidatePath('/fiscal');
+    revalidatePath('/fiscal/entradas');
     revalidatePath('/financeiro');
+    revalidatePath('/central');
     return { ok: true, message: success };
   } catch {
     return { ok: false, message: 'Não foi possível acessar a API configurada.' };

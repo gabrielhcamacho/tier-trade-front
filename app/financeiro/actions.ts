@@ -15,7 +15,7 @@ const messages: Record<string, string> = {
   FINANCIAL_SETTLEMENT_NOT_FOUND: 'O recebimento não foi encontrado.',
   SETTLEMENT_ALREADY_REVERSED: 'Esse recebimento já foi estornado.',
   RECEIVABLE_PAYMENT_FLOW_NOT_AVAILABLE: 'Este título é a receber e não aceita registro de pagamento.',
-  FISCAL_PAYABLE_REQUIRED: 'O pagamento precisa estar vinculado a uma obrigação fiscal.',
+  PAYABLE_SOURCE_REQUIRED: 'O pagamento precisa estar vinculado a uma compra ou obrigação fiscal.',
   PAYMENT_EXCEEDS_TITLE_BALANCE: 'O pagamento ultrapassa o saldo em aberto do título.',
   PAYMENT_BANK_REFERENCE_ALREADY_USED: 'Essa referência bancária de pagamento já foi utilizada.',
   FINANCIAL_PAYMENT_NOT_FOUND: 'O pagamento não foi encontrado.',
@@ -63,7 +63,7 @@ export async function payTitleAction(
     paidAt: local ? `${local}:00-03:00` : '',
     bankReference: String(formData.get('bankReference') ?? ''),
     notes: String(formData.get('notes') ?? '').trim() || null,
-  }, 'Pagamento fiscal registrado e saldos atualizados.');
+  }, 'Pagamento registrado e saldos atualizados.');
 }
 
 export async function reversePaymentAction(
@@ -71,7 +71,7 @@ export async function reversePaymentAction(
 ): Promise<FinanceActionState> {
   return send(`/v1/finance/payments/${encodeURIComponent(String(formData.get('paymentId') ?? ''))}/reverse`, {
     reason: String(formData.get('reason') ?? ''),
-  }, 'Pagamento fiscal estornado sem apagar o histórico.');
+  }, 'Pagamento estornado sem apagar o histórico.');
 }
 
 async function send(path: string, payload: unknown, success: string): Promise<FinanceActionState> {

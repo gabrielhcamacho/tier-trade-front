@@ -39,7 +39,7 @@ const tabs: Record<Domain, Tab[]> = {
   ],
   fiscal: [
     { label: 'Visão fiscal', href: '/fiscal' }, { label: 'Documentos' },
-    { label: 'Entrada fiscal' }, { label: 'Validação' }, { label: 'Tributos' }, { label: 'Obrigações' },
+    { label: 'Entrada fiscal', href: '/fiscal/entradas' }, { label: 'Validação' }, { label: 'Tributos' }, { label: 'Obrigações' },
   ],
 };
 
