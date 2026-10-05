@@ -12,7 +12,10 @@ export type InventoryLot = {
   quantityKg: string;
   committedKg: string;
   availableKg: string;
-  quality: { moisturePct: string; impurityPct: string; damagedPct: string };
+  owner: { id: string; name: string | null } | null;
+  custodian: { id: string; name: string | null } | null;
+  quality: { moisturePct: string; impurityPct: string; damagedPct: string;
+    brokenPct?: string; burntPct?: string; heatDamagedPct?: string };
   vehiclePlate: string;
   createdAt: string;
 };
@@ -63,6 +66,21 @@ export type InventoryPosition = {
     contract_reference: string; lot_code: string;
   }>;
   counterparties: Array<{ id: string; legal_name: string }>;
+  locations: Array<{ id: string; code: string; name: string; status: string }>;
+  transfers: Array<{
+    id: string; lot_id: string; lot_code: string; source_location_id: string;
+    source_location_code: string; destination_location_id: string;
+    destination_location_code: string; status: string; started_at: string;
+    completed_at: string | null; reason: string;
+  }>;
+  counts: Array<{
+    id: string; lot_id: string; lot_code: string; system_quantity_kg: string;
+    counted_quantity_kg: string; difference_kg: string; occurred_at: string; reason: string;
+  }>;
+  lotEvents: Array<{
+    id: string; lot_id: string; lot_code: string; event_type: string;
+    payload: Record<string, unknown>; reason: string; occurred_at: string;
+  }>;
 };
 
 export type InventoryResult =
@@ -112,5 +130,7 @@ export function movementLabel(value: string): string {
   if (value === 'RECEIPT_CORRECTION') return 'Correção de recebimento';
   if (value === 'RECEIPT_REVERSAL') return 'Estorno para revisão';
   if (value === 'DISPATCH') return 'Saída por expedição';
+  if (value === 'LOSS') return 'Perda operacional';
+  if (value === 'COUNT_ADJUSTMENT') return 'Ajuste por inventário físico';
   return value;
 }

@@ -62,6 +62,9 @@ export function ReceiptWorkspace({ loadId, status, receipt }: {
           <div><dt>Umidade</dt><dd>{formatNumber(receipt.moisturePct)}%</dd></div>
           <div><dt>Impurezas</dt><dd>{formatNumber(receipt.impurityPct)}%</dd></div>
           <div><dt>Avariados</dt><dd>{formatNumber(receipt.damagedPct)}%</dd></div>
+          <div><dt>Quebrados</dt><dd>{formatNumber(receipt.brokenPct)}%</dd></div>
+          <div><dt>Queimados</dt><dd>{formatNumber(receipt.burntPct)}%</dd></div>
+          <div><dt>Ardidos</dt><dd>{formatNumber(receipt.heatDamagedPct)}%</dd></div>
         </dl>
       ) : null}
       <form action={receiptAction} className="receipt-form">
@@ -97,6 +100,9 @@ export function ReceiptWorkspace({ loadId, status, receipt }: {
         <DecimalField name="moisturePct" label="Umidade" suffix="%" defaultValue={receipt?.moisturePct ?? '0'} fractionDigits={4} emptyWhenZero required />
         <DecimalField name="impurityPct" label="Impurezas" suffix="%" defaultValue={receipt?.impurityPct ?? '0'} fractionDigits={4} emptyWhenZero required />
         <DecimalField name="damagedPct" label="Avariados" suffix="%" defaultValue={receipt?.damagedPct ?? '0'} fractionDigits={4} emptyWhenZero required />
+        <DecimalField name="brokenPct" label="Quebrados" suffix="%" defaultValue={receipt?.brokenPct ?? '0'} fractionDigits={4} emptyWhenZero required />
+        <DecimalField name="burntPct" label="Queimados" suffix="%" defaultValue={receipt?.burntPct ?? '0'} fractionDigits={4} emptyWhenZero required />
+        <DecimalField name="heatDamagedPct" label="Ardidos" suffix="%" defaultValue={receipt?.heatDamagedPct ?? '0'} fractionDigits={4} emptyWhenZero required />
         <Field label="Decisão humana de qualidade" required>
           <select name="qualityDecision" value={qualityDecision} onChange={(event) => setQualityDecision(event.target.value as 'ACCEPTED' | 'REVIEW_REQUIRED')}>
             <option value="REVIEW_REQUIRED">Manter em revisão</option>

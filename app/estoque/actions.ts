@@ -15,6 +15,13 @@ const messages: Record<string, string> = {
   DISPATCH_EXCEEDS_PHYSICAL_BALANCE: 'A expedição ultrapassa o estoque físico.',
   CAPABILITY_NOT_FOUND: 'Seu usuário não possui permissão para esta operação.',
   COUNTERPARTY_PROFILE_REQUIRED: 'Classifique a contraparte antes de criar o contrato de venda.',
+  INVENTORY_LOCATION_CODE_EXISTS: 'Já existe uma localização com esse código.',
+  INVENTORY_LOT_NOT_IN_STORAGE: 'O lote precisa estar armazenado para iniciar o remaneio.',
+  TRANSFER_DESTINATION_EQUALS_SOURCE: 'Escolha uma localização diferente da atual.',
+  TRANSFER_COMPLETION_PRECEDES_START: 'A conclusão não pode ser anterior ao início do remaneio.',
+  LOSS_EXCEEDS_PHYSICAL_BALANCE: 'A perda ultrapassa o saldo físico do lote.',
+  LOSS_WOULD_BREAK_ACTIVE_ALLOCATIONS: 'A perda deixaria o lote abaixo do volume já alocado.',
+  COUNT_BELOW_ACTIVE_ALLOCATIONS: 'A contagem está abaixo do volume reservado em alocações ativas.',
 };
 
 export async function saveSalesContractAction(
@@ -60,6 +67,50 @@ export async function dispatchInventoryAction(
   }, 'Expedição registrada e estoque baixado.');
 }
 
+export async function createLocationAction(_state: FulfillmentState, formData: FormData) {
+  return send('/v1/inventory/locations', 'POST', {
+    code: String(formData.get('code') ?? ''), name: String(formData.get('name') ?? ''),
+  }, 'Localização criada.');
+}
+
+export async function classifyLotAction(_state: FulfillmentState, formData: FormData) {
+  return send(`/v1/inventory/lots/${encodeURIComponent(String(formData.get('lotId') ?? ''))}/classification`, 'PUT', {
+    ownershipStatus: String(formData.get('ownershipStatus') ?? ''),
+    riskStatus: String(formData.get('riskStatus') ?? ''),
+    custodyStatus: String(formData.get('custodyStatus') ?? ''),
+    ownerCounterpartyId: optional(formData.get('ownerCounterpartyId')),
+    custodianCounterpartyId: optional(formData.get('custodianCounterpartyId')),
+    occurredAt: localTimestamp(formData.get('occurredAt'), formData.get('timezoneOffsetMinutes')), reason: String(formData.get('reason') ?? ''),
+  }, 'Classificação do lote atualizada.');
+}
+
+export async function startTransferAction(_state: FulfillmentState, formData: FormData) {
+  return send(`/v1/inventory/lots/${encodeURIComponent(String(formData.get('lotId') ?? ''))}/transfers`, 'POST', {
+    destinationLocationId: String(formData.get('destinationLocationId') ?? ''),
+    startedAt: localTimestamp(formData.get('startedAt'), formData.get('timezoneOffsetMinutes')), reason: String(formData.get('reason') ?? ''),
+  }, 'Remaneio iniciado.');
+}
+
+export async function completeTransferAction(_state: FulfillmentState, formData: FormData) {
+  return send(`/v1/inventory/transfers/${encodeURIComponent(String(formData.get('transferId') ?? ''))}/complete`, 'POST', {
+    completedAt: localTimestamp(formData.get('completedAt'), formData.get('timezoneOffsetMinutes')), reason: String(formData.get('reason') ?? ''),
+  }, 'Remaneio concluído.');
+}
+
+export async function recordLossAction(_state: FulfillmentState, formData: FormData) {
+  return send(`/v1/inventory/lots/${encodeURIComponent(String(formData.get('lotId') ?? ''))}/losses`, 'POST', {
+    quantityKg: decimal(formData.get('quantityKg')), occurredAt: localTimestamp(formData.get('occurredAt'), formData.get('timezoneOffsetMinutes')),
+    reason: String(formData.get('reason') ?? ''),
+  }, 'Perda registrada no livro de estoque.');
+}
+
+export async function reconcileCountAction(_state: FulfillmentState, formData: FormData) {
+  return send(`/v1/inventory/lots/${encodeURIComponent(String(formData.get('lotId') ?? ''))}/counts`, 'POST', {
+    countedQuantityKg: decimal(formData.get('countedQuantityKg')),
+    occurredAt: localTimestamp(formData.get('occurredAt'), formData.get('timezoneOffsetMinutes')), reason: String(formData.get('reason') ?? ''),
+  }, 'Inventário físico conciliado.');
+}
+
 async function send(path: string, method: 'POST' | 'PUT', payload: unknown, success: string) {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   const { identityHeaders } = await currentUserContext();
@@ -89,4 +140,19 @@ function decimal(value: FormDataEntryValue | null): string {
 function optionalInteger(value: FormDataEntryValue | null): number | null {
   const text = String(value ?? '').trim();
   return text ? Number.parseInt(text, 10) : null;
+}
+
+function optional(value: FormDataEntryValue | null): string | null {
+  const text = String(value ?? '').trim(); return text || null;
+}
+
+function localTimestamp(value: FormDataEntryValue | null, offsetValue: FormDataEntryValue | null): string {
+  const text = String(value ?? '');
+  if (!text) return '';
+  const offsetMinutes = Number(offsetValue ?? 0);
+  const sign = offsetMinutes > 0 ? '-' : '+';
+  const absolute = Math.abs(offsetMinutes);
+  const hours = String(Math.floor(absolute / 60)).padStart(2, '0');
+  const minutes = String(absolute % 60).padStart(2, '0');
+  return `${text}:00${sign}${hours}:${minutes}`;
 }

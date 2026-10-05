@@ -12,6 +12,7 @@ import {
   type InventoryPosition,
 } from '../../lib/inventory';
 import { FulfillmentForms } from './fulfillment-forms';
+import { InventoryGovernanceForms } from './inventory-governance-forms';
 
 export default async function InventoryPage() {
   const user = await currentUserContext();
@@ -113,6 +114,9 @@ function InventoryWorkspace({ data }: { data: InventoryPosition }) {
                 `${formatTonnes(String(Number(contract.quantity_kg) - Number(contract.dispatched_kg)))} t`,
               ])} />
               : <p>Nenhum contrato de venda cadastrado.</p>}
+          </DemoSection>
+          <DemoSection kicker="GOVERNANÇA FÍSICA" title="Titularidade, custódia, remaneio e perdas" id="governanca-estoque" aside="eventos auditáveis">
+            <InventoryGovernanceForms data={data} />
           </DemoSection>
           <DemoSection kicker="POSIÇÃO CONSOLIDADA" title="Saldo por lote e localização" id="posicao-estoque" aside={`${data.lots.length} lotes visíveis`}>
             {positionRows.length > 0

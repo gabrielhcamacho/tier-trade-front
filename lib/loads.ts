@@ -32,6 +32,9 @@ export type LoadReceipt = {
   moisturePct: string;
   impurityPct: string;
   damagedPct: string;
+  brokenPct: string;
+  burntPct: string;
+  heatDamagedPct: string;
   qualityDecision: 'ACCEPTED' | 'REVIEW_REQUIRED';
   notes: string | null;
   createdAt: string;
@@ -84,6 +87,9 @@ export type Romaneio = {
   moisturePct: string;
   impurityPct: string;
   damagedPct: string;
+  brokenPct: string;
+  burntPct: string;
+  heatDamagedPct: string;
   createdAt: string;
 };
 
@@ -141,6 +147,9 @@ export type OperationalBoardReceipt = {
   moisturePct: string | null;
   impurityPct: string | null;
   damagedPct: string | null;
+  brokenPct: string | null;
+  burntPct: string | null;
+  heatDamagedPct: string | null;
   qualityDecision: 'ACCEPTED' | 'REVIEW_REQUIRED';
 };
 

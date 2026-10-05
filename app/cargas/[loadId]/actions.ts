@@ -80,6 +80,9 @@ export async function recordReceiptAction(
     moisturePct: decimal(formData.get('moisturePct')),
     impurityPct: decimal(formData.get('impurityPct')),
     damagedPct: decimal(formData.get('damagedPct')),
+    brokenPct: decimal(formData.get('brokenPct')),
+    burntPct: decimal(formData.get('burntPct')),
+    heatDamagedPct: decimal(formData.get('heatDamagedPct')),
     qualityDecision,
     notes: nullable(formData.get('notes')),
   };
