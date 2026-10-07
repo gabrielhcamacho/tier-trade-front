@@ -13,8 +13,8 @@ const tabs: Record<Domain, Tab[]> = {
     { label: 'Alertas' }, { label: 'Roteiro de demonstração', href: '/demonstracao' },
   ],
   commercial: [
-    { label: 'Carteira' }, { label: 'Ofertas', href: '/' }, { label: 'Demandas' }, { label: 'Política de margem', href: '/comercial/politica-margem' },
-    { label: 'Negociações' }, { label: 'Formação de preço' }, { label: 'Confirmações' },
+    { label: 'Carteira' }, { label: 'Ofertas', href: '/' }, { label: 'Vendas', href: '/comercial/vendas' }, { label: 'Demandas', href: '/comercial/demandas' }, { label: 'Política de margem', href: '/comercial/politica-margem' },
+    { label: 'Negociações', href: '/comercial/negociacoes' }, { label: 'Formação de preço' }, { label: 'Confirmações' },
   ],
   contracts: [
     { label: 'Lista', href: '/contratos' }, { label: 'Obrigações', href: '/contratos/obrigacoes' }, { label: 'Fixações' },
@@ -53,7 +53,7 @@ export function ContextNav({ activeDomain }: { activeDomain: Domain }) {
   return (
     <nav className="context-bar" aria-label={`Telas de ${domainLabels[activeDomain]}`}>
       {tabs[activeDomain].map(({ label, href }) => href ? (
-        <Link key={label} className={pathname === href || (href === '/' && pathname.startsWith('/ofertas/')) ? 'active' : undefined} aria-current={pathname === href ? 'page' : undefined} href={href}>{label}</Link>
+        <Link key={label} className={pathname === href || (href === '/' && pathname.startsWith('/ofertas/')) || (href !== '/' && pathname.startsWith(`${href}/`)) ? 'active' : undefined} aria-current={pathname === href ? 'page' : undefined} href={href}>{label}</Link>
       ) : (
         <span key={label} aria-disabled="true" title="Tela planejada, ainda indisponível">{label}</span>
       ))}

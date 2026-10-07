@@ -4,13 +4,15 @@ import { Button, Field, Status } from '@mountier/tier-trade-design-system';
 import { useActionState } from 'react';
 import type { ContractObligation } from '../../lib/contracts';
 import { obligationStatus } from '../../lib/contracts';
-import { saveContractObligationAction } from './actions';
+import type { StoredDocument } from '../../lib/documents';
+import { attachObligationEvidenceAction, saveContractObligationAction } from './actions';
 
 const initialState = { ok: false, message: '' };
 
-export function ContractObligations({ contractId, obligations }: {
+export function ContractObligations({ contractId, obligations, documents }: {
   contractId: string;
   obligations: ContractObligation[];
+  documents: StoredDocument[];
 }) {
   const openCount = obligations.filter((item) => item.status === 'PENDING' || item.status === 'IN_PROGRESS').length;
   return (
@@ -21,7 +23,7 @@ export function ContractObligations({ contractId, obligations }: {
       </header>
       <div className="contract-obligation-list">
         {obligations.map((obligation) => (
-          <ObligationEditor contractId={contractId} obligation={obligation} key={obligation.id} />
+          <ObligationEditor contractId={contractId} obligation={obligation} documents={documents} key={obligation.id} />
         ))}
       </div>
       <NewObligation contractId={contractId} key={obligations.length} />
@@ -29,11 +31,15 @@ export function ContractObligations({ contractId, obligations }: {
   );
 }
 
-function ObligationEditor({ contractId, obligation }: {
+function ObligationEditor({ contractId, obligation, documents }: {
   contractId: string;
   obligation: ContractObligation;
+  documents: StoredDocument[];
 }) {
   const [state, action, pending] = useActionState(saveContractObligationAction, initialState);
+  const [evidenceState, evidenceAction, evidencePending] = useActionState(attachObligationEvidenceAction, initialState);
+  const linkedIds = new Set((obligation.evidence ?? []).map((item) => item.documentId));
+  const availableDocuments = documents.filter((item) => item.status === 'AVAILABLE' && !linkedIds.has(item.id));
   const tone = obligation.status === 'COMPLETED' ? 'positive'
     : obligation.status === 'CANCELLED' ? 'neutral'
       : 'warning';
@@ -76,6 +82,31 @@ function ObligationEditor({ contractId, obligation }: {
           <Button type="submit" disabled={pending}>{pending ? 'Salvando…' : 'Salvar obrigação'}</Button>
         </div>
       </form>
+      <div className="contract-obligation-form">
+        <strong>Evidências vinculadas</strong>
+        {(obligation.evidence ?? []).length > 0 ? <ul>
+          {obligation.evidence.map((item) => <li key={item.documentId}>
+            {item.status === 'AVAILABLE'
+              ? <a href={`/documentos/${item.documentId}/download`}>{item.fileName}</a>
+              : <span>{item.fileName}</span>}
+            {item.status !== 'AVAILABLE' ? ' · indisponível para download' : ''}
+          </li>)}
+        </ul> : <p>Nenhum documento vinculado a esta obrigação.</p>}
+        <form action={evidenceAction}>
+          <input type="hidden" name="contractId" value={contractId} />
+          <input type="hidden" name="obligationId" value={obligation.id} />
+          <Field label="Vincular documento existente">
+            <select name="documentId" defaultValue="" disabled={availableDocuments.length === 0} required>
+              <option value="" disabled>Selecione um documento disponível</option>
+              {availableDocuments.map((item) => <option value={item.id} key={item.id}>{item.file_name}</option>)}
+            </select>
+          </Field>
+          {evidenceState.message ? <p className="fulfillment-feedback" data-ok={evidenceState.ok || undefined}>{evidenceState.message}</p> : null}
+          <Button type="submit" disabled={evidencePending || availableDocuments.length === 0}>
+            {evidencePending ? 'Vinculando…' : 'Vincular evidência'}
+          </Button>
+        </form>
+      </div>
     </details>
   );
 }

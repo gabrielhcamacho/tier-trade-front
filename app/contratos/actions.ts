@@ -11,7 +11,41 @@ const messages: Record<string, string> = {
   CONTRACT_OBLIGATION_NOT_FOUND: 'A obrigação não existe ou não pertence a este contrato.',
   CAPABILITY_NOT_FOUND: 'Seu usuário não possui permissão para alterar obrigações contratuais.',
   PURCHASE_TERMS_VERSION_CONFLICT: 'Este contrato foi alterado por outra pessoa. Atualize a página antes de salvar.',
+  CONTRACT_EVIDENCE_NOT_AVAILABLE: 'Escolha um documento disponível e pertencente a este contrato.',
 };
+
+export async function attachObligationEvidenceAction(
+  _state: ContractActionState,
+  formData: FormData,
+): Promise<ContractActionState> {
+  const contractId = String(formData.get('contractId') ?? '');
+  const obligationId = String(formData.get('obligationId') ?? '');
+  const documentId = String(formData.get('documentId') ?? '');
+  if (![contractId, obligationId, documentId].every((value) => /^[0-9a-f-]{36}$/i.test(value))) {
+    return fail('Selecione uma obrigação e um documento válido.');
+  }
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const { identityHeaders } = await currentUserContext();
+  if (!apiUrl || Object.keys(identityHeaders).length === 0) return fail('API ou identidade não configurada.');
+  try {
+    const response = await fetch(
+      `${apiUrl}/v1/contracts/${encodeURIComponent(contractId)}/obligations/${encodeURIComponent(obligationId)}/evidence`,
+      {
+        method: 'POST', headers: { ...identityHeaders, 'content-type': 'application/json' },
+        body: JSON.stringify({ documentId }), cache: 'no-store',
+      },
+    );
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({})) as { code?: string; issues?: Array<{ message: string }> };
+      return fail((body.code && messages[body.code]) || body.issues?.[0]?.message
+        || 'Não foi possível vincular o documento.');
+    }
+    revalidatePath(`/contratos/${contractId}`);
+    return { ok: true, message: 'Documento vinculado à obrigação, com rastreabilidade.' };
+  } catch {
+    return fail('Não foi possível acessar a API configurada.');
+  }
+}
 
 export async function saveContractObligationAction(
   _state: ContractActionState,

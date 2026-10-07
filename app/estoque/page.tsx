@@ -94,10 +94,10 @@ function InventoryWorkspace({ data }: { data: InventoryPosition }) {
 
       <div className="demo-domain-layout">
         <div className="demo-main-stack">
-          <DemoSection kicker="EXECUÇÃO DE VENDA" title="Contrato, alocação e expedição" id="execucao-venda" aside="fluxo conectado de ponta a ponta">
+          <DemoSection kicker="EXECUÇÃO DE VENDA" title="Alocação e expedição" id="execucao-venda" aside="contratos nascem no Comercial">
+            <p>Cadastre e negocie o contrato de venda no <Link href="/comercial/vendas">Comercial</Link>. Aqui o estoque é reservado e expedido.</p>
             <FulfillmentForms data={{
               salesContracts: data.salesContracts,
-              counterparties: data.counterparties,
               allocations: data.allocations,
               lots: data.lots,
             }} />

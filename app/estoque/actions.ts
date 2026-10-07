@@ -126,7 +126,7 @@ async function send(path: string, method: 'POST' | 'PUT', payload: unknown, succ
       const body = await response.json().catch(() => ({})) as { code?: string; issues?: Array<{ message: string }> };
       return { ok: false, message: (body.code && messages[body.code]) || body.issues?.[0]?.message || 'Não foi possível concluir a operação.' };
     }
-    revalidatePath('/estoque'); revalidatePath('/contratos');
+    revalidatePath('/estoque'); revalidatePath('/contratos'); revalidatePath('/comercial/vendas');
     return { ok: true, message: success };
   } catch {
     return { ok: false, message: 'Não foi possível acessar a API configurada.' };

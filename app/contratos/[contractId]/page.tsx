@@ -127,7 +127,7 @@ function ContractDetail({ summary, documents, documentError }: {
             <p className="detail-note">Valores preservados pela versão {summary.policy_version} da política aplicada na conversão da oferta.</p>
           </section>
 
-          <div id="obrigacoes"><ContractObligations contractId={summary.id} obligations={summary.obligations} /></div>
+          <div id="obrigacoes"><ContractObligations contractId={summary.id} obligations={summary.obligations} documents={documents} /></div>
           <DocumentPanel
             aggregateType="CONTRACT"
             aggregateId={summary.id}

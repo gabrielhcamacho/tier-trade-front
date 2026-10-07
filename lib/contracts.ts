@@ -9,6 +9,13 @@ export type ContractObligation = {
   completed_at: string | null;
   created_at: string;
   updated_at: string;
+  evidence: Array<{
+    documentId: string;
+    fileName: string;
+    documentType: string;
+    status: string;
+    linkedAt: string;
+  }>;
 };
 
 export type OpenContractObligation = Pick<ContractObligation,

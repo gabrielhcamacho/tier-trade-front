@@ -25,7 +25,7 @@ export type StoredDocument = {
   file_name: string;
   mime_type: string;
   size_bytes: string;
-  status: 'PENDING_UPLOAD' | 'AVAILABLE';
+  status: 'PENDING_UPLOAD' | 'AVAILABLE' | 'ARCHIVED';
   version: number;
   notes: string | null;
   uploaded_at: string | null;

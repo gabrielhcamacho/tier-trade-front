@@ -176,11 +176,28 @@ body, button, input, select, textarea { font-family: var(--font-geist-sans), Gei
 @media (max-width: 1000px) { .prototype-kpis { grid-template-columns: repeat(3,minmax(0,1fr)); row-gap: 25px; } .prototype-overview-grid { grid-template-columns: 1fr; } .prototype-overview-aside { border-left: 0; padding-left: 0; } }
 @media (max-width: 700px) { .prototype-list-page, .prototype-overview { padding: 22px 16px 48px; } .prototype-list-header { flex-direction: column; } .prototype-filter-row { overflow-x: auto; } .prototype-filter-row > label, .prototype-filter-row > span:not(.prototype-filter-actions) { flex: none; } .prototype-filter-actions { display: none; } .prototype-kpis { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 
-.fulfillment-forms { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--ink); }
+.fulfillment-forms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--ink); }
 .fulfillment-forms > form { min-width: 0; padding: 20px; display: grid; align-content: start; gap: 14px; border-right: 1px solid var(--line); }
 .fulfillment-forms > form:last-child { border-right: 0; }
 .fulfillment-forms h3 { margin: 3px 0 0; font-size: 17px; letter-spacing: -.025em; }
 .fulfillment-forms .tt-button { justify-self: start; margin-top: 4px; }
+.sales-contract-form { display: grid; gap: 16px; max-width: 1120px; padding: 24px 0; border-top: 1px solid var(--ink); }
+.sales-contract-fields { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px 22px; }
+.sales-contract-form .tt-button { justify-self: start; }
+.commercial-demand-section { margin-top: 34px; padding-block: 24px; border-top: 1px solid var(--ink); max-width: 1240px; }
+.commercial-demand-section h2 { margin: 4px 0 10px; font-size: 25px; letter-spacing: -.03em; }
+.commercial-demand-section > p { color: var(--muted); }
+.commercial-demand-form { display: grid; gap: 16px; margin-top: 18px; }
+.commercial-demand-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 22px; }
+.commercial-demand-form .tt-button, .commercial-demand-close .tt-button { justify-self: start; }
+.commercial-demand-close { display: grid; gap: 14px; max-width: 600px; margin-top: 18px; }
+.commercial-negotiation-list { list-style: none; padding: 0; margin: 28px 0 0; border-top: 1px solid var(--line); }
+.commercial-negotiation-list li { padding: 15px 0; border-bottom: 1px solid var(--line); }
+.commercial-negotiation-list time, .commercial-negotiation-list small { color: var(--muted); }
+.commercial-negotiation-list p { margin: 5px 0; white-space: pre-wrap; }
+@media (max-width: 900px) { .sales-contract-fields { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 900px) { .commercial-demand-fields { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 600px) { .sales-contract-fields, .commercial-demand-fields { grid-template-columns: 1fr; } }
 .fulfillment-feedback { margin: 0; padding: 10px 12px; color: var(--ember-text); background: var(--ember-soft); border: 1px solid #efd0bd; font-size: 11px; line-height: 16px; }
 .fulfillment-feedback[data-ok] { color: var(--forest); background: var(--leaf-soft); border-color: #bdd9b1; }
 
