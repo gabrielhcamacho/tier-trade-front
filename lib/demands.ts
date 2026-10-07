@@ -18,7 +18,9 @@ export type CommercialDemand = {
   negotiation_count?: number;
 };
 
-export type CommercialCounterparty = { id: string; legal_name: string; party_type: string };
+export type CommercialCounterparty = {
+  id: string; legal_name: string; party_type: 'UNCLASSIFIED' | 'PERSON' | 'COMPANY' | 'COOPERATIVE';
+};
 export type NegotiationEntry = {
   id: string;
   note: string;

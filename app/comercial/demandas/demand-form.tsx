@@ -18,7 +18,9 @@ export function DemandForm({ counterparties, demand }: {
     <div className="commercial-demand-fields">
       <Field label="Contraparte" required><select name="counterpartyId" defaultValue={demand?.counterparty_id ?? ''} disabled={closed} required>
         <option value="" disabled>Selecione</option>
-        {counterparties.map((item) => <option value={item.id} key={item.id}>{item.legal_name}</option>)}
+        {counterparties.map((item) => <option value={item.id} key={item.id} disabled={item.party_type === 'UNCLASSIFIED'}>
+          {item.legal_name}{item.party_type === 'UNCLASSIFIED' ? ' · perfil pendente' : ''}
+        </option>)}
       </select></Field>
       <Field label="Operação da trading" required><select name="direction" defaultValue={demand?.direction ?? 'PURCHASE'} disabled={closed} required>
         <option value="PURCHASE">Compra</option><option value="SALE">Venda</option>
@@ -38,6 +40,7 @@ export function DemandForm({ counterparties, demand }: {
     </div>
     {state.message ? <p className="fulfillment-feedback" data-ok={state.ok || undefined} role={state.ok ? 'status' : 'alert'}>{state.message}
       {state.ok && state.id && !demand ? <> <a href={`/comercial/demandas/${state.id}`}>Abrir demanda</a></> : null}</p> : null}
-    {!closed ? <Button type="submit" disabled={pending || counterparties.length === 0}>{pending ? 'Salvando…' : demand ? 'Salvar alterações' : 'Registrar demanda'}</Button> : null}
+    {!closed ? <Button type="submit" disabled={pending || counterparties.every((item) => item.party_type === 'UNCLASSIFIED')}>
+      {pending ? 'Salvando…' : demand ? 'Salvar alterações' : 'Registrar demanda'}</Button> : null}
   </form>;
 }

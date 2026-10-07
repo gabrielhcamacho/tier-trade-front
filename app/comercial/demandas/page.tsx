@@ -28,6 +28,9 @@ export default async function DemandsPage() {
         {result.data.hasMore ? <p className="prototype-empty">Existem mais de 500 demandas. A paginação é uma etapa pendente.</p> : null}
         <section className="commercial-demand-section"><p className="section-kicker">NOVA DEMANDA</p><h2>Registrar intenção comercial</h2>
           <p>O preço é apenas indicativo. Este registro não calcula margem nem cria obrigação financeira.</p>
+          {result.data.counterparties.some((item) => item.party_type === 'UNCLASSIFIED') ? <p>
+            Contrapartes com perfil pendente precisam ser classificadas antes do uso. Confirme o perfil em <Link href="/ofertas/nova">Nova oferta › Contraparte</Link>; não é necessário criar uma oferta.
+          </p> : null}
           <DemandForm counterparties={result.data.counterparties} /></section>
       </> : null}
     </div>
