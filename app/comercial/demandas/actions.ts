@@ -1,5 +1,6 @@
 'use server';
 
+import { normalizeDecimalInput } from '@mountier/tier-trade-design-system';
 import { revalidatePath } from 'next/cache';
 import { currentUserContext } from '../../../lib/current-user';
 
@@ -40,10 +41,10 @@ export async function saveDemandAction(_state: DemandActionState, formData: Form
     counterpartyId: String(formData.get('counterpartyId') ?? ''),
     direction: String(formData.get('direction') ?? ''),
     commodity: String(formData.get('commodity') ?? ''), unit: 'SC_60KG',
-    quantitySc: String(formData.get('quantitySc') ?? ''),
+    quantitySc: normalizeDecimalInput(String(formData.get('quantitySc') ?? ''), 3) ?? '',
     deliveryStart: String(formData.get('deliveryStart') ?? ''),
     deliveryEnd: String(formData.get('deliveryEnd') ?? ''),
-    indicativePricePerSc: nullable(formData.get('indicativePricePerSc')),
+    indicativePricePerSc: optionalDecimal(formData.get('indicativePricePerSc'), 2),
     description: nullable(formData.get('description')),
     ...(id ? { expectedVersion: Number(formData.get('expectedVersion') ?? 0) } : {}),
   };
@@ -63,7 +64,7 @@ export async function addNegotiationAction(_state: DemandActionState, formData: 
   const note = String(formData.get('note') ?? '').trim();
   if (!id || note.length < 3) return { ok: false, message: 'Escreva uma nota de negociação.' };
   const result = await send(`/v1/commercial/demands/${encodeURIComponent(id)}/negotiations`, 'POST',
-    { note, indicativePricePerSc: nullable(formData.get('indicativePricePerSc')) });
+    { note, indicativePricePerSc: optionalDecimal(formData.get('indicativePricePerSc'), 2) });
   if (!result.ok) return { ok: false, message: result.message };
   revalidatePath(`/comercial/demandas/${id}`);
   revalidatePath('/comercial/demandas');
@@ -83,4 +84,9 @@ export async function closeDemandAction(_state: DemandActionState, formData: For
 
 function nullable(value: FormDataEntryValue | null): string | null {
   return String(value ?? '').trim() || null;
+}
+
+function optionalDecimal(value: FormDataEntryValue | null, fractionDigits: number): string | null {
+  const raw = String(value ?? '').trim();
+  return raw ? normalizeDecimalInput(raw, fractionDigits) : null;
 }
