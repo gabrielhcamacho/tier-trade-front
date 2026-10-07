@@ -4,7 +4,6 @@ import { revalidatePath } from 'next/cache';
 import { currentUserContext } from '../../../lib/current-user';
 
 export type DemandActionState = { ok: boolean; message: string; id?: string };
-export const initialDemandState: DemandActionState = { ok: false, message: '' };
 
 const messageByCode: Record<string, string> = {
   COMMERCIAL_DEMAND_NOT_FOUND: 'Demanda não encontrada nesta empresa.',

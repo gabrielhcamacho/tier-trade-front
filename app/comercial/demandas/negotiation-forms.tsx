@@ -2,7 +2,9 @@
 
 import { Button, DecimalField, Field } from '@mountier/tier-trade-design-system';
 import { useActionState } from 'react';
-import { addNegotiationAction, closeDemandAction, initialDemandState } from './actions';
+import { addNegotiationAction, closeDemandAction, type DemandActionState } from './actions';
+
+const initialDemandState: DemandActionState = { ok: false, message: '' };
 
 export function NegotiationForm({ id }: { id: string }) {
   const [state, action, pending] = useActionState(addNegotiationAction, initialDemandState);

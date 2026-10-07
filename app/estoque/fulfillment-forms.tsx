@@ -3,10 +3,10 @@
 import { Button, DecimalField, Field } from '@mountier/tier-trade-design-system';
 import { useActionState } from 'react';
 import type { InventoryPosition } from '../../lib/inventory';
+import { initialFulfillmentState } from './action-state';
 import {
   allocateInventoryAction,
   dispatchInventoryAction,
-  initialFulfillmentState,
 } from './actions';
 
 type FulfillmentData = Pick<InventoryPosition, 'salesContracts' | 'allocations' | 'lots'>;

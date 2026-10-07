@@ -11,5 +11,6 @@ jobs:
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
+      - run: pnpm check:server-actions
       - run: pnpm build
       - run: docker build --tag tier-trade-web:${{ github.sha }} .

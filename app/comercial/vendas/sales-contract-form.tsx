@@ -3,7 +3,8 @@
 import { Button, DecimalField, Field } from '@mountier/tier-trade-design-system';
 import { useActionState, useState } from 'react';
 import type { InventoryPosition } from '../../../lib/inventory';
-import { initialFulfillmentState, saveSalesContractAction } from '../../estoque/actions';
+import { saveSalesContractAction } from '../../estoque/actions';
+import { initialFulfillmentState } from '../../estoque/action-state';
 
 type Sale = InventoryPosition['salesContracts'][number];
 

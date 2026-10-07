@@ -3,8 +3,9 @@
 import { Button, DecimalField, Field } from '@mountier/tier-trade-design-system';
 import { useActionState, useEffect, useState } from 'react';
 import type { InventoryPosition } from '../../lib/inventory';
+import { initialFulfillmentState } from './action-state';
 import {
-  classifyLotAction, completeTransferAction, createLocationAction, initialFulfillmentState,
+  classifyLotAction, completeTransferAction, createLocationAction,
   reconcileCountAction, recordLossAction, startTransferAction,
 } from './actions';
 

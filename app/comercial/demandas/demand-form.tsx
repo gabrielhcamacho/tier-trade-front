@@ -3,7 +3,9 @@
 import { Button, DecimalField, Field } from '@mountier/tier-trade-design-system';
 import { useActionState } from 'react';
 import type { CommercialCounterparty, CommercialDemand } from '../../../lib/demands';
-import { initialDemandState, saveDemandAction } from './actions';
+import { saveDemandAction, type DemandActionState } from './actions';
+
+const initialDemandState: DemandActionState = { ok: false, message: '' };
 
 export function DemandForm({ counterparties, demand }: {
   counterparties: CommercialCounterparty[]; demand?: CommercialDemand;

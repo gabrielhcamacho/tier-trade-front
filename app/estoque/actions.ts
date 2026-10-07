@@ -3,8 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { currentUserContext } from '../../lib/current-user';
 
-export type FulfillmentState = { ok: boolean; message: string };
-export const initialFulfillmentState: FulfillmentState = { ok: false, message: '' };
+import type { FulfillmentState } from './action-state';
 
 const messages: Record<string, string> = {
   SALES_CONTRACT_REFERENCE_EXISTS: 'Já existe um contrato de venda com essa referência.',
