@@ -17,10 +17,10 @@ export function SalesContractForm({ contracts, counterparties }: {
   const editing = contracts.find((item) => item.id === editingId);
   return <form action={action} className="sales-contract-form" key={editingId || 'new'}>
     <div><p className="section-kicker">CONDIÇÕES COMERCIAIS</p><h2>{editing ? `Editar ${editing.reference}` : 'Formalizar venda'}</h2>
-      <p>O contrato nasce ativo no fluxo atual. O registro e cada revisão ficam auditados; alocação e expedição são feitas em Estoque.</p></div>
+      <p>O contrato nasce como rascunho e só libera alocação após assinatura e ativação. Cada revisão fica auditada.</p></div>
     <div className="sales-contract-fields">
       <Field label="Ação"><select value={editingId} onChange={(event) => setEditingId(event.target.value)}>
-        <option value="">Novo contrato</option>{contracts.map((item) => <option value={item.id} key={item.id}>Editar {item.reference}</option>)}
+        <option value="">Novo contrato</option>{contracts.filter((item) => item.status === 'DRAFT').map((item) => <option value={item.id} key={item.id}>Editar {item.reference}</option>)}
       </select></Field>
       <input type="hidden" name="contractId" value={editingId} />
       <Field label="Contraparte" required><select name="counterpartyId" defaultValue={editing?.counterparty_id ?? ''} required>

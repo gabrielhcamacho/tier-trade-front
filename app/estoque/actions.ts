@@ -21,6 +21,13 @@ const messages: Record<string, string> = {
   LOSS_EXCEEDS_PHYSICAL_BALANCE: 'A perda ultrapassa o saldo físico do lote.',
   LOSS_WOULD_BREAK_ACTIVE_ALLOCATIONS: 'A perda deixaria o lote abaixo do volume já alocado.',
   COUNT_BELOW_ACTIVE_ALLOCATIONS: 'A contagem está abaixo do volume reservado em alocações ativas.',
+  SALES_CONTRACT_NOT_DRAFT: 'Somente contratos de venda em rascunho podem ser editados diretamente.',
+  SIGNED_SALES_CONTRACT_EVIDENCE_REQUIRED: 'Anexe o contrato de venda assinado e registre a assinatura concluída.',
+  INVALID_SALES_CONTRACT_STATUS_TRANSITION: 'Esta mudança de situação não é permitida.',
+  ACTIVE_ALLOCATIONS_PREVENT_SALES_CONTRACT_CLOSURE: 'Conclua as alocações ativas antes de encerrar o contrato.',
+  SALES_CONTRACT_BALANCE_PREVENTS_CLOSURE: 'O volume expedido ainda não cobre o volume contratado.',
+  DISPATCHED_SALES_CONTRACT_CANNOT_BE_CANCELLED: 'Um contrato com expedição registrada não pode ser cancelado.',
+  ONLY_ACTIVE_SALES_CONTRACTS_ACCEPT_AMENDMENTS: 'O aditivo só pode ser registrado em contrato de venda ativo.',
 };
 
 export async function saveSalesContractAction(
@@ -42,6 +49,38 @@ export async function saveSalesContractAction(
       paymentTermDays: optionalInteger(formData.get('paymentTermDays')),
     }, contractId ? 'Contrato de venda atualizado.' : 'Contrato de venda criado.',
   );
+}
+
+export async function transitionSalesContractAction(
+  _state: FulfillmentState, formData: FormData,
+): Promise<FulfillmentState> {
+  const contractId = String(formData.get('contractId') ?? '');
+  const status = String(formData.get('status') ?? '');
+  const reason = optional(formData.get('reason'));
+  return send(`/v1/inventory/sales-contracts/${encodeURIComponent(contractId)}/transition`, 'POST',
+    { status, reason }, 'Situação do contrato de venda atualizada e versionada.');
+}
+
+export async function amendSalesContractAction(
+  _state: FulfillmentState, formData: FormData,
+): Promise<FulfillmentState> {
+  const contractId = String(formData.get('contractId') ?? '');
+  return send(`/v1/inventory/sales-contracts/${encodeURIComponent(contractId)}/amendments`, 'POST', {
+    reason: String(formData.get('reason') ?? '').trim(),
+    effectiveOn: String(formData.get('effectiveOn') ?? ''),
+    terms: {
+      counterpartyId: String(formData.get('counterpartyId') ?? ''),
+      reference: String(formData.get('reference') ?? ''),
+      commodity: String(formData.get('commodity') ?? ''),
+      quantityKg: decimal(formData.get('quantityKg')),
+      salePricePerKg: decimal(formData.get('salePricePerKg')),
+      destinationCode: String(formData.get('destinationCode') ?? ''),
+      deliveryStart: String(formData.get('deliveryStart') ?? ''),
+      deliveryEnd: String(formData.get('deliveryEnd') ?? ''),
+      requiredDocuments: String(formData.get('requiredDocuments') ?? '').split(',').map((item) => item.trim()).filter(Boolean),
+      paymentTermDays: optionalInteger(formData.get('paymentTermDays')),
+    },
+  }, 'Aditivo de venda registrado, versionado e auditado.');
 }
 
 export async function allocateInventoryAction(
@@ -126,6 +165,10 @@ async function send(path: string, method: 'POST' | 'PUT', payload: unknown, succ
       return { ok: false, message: (body.code && messages[body.code]) || body.issues?.[0]?.message || 'Não foi possível concluir a operação.' };
     }
     revalidatePath('/estoque'); revalidatePath('/contratos'); revalidatePath('/comercial/vendas');
+    if (path.includes('/sales-contracts/')) {
+      const id = path.split('/sales-contracts/')[1]?.split('/')[0];
+      if (id) revalidatePath(`/comercial/vendas/${id}`);
+    }
     return { ok: true, message: success };
   } catch {
     return { ok: false, message: 'Não foi possível acessar a API configurada.' };

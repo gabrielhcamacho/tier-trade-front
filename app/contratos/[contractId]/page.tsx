@@ -7,6 +7,7 @@ import { loadDocuments, type StoredDocument } from '../../../lib/documents';
 import { DocumentPanel } from '../../documents/document-panel';
 import { ContractObligations } from '../contract-obligations';
 import { PurchaseTerms } from '../purchase-terms';
+import { ContractLifecycle } from '../contract-lifecycle';
 import {
   commodityLabel,
   contractStatusLabel,
@@ -71,7 +72,7 @@ function ContractDetail({ summary, documents, documentError }: {
           </div>
           <div className="entity-actions">
             <Status tone="positive">{contractStatusLabel(summary.status)}</Status>
-            <Link className="tt-button" data-variant="primary" data-size="md" href={`/cargas?contractId=${summary.id}`}>Abrir agenda de cargas</Link>
+            {summary.status === 'ACTIVE' ? <Link className="tt-button" data-variant="primary" data-size="md" href={`/cargas?contractId=${summary.id}`}>Abrir agenda de cargas</Link> : null}
           </div>
         </div>
         <dl className="entity-facts">
@@ -83,7 +84,7 @@ function ContractDetail({ summary, documents, documentError }: {
         </dl>
         <ol className="trace-rail" aria-label="Rastreabilidade do contrato">
           <TraceStep label="Negociação" value="Concluída" state="done" />
-          <TraceStep label="Contrato" value={contractStatusLabel(summary.status)} state="done" />
+          <TraceStep label="Contrato" value={contractStatusLabel(summary.status)} state={summary.status === 'ACTIVE' || summary.status === 'CLOSED' ? 'done' : 'current'} />
           <TraceStep
             label="Execução física"
             value={summary.load_count > 0 ? `${summary.load_count} carga${summary.load_count === 1 ? '' : 's'}` : 'Não iniciada'}
@@ -115,7 +116,8 @@ function ContractDetail({ summary, documents, documentError }: {
             </dl>
           </section>
 
-          <PurchaseTerms contractId={summary.id} terms={summary.purchase_terms} />
+          <PurchaseTerms contractId={summary.id} terms={summary.purchase_terms} status={summary.status} />
+          <ContractLifecycle contractId={summary.id} status={summary.status} />
 
           <section className="detail-section" id="custos-margem" aria-labelledby="contract-economics-title">
             <header><p className="section-kicker">ESTADO ECONÔMICO</p><h2 id="contract-economics-title">Custos e margem contratados</h2></header>
@@ -149,7 +151,9 @@ function ContractDetail({ summary, documents, documentError }: {
               ? 'Registre os termos do instrumento de compra e anexe o documento assinado antes de considerar a formalização concluída.'
               : !hasSignedDocument ? 'Anexe o documento assinado e conclua a obrigação correspondente para confirmar a formalização.'
                 : 'A agenda operacional está conectada a este contrato. Acompanhe as cargas e as obrigações até a conclusão.'}</p>
-            <Link className="operational-link" href={`/cargas?contractId=${summary.id}`}>Abrir execução física <span aria-hidden="true">→</span></Link>
+            {summary.status === 'ACTIVE'
+              ? <Link className="operational-link" href={`/cargas?contractId=${summary.id}`}>Abrir execução física <span aria-hidden="true">→</span></Link>
+              : <p className="detail-note">A execução física será liberada após assinatura e ativação.</p>}
           </section>
           <section>
             <p className="section-kicker">OBJETOS RELACIONADOS</p>

@@ -195,7 +195,11 @@ export function unitLabel(value: string): string {
 }
 
 export function contractStatusLabel(value: string): string {
-  return value === 'ACTIVE' ? 'Ativo' : value;
+  const labels: Record<string, string> = {
+    DRAFT: 'Rascunho', AWAITING_SIGNATURE: 'Aguardando assinatura', SIGNED: 'Assinado',
+    ACTIVE: 'Ativo', CLOSED: 'Encerrado', CANCELLED: 'Cancelado',
+  };
+  return labels[value] ?? value;
 }
 
 export function obligationLabel(value: string): string {

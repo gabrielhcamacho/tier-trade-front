@@ -58,7 +58,8 @@ export function DocumentPanel({ aggregateType, aggregateId, documents, error, re
                 {signature.signedAt ? <time dateTime={signature.signedAt}>{formatSignatureDate(signature.signedAt)}</time> : null}
               </li>)}
             </ul> : null}
-            {aggregateType === 'CONTRACT' && document.document_type === 'SIGNED_CONTRACT' && document.status === 'AVAILABLE'
+            {(aggregateType === 'CONTRACT' || aggregateType === 'SALES_CONTRACT')
+              && document.document_type === 'SIGNED_CONTRACT' && document.status === 'AVAILABLE'
               ? <SignatureRecorder documentId={document.id} returnPath={returnPath} /> : null}
           </div>
           <div className="document-list-meta">

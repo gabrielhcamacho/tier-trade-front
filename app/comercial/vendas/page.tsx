@@ -5,6 +5,7 @@ import { formatTonnes } from '../../../lib/inventory';
 import { loadSalesPortfolio } from '../../../lib/sales';
 import { commodityLabel, formatCurrency, formatDate } from '../../../lib/contracts';
 import { SalesContractForm } from './sales-contract-form';
+import { ClickableTableRow } from '../../clickable-table-row';
 
 export default async function CommercialSalesPage() {
   const user = await currentUserContext();
@@ -21,18 +22,23 @@ export default async function CommercialSalesPage() {
       {result.data ? <>
         <div className="prototype-table-scroll"><table className="prototype-ledger">
           <thead><tr><th>Referência</th><th>Cliente</th><th>Commodity</th><th>Contratado</th><th>Alocado</th><th>Expedido</th><th>Preço</th><th>Janela</th><th>Status</th></tr></thead>
-          <tbody>{contracts.map((item) => <tr key={item.id}>
+          <tbody>{contracts.map((item) => <ClickableTableRow key={item.id} href={`/comercial/vendas/${item.id}`} label={`Abrir contrato ${item.reference}`}>
             <td className="prototype-id">{item.reference}</td><td><strong>{item.counterparty_name}</strong></td>
             <td>{commodityLabel(item.commodity)}</td><td>{formatTonnes(item.quantity_kg)} t</td>
             <td>{formatTonnes(item.allocated_kg)} t</td><td>{formatTonnes(item.dispatched_kg)} t</td>
             <td>{formatCurrency(item.sale_price_per_kg)}/kg</td>
             <td>{formatDate(item.delivery_start)}–{formatDate(item.delivery_end)}</td>
-            <td>{item.status === 'ACTIVE' ? 'Ativo' : item.status}</td>
-          </tr>)}</tbody>
+            <td>{contractStatus(item.status)}</td>
+          </ClickableTableRow>)}</tbody>
         </table></div>
         {contracts.length === 0 ? <p className="prototype-empty">Nenhum contrato de venda registrado para esta empresa.</p> : null}
         <SalesContractForm contracts={contracts} counterparties={result.data.counterparties} />
       </> : null}
     </div>
   </AppShell>;
+}
+
+function contractStatus(value: string) {
+  return ({ DRAFT: 'Rascunho', AWAITING_SIGNATURE: 'Aguardando assinatura', SIGNED: 'Assinado',
+    ACTIVE: 'Ativo', CLOSED: 'Encerrado', CANCELLED: 'Cancelado' } as Record<string, string>)[value] ?? value;
 }
