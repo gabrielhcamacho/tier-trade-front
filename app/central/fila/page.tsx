@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { AppShell } from '../../app-shell';
+import { ClickableSurface } from '../../clickable-surface';
 import { currentUserContext } from '../../../lib/current-user';
 import { commodityLabel, formatCurrency, formatQuantity, loadOpenContractObligations, type OpenContractObligation } from '../../../lib/contracts';
 import { loadOverview, type OverviewResponse } from '../../../lib/overview';
@@ -120,31 +121,31 @@ export default async function CentralPage() {
       <div className="central-layout"><div className="central-main-column">
         <section className="central-section" id="fila" aria-labelledby="work-queue-title">
           <header><div><p className="section-kicker">PRIORIDADES</p><h2 id="work-queue-title">Fila de trabalho</h2></div><span>Prazos vencidos primeiro; demais itens por tipo e prazo conhecido</span></header>
-          <div className="work-queue">{queue.length ? queue.map((item, index) => <article key={item.id}>
+          <div className="work-queue">{queue.length ? queue.map((item, index) => <ClickableSurface key={item.id} href={item.href} label={`Abrir ${item.title}`}>
             <span className="queue-index">{String(index + 1).padStart(2, '0')}</span>
             <div className="queue-copy"><small>{item.kind}</small><strong>{item.title}</strong><p>{item.description}</p></div>
             <div className="queue-due"><small>Prazo</small><strong>{formatDue(item.dueDate)}</strong></div>
-            <span className="demo-status" data-tone={item.tone}>{item.status}</span><Link href={item.href}>Abrir</Link>
-          </article>) : <div className="central-empty-state">{errors.length ? 'A fila não pôde ser carregada por completo.' : 'Nenhuma pendência acionável para suas permissões neste momento.'}</div>}</div>
+            <span className="demo-status" data-tone={item.tone}>{item.status}</span><span className="clickable-surface-action" aria-hidden="true">Abrir →</span>
+          </ClickableSurface>) : <div className="central-empty-state">{errors.length ? 'A fila não pôde ser carregada por completo.' : 'Nenhuma pendência acionável para suas permissões neste momento.'}</div>}</div>
           {openObligations.hasMore ? <p className="central-list-note">A lista mostra as primeiras 100 obrigações por prazo. Consulte os contratos para ver o restante.</p> : null}
         </section>
         <section className="central-section" id="aprovacoes" aria-labelledby="approvals-title">
           <header><div><p className="section-kicker">ALÇADA COMERCIAL</p><h2 id="approvals-title">Aprovações</h2></div><span>A decisão permanece humana e auditada no Comercial</span></header>
-          {approvals.length ? approvals.map((offer, index) => <article className="approval-preview" key={offer.id}>
+          {approvals.length ? approvals.map((offer, index) => <ClickableSurface className="approval-preview" key={offer.id} href={`/?status=IN_APPROVAL&commodity=${offer.commodity}`} label={`Analisar oferta de ${commodityLabel(offer.commodity)} de ${offer.counterparty_name}`}>
             <div className="approval-heading"><span className="approval-flag">{String(index + 1).padStart(2, '0')}</span>
               <div><small>OFERTA EM APROVAÇÃO</small><h3>{commodityLabel(offer.commodity)} · {formatQuantity(offer.quantity_sc)} sc</h3><p>{offer.counterparty_name} · {offer.id.slice(0, 8)}</p></div>
               <span className="demo-status" data-tone="attention">Aguardando</span></div>
             <dl><div><dt>Preço de compra</dt><dd>{formatCurrency(offer.purchase_price_per_sc)}/sc</dd></div>
               <div><dt>Margem projetada</dt><dd>{formatCurrency(offer.projected_margin_per_sc)}/sc</dd></div>
               <div><dt>Janela de entrega</dt><dd>{formatDue(offer.delivery_start)} a {formatDue(offer.delivery_end)}</dd></div></dl>
-            <footer><p>Consulte o cenário e a política vigente antes de decidir.</p><Link className="tt-button" data-variant="primary" data-size="md" href={`/?status=IN_APPROVAL&commodity=${offer.commodity}`}>Analisar no Comercial</Link></footer>
-          </article>) : <div className="central-empty-state">{data ? 'Nenhuma oferta aguardando sua alçada comercial.' : 'Aprovações indisponíveis.'}</div>}
+            <footer><p>Consulte o cenário e a política vigente antes de decidir.</p><span className="clickable-surface-action">Analisar no Comercial →</span></footer>
+          </ClickableSurface>) : <div className="central-empty-state">{data ? 'Nenhuma oferta aguardando sua alçada comercial.' : 'Aprovações indisponíveis.'}</div>}
         </section>
         <section className="central-section" id="alertas" aria-labelledby="alerts-title">
           <header><div><p className="section-kicker">EXCEÇÕES</p><h2 id="alerts-title">Alertas operacionais</h2></div></header>
-          <div className="central-alerts">{alerts.length ? alerts.map((item) => <div className="demo-alert" data-tone={item.tone === 'critical' || item.tone === 'attention' ? 'attention' : undefined} key={item.id}>
-            <strong>{item.title}</strong><p>{item.description}</p><Link href={item.href}>Abrir área responsável →</Link>
-          </div>) : <div className="central-empty-state">{data ? 'Nenhum alerta acionável nas áreas liberadas para seu usuário.' : 'Alertas indisponíveis.'}</div>}</div>
+          <div className="central-alerts">{alerts.length ? alerts.map((item) => <ClickableSurface className="demo-alert" data-tone={item.tone === 'critical' || item.tone === 'attention' ? 'attention' : undefined} key={item.id} href={item.href} label={`Abrir ${item.title}`}>
+            <strong>{item.title}</strong><p>{item.description}</p><span className="clickable-surface-action" aria-hidden="true">Abrir área responsável →</span>
+          </ClickableSurface>) : <div className="central-empty-state">{data ? 'Nenhum alerta acionável nas áreas liberadas para seu usuário.' : 'Alertas indisponíveis.'}</div>}</div>
         </section>
       </div><aside className="central-sidebar"><section><p className="section-kicker">ACESSO RÁPIDO</p>
         <ol className="activity-list"><li><Link href="/contratos">Contratos e obrigações →</Link></li>

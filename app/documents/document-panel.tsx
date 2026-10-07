@@ -6,7 +6,7 @@ import {
   documentTypeLabel, formatDocumentSize,
   type DocumentAggregateType, type DocumentType, type StoredDocument,
 } from '../../lib/documents';
-import { uploadDocumentAction } from './actions';
+import { recordDocumentSignatureAction, uploadDocumentAction } from './actions';
 
 const initialState = { ok: false, message: '' };
 
@@ -51,6 +51,15 @@ export function DocumentPanel({ aggregateType, aggregateId, documents, error, re
             <strong>{document.file_name}</strong>
             <span>{documentTypeLabel(document.document_type)} · v{document.version} · {formatDocumentSize(document.size_bytes)}</span>
             {document.notes ? <small>{document.notes}</small> : null}
+            {document.signatures.length ? <ul className="document-signatures" aria-label="Assinaturas registradas">
+              {document.signatures.map((signature) => <li key={signature.id}>
+                <strong>{signature.signerName}</strong>
+                <span>{signature.signerRole} · {signatureStatusLabel(signature.status)} · {signatureProviderLabel(signature.provider)}</span>
+                {signature.signedAt ? <time dateTime={signature.signedAt}>{formatSignatureDate(signature.signedAt)}</time> : null}
+              </li>)}
+            </ul> : null}
+            {aggregateType === 'CONTRACT' && document.document_type === 'SIGNED_CONTRACT' && document.status === 'AVAILABLE'
+              ? <SignatureRecorder documentId={document.id} returnPath={returnPath} /> : null}
           </div>
           <div className="document-list-meta">
             <span>{document.status === 'AVAILABLE' ? 'Disponível' : 'Envio pendente'}</span>
@@ -62,4 +71,36 @@ export function DocumentPanel({ aggregateType, aggregateId, documents, error, re
       </div>
     </section>
   );
+}
+
+function SignatureRecorder({ documentId, returnPath }: { documentId: string; returnPath: string }) {
+  const [state, action, pending] = useActionState(recordDocumentSignatureAction, initialState);
+  return <details className="signature-recorder">
+    <summary>Registrar evidência de assinatura</summary>
+    <form action={action}>
+      <input type="hidden" name="documentId" value={documentId} />
+      <input type="hidden" name="returnPath" value={returnPath} />
+      <Field label="Signatário" required><input name="signerName" minLength={2} maxLength={160} required /></Field>
+      <Field label="Papel no contrato" required><input name="signerRole" minLength={2} maxLength={80} placeholder="Ex.: representante da compradora" required /></Field>
+      <Field label="E-mail"><input name="signerEmail" type="email" /></Field>
+      <Field label="Origem da evidência" required><select name="provider" defaultValue="MANUAL"><option value="MANUAL">Registro manual</option><option value="DOCUSIGN">DocuSign</option><option value="OTHER">Outro provedor</option></select></Field>
+      <Field label="Situação" required><select name="status" defaultValue="SIGNED"><option value="SIGNED">Assinada</option><option value="SENT">Enviada para assinatura</option><option value="PENDING">Pendente</option><option value="DECLINED">Recusada</option><option value="CANCELLED">Cancelada</option></select></Field>
+      <Field label="Data e hora da assinatura" hint="Obrigatória quando a situação for Assinada"><input name="signedAt" type="datetime-local" /></Field>
+      <Field label="Envelope ou referência"><input name="externalEnvelopeId" maxLength={240} placeholder="Identificador externo opcional" /></Field>
+      <div className="signature-recorder-action">{state.message ? <p className="fulfillment-feedback" data-ok={state.ok || undefined}>{state.message}</p> : null}<Button type="submit" disabled={pending}>{pending ? 'Registrando…' : 'Registrar evidência'}</Button></div>
+    </form>
+    <p>Este registro documenta a evidência informada; não assina o arquivo nem substitui a validação jurídica.</p>
+  </details>;
+}
+
+function signatureStatusLabel(value: StoredDocument['signatures'][number]['status']) {
+  return ({ PENDING: 'Pendente', SENT: 'Enviada', SIGNED: 'Assinada', DECLINED: 'Recusada', CANCELLED: 'Cancelada' })[value];
+}
+
+function signatureProviderLabel(value: StoredDocument['signatures'][number]['provider']) {
+  return ({ MANUAL: 'registro manual', DOCUSIGN: 'DocuSign', OTHER: 'outro provedor' })[value];
+}
+
+function formatSignatureDate(value: string) {
+  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value));
 }

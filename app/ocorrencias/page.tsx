@@ -1,6 +1,6 @@
 import { Status } from '@mountier/tier-trade-design-system';
-import Link from 'next/link';
 import { AppShell } from '../app-shell';
+import { ClickableSurface } from '../clickable-surface';
 import { currentUserContext } from '../../lib/current-user';
 import { formatSchedule, loadOccurrenceBoard, type LoadOccurrence } from '../../lib/loads';
 
@@ -19,7 +19,7 @@ export default async function OccurrencesPage() {
             <article data-primary="true"><span>Resolvidas</span><strong>{result.data.summary.resolved}</strong></article>
           </section>
           <section className="board-ledger"><header><div><p className="section-kicker">TRIAGEM</p><h2>Fila de ocorrências</h2></div><span>{result.data.items.length} registro(s)</span></header>
-            <div className="occurrence-board-list">{result.data.items.map((item) => <article key={item.id} data-severity={item.severity.toLowerCase()}><div className="occurrence-board-copy"><span>{categoryLabel(item.category)} · {item.vehiclePlate}</span><strong>{item.title}</strong><p>{item.description}</p><small>{formatSchedule(item.occurredAt, item.timezone)} · carga <span className="tt-mono">{item.loadId.slice(-8)}</span></small></div><Status tone={item.status === 'RESOLVED' ? 'positive' : item.severity === 'CRITICAL' ? 'critical' : 'warning'}>{item.status === 'RESOLVED' ? 'Resolvida' : severityLabel(item.severity)}</Status><Link href={`/cargas/${item.loadId}#ocorrencias`}>{item.status === 'OPEN' ? 'Tratar' : 'Ver carga'} →</Link></article>)}</div>
+            <div className="occurrence-board-list">{result.data.items.map((item) => <ClickableSurface key={item.id} data-severity={item.severity.toLowerCase()} href={`/cargas/${item.loadId}#ocorrencias`} label={`${item.status === 'OPEN' ? 'Tratar' : 'Ver'} ocorrência ${item.title}`}><div className="occurrence-board-copy"><span>{categoryLabel(item.category)} · {item.vehiclePlate}</span><strong>{item.title}</strong><p>{item.description}</p><small>{formatSchedule(item.occurredAt, item.timezone)} · carga <span className="tt-mono">{item.loadId.slice(-8)}</span></small></div><Status tone={item.status === 'RESOLVED' ? 'positive' : item.severity === 'CRITICAL' ? 'critical' : 'warning'}>{item.status === 'RESOLVED' ? 'Resolvida' : severityLabel(item.severity)}</Status><span className="clickable-surface-action" aria-hidden="true">{item.status === 'OPEN' ? 'Tratar' : 'Ver carga'} →</span></ClickableSurface>)}</div>
           </section>
         </> : null}
       </main>
