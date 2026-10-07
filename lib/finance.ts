@@ -16,7 +16,9 @@ export type FinancialEvent = {
   direction: 'INFLOW' | 'OUTFLOW';
   sourceId: string;
   salesContractId: string | null;
+  salesContractVersionNumber: number | null;
   purchaseContractId: string | null;
+  purchaseContractVersionNumber: number | null;
   loadId: string | null;
   loadReceiptId: string | null;
   contractReference: string | null;

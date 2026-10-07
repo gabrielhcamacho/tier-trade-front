@@ -41,7 +41,7 @@ export function FiscalWorkspaceView({ data, attachments, attachmentError }: {
   const rows = data.documents.map((document) => [
     document.documentNumber,
     document.counterpartyName,
-    document.contractReference,
+    `${document.contractReference} · v${document.salesContractVersionNumber}`,
     document.dispatchReference,
     formatFiscalMoney(document.totalAmount),
     <DemoStatus tone={statusTone(document.status)} key={document.id}>{statusLabel(document.status)}</DemoStatus>,
@@ -189,12 +189,14 @@ export function FiscalWorkspaceView({ data, attachments, attachmentError }: {
               ? <DemoTable label="Documentos fiscais" columns={['Documento', 'Cliente', 'Contrato', 'Expedição', 'Valor', 'Status', 'Título']} rows={rows} />
               : <p>Nenhum documento fiscal recebido para este tenant.</p>}
           </DemoSection>
-          {data.documents.map((document) => <FiscalDocumentEditor
-            document={document}
-            attachments={attachments.filter((item) => item.aggregate_id === document.id)}
-            attachmentError={attachmentError}
-            key={document.id}
-          />)}
+          <div id="validacoes">
+            {data.documents.map((document) => <FiscalDocumentEditor
+              document={document}
+              attachments={attachments.filter((item) => item.aggregate_id === document.id)}
+              attachmentError={attachmentError}
+              key={document.id}
+            />)}
+          </div>
         </div>
         <aside className="demo-side-stack">
           <section><p className="section-kicker">VALIDAÇÃO</p><h2>Conferência sem inferência</h2><p>A validação exige chave de acesso e igualdade exata com o evento financeiro da expedição.</p></section>
@@ -428,7 +430,7 @@ function FiscalDocumentEditor({ document, attachments, attachmentError }: {
   const [validateState, validateAction, validatePending] = useActionState(validateFiscalDocumentAction, initialState);
   const [rejectState, rejectAction, rejectPending] = useActionState(rejectFiscalDocumentAction, initialState);
   return (
-    <DemoSection kicker="CONFERÊNCIA" title={document.documentNumber} aside={`${document.contractReference} · ${document.counterpartyName}`}>
+    <DemoSection kicker="CONFERÊNCIA" title={document.documentNumber} aside={`${document.contractReference} · v${document.salesContractVersionNumber} · ${document.counterpartyName}`}>
       <div className="fiscal-document-card">
         <dl className="summary-ledger">
           <div><dt>Valor informado</dt><dd>{formatFiscalMoney(document.totalAmount)}</dd></div>

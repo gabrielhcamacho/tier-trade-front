@@ -1249,3 +1249,68 @@ main { min-width: 0; }
   .overview-table-wrap table { min-width: 620px; }
   .clickable-table-row > th, .clickable-table-row > td { min-height: 44px; }
 }
+
+/* Each module submenu opens a focused internal screen without duplicating its backend workspace. */
+.module-view:not([data-workspace-view='overview']) .demo-section,
+.module-view:not([data-workspace-view='overview']) > .demo-metric-strip,
+.module-view:not([data-workspace-view='overview']) .demo-filterbar,
+.module-view:not([data-workspace-view='overview']) .demo-side-stack {
+  display: none;
+}
+
+.module-view[data-workspace-view='lots'] #lotes,
+.module-view[data-workspace-view='movements'] #movimentos,
+.module-view[data-workspace-view='reconciliation'] #reconciliacao,
+.module-view[data-workspace-view='coverage'] #cobertura,
+.module-view[data-workspace-view='settlements'] #acoes,
+.module-view[data-workspace-view='settlements'] #liquidacoes,
+.module-view[data-workspace-view='settlements'] #receber,
+.module-view[data-workspace-view='settlements'] #conciliacao,
+.module-view[data-workspace-view='receivables'] #receber,
+.module-view[data-workspace-view='receivables'] #liquidacoes,
+.module-view[data-workspace-view='payables'] #acoes-pagar,
+.module-view[data-workspace-view='payables'] #pagar,
+.module-view[data-workspace-view='payables'] #pagamentos,
+.module-view[data-workspace-view='payables'] #lotes,
+.module-view[data-workspace-view='reconciliation'] #conciliacao-bancaria,
+.module-view[data-workspace-view='reconciliation'] #conciliacao,
+.module-view[data-workspace-view='reconciliation'] #pagamentos,
+.module-view[data-workspace-view='cashflow'] #liquidacoes,
+.module-view[data-workspace-view='documents'] #entrada,
+.module-view[data-workspace-view='documents'] #documentos,
+.module-view[data-workspace-view='validation'] #documentos,
+.module-view[data-workspace-view='validation'] #validacoes .demo-section,
+.module-view[data-workspace-view='taxes'] #configuracoes,
+.module-view[data-workspace-view='taxes'] #autoridades,
+.module-view[data-workspace-view='taxes'] #calculo,
+.module-view[data-workspace-view='taxes'] #memorias,
+.module-view[data-workspace-view='obligations'] #obrigacoes {
+  display: block;
+}
+
+.module-view[data-workspace-view='cashflow'] > .demo-metric-strip {
+  display: grid;
+}
+
+.module-view[data-workspace-view='limits'] .risk-live-layout .demo-main-stack,
+.module-view[data-workspace-view='limits'] .risk-live-layout .demo-side-stack > section:not(#limites):not(#configuracao-limites) {
+  display: none;
+}
+
+.module-view[data-workspace-view='limits'] .risk-live-layout .demo-side-stack {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.module-view:not([data-workspace-view='overview']) .demo-domain-layout,
+.module-view:not([data-workspace-view='overview']) .fiscal-live-layout,
+.module-view:not([data-workspace-view='overview']) .risk-live-layout {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (max-width: 760px) {
+  .module-view[data-workspace-view='limits'] .risk-live-layout .demo-side-stack {
+    grid-template-columns: 1fr;
+  }
+}

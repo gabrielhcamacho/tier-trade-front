@@ -91,7 +91,7 @@ function ContractLoadAgenda({ summary, agenda }: { summary: ContractSummary; age
             {agenda.items.length === 0 ? <div className="loads-table-empty"><span aria-hidden="true">＋</span><strong>Nenhuma carga programada</strong><p>Use “Programar carga” para reservar saldo e iniciar a execução do contrato.</p></div> : agenda.items.map((load) => (
               <Link className="loads-table-row" role="row" key={load.id} href={`/cargas/${load.id}`}>
                 <span role="cell" className="tt-mono">{load.id.slice(-8)}</span><span role="cell">{formatSchedule(load.scheduledAt, load.timezone)}</span>
-                <span role="cell"><strong>{load.vehiclePlate}</strong><small>{load.carrierName}</small></span><span role="cell">{formatWeightKg(load.expectedWeightKg)} kg</span>
+                <span role="cell"><strong>{load.vehiclePlate}</strong><small>{load.carrierName} · contrato v{load.contractVersionNumber}</small></span><span role="cell">{formatWeightKg(load.expectedWeightKg)} kg</span>
                 <span role="cell"><Status tone={load.status === 'CANCELLED' ? 'neutral' : load.status === 'IN_RECEIVING' ? 'warning' : 'positive'}>{loadStatusLabel(load.status)}</Status></span>
               </Link>
             ))}

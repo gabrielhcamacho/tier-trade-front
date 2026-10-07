@@ -52,7 +52,7 @@ function LoadDetail({ load, summary, documents, documentError }: {
           <div className="entity-actions"><Status tone="positive">{loadStatusLabel(load.status)}</Status></div>
         </div>
         <dl className="entity-facts">
-          <div><dt>Contrato</dt><dd><Link className="tt-mono" href={`/contratos/${summary.id}`}>{summary.id}</Link></dd></div>
+          <div><dt>Contrato</dt><dd><Link className="tt-mono" href={`/contratos/${summary.id}`}>{summary.id}</Link> · v{load.contractVersionNumber}</dd></div>
           <div><dt>Commodity</dt><dd>{commodityLabel(summary.commodity)}</dd></div>
           <div><dt>Programação</dt><dd>{formatSchedule(load.scheduledAt, load.timezone)}</dd></div>
           <div><dt>Peso previsto</dt><dd>{formatWeightKg(load.expectedWeightKg)} kg</dd></div>
@@ -94,7 +94,7 @@ function LoadDetail({ load, summary, documents, documentError }: {
 
         <aside className="load-side-column" aria-label="Relações e histórico da carga">
           <section><p className="section-kicker">OBJETOS VINCULADOS</p><h2>Rastreabilidade</h2><dl className="linked-object-list">
-            <div><dt>Contrato</dt><dd><Link className="tt-mono" href={`/contratos/${summary.id}`}>{summary.id}</Link></dd></div><div><dt>Romaneio</dt><dd>{load.romaneio ? `${load.romaneio.reference} · v${load.romaneio.version}` : 'Ainda não existe'}</dd></div><div><dt>NF-e</dt><dd>{load.receipt?.inboundInvoiceNumber ?? 'Ainda não existe'}</dd></div><div><dt>Pátio</dt><dd>{yardStateLabel(load.yardState)}</dd></div><div><dt>Liquidação</dt><dd>Ainda não existe</dd></div>
+            <div><dt>Contrato</dt><dd><Link className="tt-mono" href={`/contratos/${summary.id}`}>{summary.id}</Link> · versão {load.contractVersionNumber}</dd></div><div><dt>Romaneio</dt><dd>{load.romaneio ? `${load.romaneio.reference} · v${load.romaneio.version}` : 'Ainda não existe'}</dd></div><div><dt>NF-e</dt><dd>{load.receipt?.inboundInvoiceNumber ?? 'Ainda não existe'}</dd></div><div><dt>Pátio</dt><dd>{yardStateLabel(load.yardState)}</dd></div><div><dt>Liquidação</dt><dd>Ainda não existe</dd></div>
           </dl></section>
           <section><p className="section-kicker">HISTÓRICO DA CARGA</p><h2>Eventos</h2>{load.events.length ? load.events.map((event, index) => <div className="load-history-item" key={`${event.type}-${event.occurredAt}-${index}`}><span aria-hidden="true" /><div><strong>{eventLabel(event.type)}</strong><p>{eventDescription(event.type, event.payload)}</p><small>{formatSchedule(event.occurredAt, load.timezone)}</small></div></div>) : <div className="load-history-item"><span aria-hidden="true" /><div><strong>Carga programada</strong><p>Saldo reservado no contrato para {formatWeightKg(load.expectedWeightKg)} kg.</p><small>{formatSchedule(load.createdAt, load.timezone)}</small></div></div>}</section>
         </aside>

@@ -56,8 +56,8 @@ export function PurchaseFiscalWorkspace({ data }: { data: FiscalWorkspace }) {
     </DemoSection>
 
     <DemoSection kicker="RASTREABILIDADE DE COMPRA" title="Entradas fiscais e contas a pagar" id="documentos" aside="dados reais do backend">
-      {data.purchaseDocuments.length ? <DemoTable label="Entradas fiscais" columns={['NF-e', 'Fornecedor', 'Commodity', 'Peso aceito', 'Valor informado', 'Valor esperado', 'Vencimento', 'Status', 'Saldo']} rows={data.purchaseDocuments.map((document) => [
-        document.documentNumber, document.counterpartyName, document.commodity,
+      {data.purchaseDocuments.length ? <DemoTable label="Entradas fiscais" columns={['NF-e', 'Contrato', 'Fornecedor', 'Commodity', 'Peso aceito', 'Valor informado', 'Valor esperado', 'Vencimento', 'Status', 'Saldo']} rows={data.purchaseDocuments.map((document) => [
+        document.documentNumber, `v${document.contractVersionNumber}`, document.counterpartyName, document.commodity,
         `${Number(document.acceptedWeightKg).toLocaleString('pt-BR')} kg`, formatFiscalMoney(document.totalAmount),
         formatFiscalMoney(document.expectedAmount), formatFiscalDate(document.dueDate),
         <DemoStatus key={document.id} tone={document.status === 'VALIDATED' ? 'positive' : document.status === 'REJECTED' ? 'critical' : 'attention'}>{document.status === 'VALIDATED' ? 'Validada' : document.status === 'REJECTED' ? 'Rejeitada' : 'Em conferência'}</DemoStatus>,
@@ -73,7 +73,7 @@ function PurchaseDecision({ document }: { document: FiscalWorkspace['purchaseDoc
   const [updateState, updateAction, updatePending] = useActionState(updateFiscalDocumentAction, initialState);
   const [validateState, validateAction, validatePending] = useActionState(validateFiscalDocumentAction, initialState);
   const [rejectState, rejectAction, rejectPending] = useActionState(rejectFiscalDocumentAction, initialState);
-  return <DemoSection kicker="CONFERÊNCIA" title={document.documentNumber} aside={`${document.counterpartyName} · ${document.commodity}`}>
+  return <DemoSection kicker="CONFERÊNCIA" title={document.documentNumber} aside={`${document.counterpartyName} · ${document.commodity} · contrato v${document.contractVersionNumber}`}>
     <dl className="summary-ledger">
       <div><dt>NF-e</dt><dd>{formatFiscalMoney(document.totalAmount)}</dd></div>
       <div><dt>Cálculo</dt><dd>{formatFiscalMoney(document.expectedAmount)}</dd></div>

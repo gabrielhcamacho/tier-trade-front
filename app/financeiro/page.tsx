@@ -6,7 +6,19 @@ import { DemoNotice } from '../demo-notice';
 import { DemoPageHeader } from '../demo-ui';
 import { FinancialWorkspace } from './finance-workspace';
 
-export default async function FinancialPage() {
+const views = {
+  overview: ['Visão geral', 'Liquidação e caixa', 'Controle financeiro'],
+  settlements: ['Liquidações', 'Operação financeira', 'Liquidações e estornos'],
+  receivables: ['Contas a receber', 'Direitos', 'Contas a receber'],
+  payables: ['Contas a pagar', 'Obrigações', 'Contas a pagar'],
+  reconciliation: ['Conciliação', 'Movimentos bancários', 'Conciliação financeira'],
+  cashflow: ['Fluxo de caixa', 'Previsão e realizado', 'Fluxo de caixa'],
+} as const;
+
+export default async function FinancialPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
+  const requestedView = (await searchParams).view;
+  const view = requestedView && requestedView in views ? requestedView as keyof typeof views : 'overview';
+  const [section, eyebrow, title] = views[view];
   const { userLabel, identityHeaders } = await currentUserContext();
   const result = await loadFinance(identityHeaders);
 
@@ -14,13 +26,13 @@ export default async function FinancialPage() {
     <AppShell activeDomain="financial" userLabel={userLabel}>
       <DemoPageHeader
         domain="Financeiro"
-        section="Visão geral"
-        eyebrow="Liquidação e caixa"
-        title="Controle financeiro"
+        section={section}
+        eyebrow={eyebrow}
+        title={title}
         description="Previsões, títulos e recebimentos vinculados à execução física da venda."
         scope={result.data ? `${result.data.tenant.legalName} · posição atual` : 'Dados indisponíveis'}
       />
-      <div className="demo-page demo-workspace">
+      <div className="demo-page demo-workspace module-view" data-workspace-view={view}>
         {result.data?.tenant.isDemo ? <DemoNotice persisted /> : null}
         {result.error || !result.data
           ? <div className="feedback critical"><strong>Não foi possível concluir</strong><span>{result.error}</span><Link href="/financeiro">Tentar novamente</Link></div>

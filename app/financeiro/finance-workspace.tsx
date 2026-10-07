@@ -70,7 +70,7 @@ export function FinancialWorkspace({ data }: { data: FinanceWorkspace }) {
       {event.dispatchDocumentReference}
     </Link>,
     event.beneficiaryName,
-    event.contractReference,
+    `${event.contractReference ?? 'Sem contrato'} · v${event.salesContractVersionNumber ?? event.purchaseContractVersionNumber ?? '—'}`,
     `${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 3 }).format(Number(event.quantityKg ?? 0))} kg`,
     event.calculatedAmount ? formatMoney(event.calculatedAmount) : 'Política pendente',
     event.title

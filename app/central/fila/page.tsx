@@ -75,7 +75,10 @@ function alertItems(data: OverviewResponse, capabilities: Set<string>): QueueIte
   return alerts;
 }
 
-export default async function CentralPage() {
+export default async function CentralPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
+  const requestedView = (await searchParams).view;
+  const view = requestedView === 'approvals' || requestedView === 'alerts' ? requestedView : 'queue';
+  const viewTitle = view === 'approvals' ? 'Aprovações' : view === 'alerts' ? 'Alertas operacionais' : 'O que precisa da sua atenção';
   const user = await currentUserContext();
   const [overview, openObligations] = await Promise.all([
     loadOverview(user.identityHeaders, 'ALL'), loadOpenContractObligations(user.identityHeaders),
@@ -102,8 +105,8 @@ export default async function CentralPage() {
   const errors = [overview.error, openObligations.error].filter(Boolean);
 
   return <AppShell activeDomain="central" userLabel={user.userLabel}>
-    <header className="page-header central-header"><p className="breadcrumbs">Central <span>›</span> Minha fila</p>
-      <div className="page-header-row"><div><p className="entity-kind">Visão de trabalho</p><h1>O que precisa da sua atenção</h1>
+    <header className="page-header central-header"><p className="breadcrumbs">Central <span>›</span> {view === 'queue' ? 'Minha fila' : viewTitle}</p>
+      <div className="page-header-row"><div><p className="entity-kind">Visão de trabalho</p><h1>{viewTitle}</h1>
         <p className="page-description">Pendências da carteira acessíveis conforme suas permissões. Prazos só aparecem quando registrados.</p></div>
         <span className="environment-label">{data?.tenant.legalName ?? 'Ambiente autenticado'}</span></div></header>
     <div className="demo-page">
@@ -119,7 +122,7 @@ export default async function CentralPage() {
         <span aria-hidden="true">!</span><div><strong>Existem pendências críticas</strong><p>Verifique obrigações vencidas, limites excedidos e ocorrências críticas abaixo.</p></div><a href="#fila">Ver fila</a>
       </section> : null}
       <div className="central-layout"><div className="central-main-column">
-        <section className="central-section" id="fila" aria-labelledby="work-queue-title">
+        {view === 'queue' ? <section className="central-section" id="fila" aria-labelledby="work-queue-title">
           <header><div><p className="section-kicker">PRIORIDADES</p><h2 id="work-queue-title">Fila de trabalho</h2></div><span>Prazos vencidos primeiro; demais itens por tipo e prazo conhecido</span></header>
           <div className="work-queue">{queue.length ? queue.map((item, index) => <ClickableSurface key={item.id} href={item.href} label={`Abrir ${item.title}`}>
             <span className="queue-index">{String(index + 1).padStart(2, '0')}</span>
@@ -128,8 +131,8 @@ export default async function CentralPage() {
             <span className="demo-status" data-tone={item.tone}>{item.status}</span><span className="clickable-surface-action" aria-hidden="true">Abrir →</span>
           </ClickableSurface>) : <div className="central-empty-state">{errors.length ? 'A fila não pôde ser carregada por completo.' : 'Nenhuma pendência acionável para suas permissões neste momento.'}</div>}</div>
           {openObligations.hasMore ? <p className="central-list-note">A lista mostra as primeiras 100 obrigações por prazo. Consulte os contratos para ver o restante.</p> : null}
-        </section>
-        <section className="central-section" id="aprovacoes" aria-labelledby="approvals-title">
+        </section> : null}
+        {view === 'approvals' ? <section className="central-section" id="aprovacoes" aria-labelledby="approvals-title">
           <header><div><p className="section-kicker">ALÇADA COMERCIAL</p><h2 id="approvals-title">Aprovações</h2></div><span>A decisão permanece humana e auditada no Comercial</span></header>
           {approvals.length ? approvals.map((offer, index) => <ClickableSurface className="approval-preview" key={offer.id} href={`/?status=IN_APPROVAL&commodity=${offer.commodity}`} label={`Analisar oferta de ${commodityLabel(offer.commodity)} de ${offer.counterparty_name}`}>
             <div className="approval-heading"><span className="approval-flag">{String(index + 1).padStart(2, '0')}</span>
@@ -140,13 +143,13 @@ export default async function CentralPage() {
               <div><dt>Janela de entrega</dt><dd>{formatDue(offer.delivery_start)} a {formatDue(offer.delivery_end)}</dd></div></dl>
             <footer><p>Consulte o cenário e a política vigente antes de decidir.</p><span className="clickable-surface-action">Analisar no Comercial →</span></footer>
           </ClickableSurface>) : <div className="central-empty-state">{data ? 'Nenhuma oferta aguardando sua alçada comercial.' : 'Aprovações indisponíveis.'}</div>}
-        </section>
-        <section className="central-section" id="alertas" aria-labelledby="alerts-title">
+        </section> : null}
+        {view === 'alerts' ? <section className="central-section" id="alertas" aria-labelledby="alerts-title">
           <header><div><p className="section-kicker">EXCEÇÕES</p><h2 id="alerts-title">Alertas operacionais</h2></div></header>
           <div className="central-alerts">{alerts.length ? alerts.map((item) => <ClickableSurface className="demo-alert" data-tone={item.tone === 'critical' || item.tone === 'attention' ? 'attention' : undefined} key={item.id} href={item.href} label={`Abrir ${item.title}`}>
             <strong>{item.title}</strong><p>{item.description}</p><span className="clickable-surface-action" aria-hidden="true">Abrir área responsável →</span>
           </ClickableSurface>) : <div className="central-empty-state">{data ? 'Nenhum alerta acionável nas áreas liberadas para seu usuário.' : 'Alertas indisponíveis.'}</div>}</div>
-        </section>
+        </section> : null}
       </div><aside className="central-sidebar"><section><p className="section-kicker">ACESSO RÁPIDO</p>
         <ol className="activity-list"><li><Link href="/contratos">Contratos e obrigações →</Link></li>
           <li><Link href="/ocorrencias">Ocorrências operacionais →</Link></li>

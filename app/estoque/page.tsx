@@ -14,7 +14,17 @@ import {
 import { FulfillmentForms } from './fulfillment-forms';
 import { InventoryGovernanceForms } from './inventory-governance-forms';
 
-export default async function InventoryPage() {
+const views = {
+  overview: ['Posição', 'Custódia e disponibilidade', 'Posição de estoque'],
+  lots: ['Lotes', 'Rastreabilidade física', 'Lotes de estoque'],
+  movements: ['Movimentos', 'Livro imutável', 'Movimentos de estoque'],
+  reconciliation: ['Reconciliação', 'Integridade do saldo', 'Reconciliação de estoque'],
+} as const;
+
+export default async function InventoryPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
+  const requestedView = (await searchParams).view;
+  const view = requestedView && requestedView in views ? requestedView as keyof typeof views : 'overview';
+  const [section, eyebrow, title] = views[view];
   const user = await currentUserContext();
   const result = await loadInventory(user.identityHeaders);
 
@@ -22,13 +32,13 @@ export default async function InventoryPage() {
     <AppShell activeDomain="inventory" userLabel={user.userLabel}>
       <DemoPageHeader
         domain="Estoque"
-        section="Posição"
-        eyebrow="Custódia e disponibilidade"
-        title="Posição de estoque"
+        section={section}
+        eyebrow={eyebrow}
+        title={title}
         description="Saldo físico rastreado por recebimento, lote e localização."
         scope="Fonte: livro imutável de movimentos"
       />
-      <div className="demo-page demo-workspace">
+      <div className="demo-page demo-workspace module-view" data-workspace-view={view}>
         {result.data
           ? <InventoryWorkspace data={result.data} />
           : <InventoryError message={result.error} />}
@@ -53,6 +63,7 @@ function InventoryWorkspace({ data }: { data: InventoryPosition }) {
   const positionRows = data.lots.map((lot) => [
     `${lot.location.name} · ${lot.location.code}`,
     lot.lotCode,
+    `v${lot.contractVersionNumber}`,
     commodityLabel(lot.commodity),
     ownershipLabel(lot.ownershipStatus),
     `${formatTonnes(lot.quantityKg)} t`,
@@ -105,8 +116,9 @@ function InventoryWorkspace({ data }: { data: InventoryPosition }) {
 
           <DemoSection kicker="CARTEIRA DE VENDA" title="Saldos executados" aside={`${data.salesContracts.length} contratos`}>
             {data.salesContracts.length > 0
-              ? <DemoTable label="Contratos de venda" columns={['Contrato', 'Cliente', 'Contratado', 'Alocado', 'Expedido', 'Saldo']} rows={data.salesContracts.map((contract) => [
+              ? <DemoTable label="Contratos de venda" columns={['Contrato', 'Versão', 'Cliente', 'Contratado', 'Alocado', 'Expedido', 'Saldo']} rows={data.salesContracts.map((contract) => [
                 contract.reference,
+                `v${contract.version_number}`,
                 contract.counterparty_name,
                 `${formatTonnes(contract.quantity_kg)} t`,
                 `${formatTonnes(contract.allocated_kg)} t`,
@@ -120,7 +132,7 @@ function InventoryWorkspace({ data }: { data: InventoryPosition }) {
           </DemoSection>
           <DemoSection kicker="POSIÇÃO CONSOLIDADA" title="Saldo por lote e localização" id="posicao-estoque" aside={`${data.lots.length} lotes visíveis`}>
             {positionRows.length > 0
-              ? <DemoTable label="Posição de estoque" columns={['Localização', 'Lote', 'Produto', 'Titularidade', 'Físico', 'Custódia', 'Disponível', 'Situação']} rows={positionRows} />
+              ? <DemoTable label="Posição de estoque" columns={['Localização', 'Lote', 'Contrato', 'Produto', 'Titularidade', 'Físico', 'Custódia', 'Disponível', 'Situação']} rows={positionRows} />
               : <p>Nenhum recebimento aceito gerou estoque para este tenant.</p>}
           </DemoSection>
 
@@ -162,7 +174,7 @@ function LotCard({ lot }: { lot: InventoryLot }) {
     <article>
       <header><div><span>{lot.lotCode}</span><strong>{commodityLabel(lot.commodity)} · {ownershipLabel(lot.ownershipStatus)}</strong></div><DemoStatus tone={lot.status === 'AVAILABLE' ? 'positive' : 'attention'}>{lot.status === 'AVAILABLE' ? 'Liberado' : 'Em revisão'}</DemoStatus></header>
       <dl>
-        <div><dt>Origem</dt><dd>Carga {lot.sourceLoadId.slice(0, 8).toUpperCase()} · placa {lot.vehiclePlate}</dd></div>
+        <div><dt>Origem</dt><dd>Carga {lot.sourceLoadId.slice(0, 8).toUpperCase()} · contrato v{lot.contractVersionNumber} · placa {lot.vehiclePlate}</dd></div>
         <div><dt>Qualidade</dt><dd>Umidade {formatPercent(lot.quality.moisturePct)} · impureza {formatPercent(lot.quality.impurityPct)}</dd></div>
         <div><dt>Localização</dt><dd>{lot.location.name}</dd></div>
         <div><dt>Saldo físico</dt><dd>{formatTonnes(lot.quantityKg)} t</dd></div>

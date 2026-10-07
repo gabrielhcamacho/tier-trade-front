@@ -1,6 +1,7 @@
 export type ScheduledLoad = {
   id: string;
   contractId: string;
+  contractVersionNumber: number;
   scheduledAt: string;
   timezone: string;
   expectedWeightKg: string;

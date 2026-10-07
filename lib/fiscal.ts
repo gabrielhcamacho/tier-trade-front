@@ -3,6 +3,7 @@ export type FiscalDocument = {
   financialEventId: string;
   sourceId: string;
   salesContractId: string;
+  salesContractVersionNumber: number;
   contractReference: string;
   counterpartyName: string;
   dispatchReference: string;
@@ -94,7 +95,7 @@ export type FiscalWorkspace = {
   };
   documents: FiscalDocument[];
   purchaseDocuments: Array<{
-    id: string; financialEventId: string; purchaseContractId: string; loadId: string;
+    id: string; financialEventId: string; purchaseContractId: string; contractVersionNumber: number; loadId: string;
     loadReceiptId: string; counterpartyName: string; commodity: string; documentNumber: string;
     invoiceSeries: string | null; accessKey: string | null; issuedAt: string; totalAmount: string;
     expectedAmount: string | null; differenceAmount: string | null; dueDate: string;

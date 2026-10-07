@@ -3,6 +3,7 @@ export type InventoryLot = {
   lotCode: string;
   sourceLoadId: string;
   contractId: string;
+  contractVersionNumber: number;
   location: { code: string; name: string };
   commodity: string;
   status: string;
@@ -54,14 +55,14 @@ export type InventoryPosition = {
     id: string; counterparty_id: string; reference: string; commodity: string; quantity_kg: string;
     sale_price_per_kg: string; destination_code: string; delivery_start: string;
     delivery_end: string; required_documents: string[]; payment_term_days: number | null; status: string;
-    counterparty_name: string; allocated_kg: string; dispatched_kg: string;
+    counterparty_name: string; version_number: number; allocated_kg: string; dispatched_kg: string;
   }>;
   allocations: Array<{
-    id: string; sales_contract_id: string; lot_id: string; quantity_kg: string;
+    id: string; sales_contract_id: string; sales_contract_version_number: number; lot_id: string; quantity_kg: string;
     status: string; contract_reference: string; lot_code: string; dispatched_kg: string;
   }>;
   dispatches: Array<{
-    id: string; allocation_id: string; quantity_kg: string; dispatched_at: string;
+    id: string; allocation_id: string; sales_contract_version_number: number; quantity_kg: string; dispatched_at: string;
     vehicle_plate: string; document_reference: string; notes: string | null;
     contract_reference: string; lot_code: string;
   }>;

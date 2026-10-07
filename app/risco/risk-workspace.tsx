@@ -78,7 +78,7 @@ export function RiskWorkspaceView({ data }: { data: RiskWorkspace }) {
               <div><dt>Faixa de alerta</dt><dd>{primary.limit.warningThresholdPct ? formatPercent(primary.limit.warningThresholdPct) : '—'}</dd></div>
             </dl>
           </section>
-          <section>
+          <section id="configuracao-limites">
             <p className="section-kicker">CONFIGURAÇÃO</p><h2>Versionar política</h2>
             <form action={action} className="risk-policy-form">
               <input type="hidden" name="commodity" value={primary.commodity} />
