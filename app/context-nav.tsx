@@ -15,12 +15,14 @@ const tabs: Record<Domain, Tab[]> = {
     { label: 'Alertas', href: '/central/fila?view=alerts' }, { label: 'Roteiro de demonstração', href: '/demonstracao' },
   ],
   commercial: [
-    { label: 'Carteira' }, { label: 'Ofertas', href: '/' }, { label: 'Vendas', href: '/comercial/vendas' }, { label: 'Demandas', href: '/comercial/demandas' }, { label: 'Política de margem', href: '/comercial/politica-margem' },
-    { label: 'Negociações', href: '/comercial/negociacoes' }, { label: 'Formação de preço' }, { label: 'Confirmações' },
+    { label: 'Carteira', href: '/comercial/carteira' }, { label: 'Ofertas', href: '/' }, { label: 'Vendas', href: '/comercial/vendas' }, { label: 'Demandas', href: '/comercial/demandas' }, { label: 'Política de margem', href: '/comercial/politica-margem' },
+    { label: 'Negociações', href: '/comercial/negociacoes' }, { label: 'Formação de preço' }, { label: 'Confirmações', href: '/comercial/confirmacoes' },
   ],
   contracts: [
     { label: 'Lista', href: '/contratos' }, { label: 'Obrigações', href: '/contratos/obrigacoes' }, { label: 'Fixações' },
-    { label: 'Entregas' }, { label: 'Custos e margem' }, { label: 'Comissões' }, { label: 'Garantias' }, { label: 'Aditivos' }, { label: 'Assinaturas' },
+    { label: 'Entregas', href: '/contratos?view=deliveries' }, { label: 'Custos e margem', href: '/contratos?view=economics' },
+    { label: 'Comissões' }, { label: 'Garantias', href: '/contratos?view=guarantees' },
+    { label: 'Aditivos', href: '/contratos?view=amendments' }, { label: 'Assinaturas', href: '/contratos?view=signatures' },
   ],
   operations: [
     { label: 'Agenda de cargas', href: '/cargas' }, { label: 'Pátio', href: '/patio' },

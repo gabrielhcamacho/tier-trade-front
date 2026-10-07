@@ -91,12 +91,24 @@ export type ContractListItem = {
   delivery_start: string;
   delivery_end: string;
   purchase_price_per_sc: string;
+  total_costs_per_sc: string;
   projected_margin_per_sc: string;
+  external_number: string | null;
+  contract_version_number: number;
   load_count: number;
+  open_load_count: number;
+  received_load_count: number;
   scheduled_weight_kg: string;
   received_weight_kg: string;
   available_weight_kg: string;
   pending_obligations: number;
+  amendment_count: number;
+  latest_amendment_on: string | null;
+  document_count: number;
+  guarantee_count: number;
+  signed_contract_count: number;
+  pending_signature_count: number;
+  signed_signature_count: number;
 };
 
 export type ContractPortfolio = {

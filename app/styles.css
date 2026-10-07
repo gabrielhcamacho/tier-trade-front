@@ -1314,3 +1314,35 @@ main { min-width: 0; }
     grid-template-columns: 1fr;
   }
 }
+
+.contract-portfolio-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  margin: 28px 0 8px;
+  border-block: 1px solid #d9dfdb;
+}
+.contract-portfolio-metrics > div {
+  display: grid;
+  gap: 7px;
+  min-height: 128px;
+  padding: 24px 22px;
+  border-right: 1px solid #d9dfdb;
+}
+.contract-portfolio-metrics > div:last-child { border-right: 0; }
+.contract-portfolio-metrics span { color: #5d6964; font-size: 14px; }
+.contract-portfolio-metrics strong {
+  color: #17201d;
+  font-family: var(--font-mono), monospace;
+  font-size: clamp(24px, 2.2vw, 36px);
+  font-weight: 650;
+  letter-spacing: -0.04em;
+}
+.contract-portfolio-metrics small { color: #74807b; font-size: 12px; }
+.commercial-portfolio-actions { display: flex; justify-content: flex-end; gap: 10px; margin: 20px 0 4px; }
+
+@media (max-width: 760px) {
+  .contract-portfolio-metrics { grid-template-columns: 1fr 1fr; }
+  .contract-portfolio-metrics > div:nth-child(2n) { border-right: 0; }
+  .commercial-portfolio-actions { justify-content: stretch; }
+  .commercial-portfolio-actions .tt-button { flex: 1; }
+}
