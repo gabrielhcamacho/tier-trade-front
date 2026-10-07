@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { AppShell } from '../../app-shell';
 import { currentUserContext } from '../../../lib/current-user';
 import { commodityLabel, formatDate, loadOpenContractObligations, obligationStatus } from '../../../lib/contracts';
+import { ClickableTableRow } from '../../clickable-table-row';
 
 export default async function ObligationsPage() {
   const user = await currentUserContext();
@@ -21,8 +22,8 @@ export default async function ObligationsPage() {
         {result.error ? <div className="feedback critical" role="alert"><strong>Não foi possível carregar</strong><span>{result.error}</span></div> : null}
         {!result.error ? <>
           <div className="prototype-table-scroll"><table className="prototype-ledger">
-            <thead><tr><th>Obrigação</th><th>Contrato</th><th>Contraparte</th><th>Commodity</th><th>Responsável</th><th>Prazo</th><th>Status</th><th>Ação</th></tr></thead>
-            <tbody>{result.items.map((item) => <tr key={item.id}>
+            <thead><tr><th>Obrigação</th><th>Contrato</th><th>Contraparte</th><th>Commodity</th><th>Responsável</th><th>Prazo</th><th>Status</th></tr></thead>
+            <tbody>{result.items.map((item) => <ClickableTableRow key={item.id} href={`/contratos/${item.contract_id}#obrigacoes`} label={`Abrir obrigação ${item.title}`}>
               <td><strong>{item.title}</strong>{item.description ? <small>{item.description}</small> : null}</td>
               <td className="prototype-id">{item.contract_id.slice(-8).toUpperCase()}</td>
               <td>{item.counterparty_name}</td>
@@ -30,8 +31,7 @@ export default async function ObligationsPage() {
               <td>{item.responsible_name ?? 'Não atribuído'}</td>
               <td>{item.due_date ? formatDate(item.due_date) : 'Sem prazo'}</td>
               <td>{obligationStatus(item.status)}</td>
-              <td><Link href={`/contratos/${item.contract_id}#obrigacoes`}>Abrir</Link></td>
-            </tr>)}</tbody>
+            </ClickableTableRow>)}</tbody>
           </table></div>
           {result.items.length === 0 ? <p className="prototype-empty">Não há obrigações contratuais abertas neste tenant.</p> : null}
           {result.hasMore ? <p className="prototype-empty">Exibindo as primeiras 100 obrigações. A paginação completa ainda não está disponível.</p> : null}

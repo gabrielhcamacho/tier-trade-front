@@ -5,6 +5,7 @@ import './styles.css';
 import { brandAssets } from './brand-assets';
 import { NavigationProgress } from './navigation-progress';
 import { WorkspaceChrome } from './workspace-chrome';
+import { ClickableRowNavigation } from './clickable-row-navigation';
 
 export const metadata: Metadata = {
   title: 'Tier Trade',
@@ -21,7 +22,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="pt-BR" data-scroll-behavior="smooth" className={`${GeistSans.variable} ${GeistMono.variable}`}>
-      <body className={GeistSans.className}><NavigationProgress /><WorkspaceChrome>{children}</WorkspaceChrome></body>
+      <body className={GeistSans.className}><NavigationProgress /><ClickableRowNavigation /><WorkspaceChrome>{children}</WorkspaceChrome></body>
     </html>
   );
 }

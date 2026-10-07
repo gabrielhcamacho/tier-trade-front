@@ -34,7 +34,7 @@ export function DemoContractsPortfolio() {
         <div className="demo-domain-layout">
           <div className="demo-main-stack">
             <DemoSection kicker="CARTEIRA" title="Contratos recentes" aside="4 de 14 contratos">
-              <DemoTable label="Contratos recentes" columns={['Contrato', 'Operação', 'Commodity', 'Contraparte', 'Volume', 'Preço', 'Status']} rows={contracts.map((row) => row.map((cell, index) => index === 0 ? <Link key={String(cell)} href="/cargas?modo=demonstracao">{cell}</Link> : cell))} />
+              <DemoTable label="Contratos recentes" columns={['Contrato', 'Operação', 'Commodity', 'Contraparte', 'Volume', 'Preço', 'Status']} rows={contracts} rowHrefs={contracts.map(() => '/cargas?modo=demonstracao')} />
               <div className="demo-table-actions"><span>Valores apresentados para validação visual do produto.</span><Link className="tt-button" data-variant="primary" data-size="md" href="/cargas?modo=demonstracao">Abrir execução física</Link></div>
             </DemoSection>
 

@@ -1,6 +1,6 @@
 import { Status } from '@mountier/tier-trade-design-system';
-import Link from 'next/link';
 import { AppShell } from '../app-shell';
+import { ClickableTableRow } from '../clickable-table-row';
 import { currentUserContext } from '../../lib/current-user';
 import { formatSchedule, formatWeightKg, loadReceivingBoard, loadStatusLabel } from '../../lib/loads';
 
@@ -20,8 +20,8 @@ export default async function ReceivingPage() {
             <article><span>Peso aceito</span><strong>{formatWeightKg(result.data.summary.acceptedWeightKg)} <em>kg</em></strong></article>
           </section>
           <section className="board-ledger"><header><div><p className="section-kicker">CONCILIAÇÃO</p><h2>Cargas e documentos</h2></div><span>{result.data.items.length} carga(s)</span></header>
-            <div className="board-table-wrap"><table className="board-table"><thead><tr><th>Carga</th><th>Veículo</th><th>Programação</th><th>NF de entrada</th><th>Documento</th><th>Balança</th><th>Aceito</th><th>Situação</th><th /></tr></thead><tbody>
-              {result.data.items.map((item) => <tr key={item.id}><td className="tt-mono">{item.id.slice(-8)}</td><td><strong>{item.vehiclePlate}</strong><small>{item.carrierName}</small></td><td>{formatSchedule(item.scheduledAt, item.timezone)}</td><td>{item.receipt?.inboundInvoiceNumber ?? '—'}</td><td>{weight(item.receipt?.documentWeightKg)}</td><td>{weight(item.receipt?.arrivalWeightKg)}</td><td>{weight(item.receipt?.acceptedWeightKg)}</td><td><Status tone={item.status === 'RECEIVED' ? 'positive' : item.status === 'IN_RECEIVING' ? 'warning' : 'neutral'}>{loadStatusLabel(item.status)}</Status>{item.openOccurrences ? <small>{item.openOccurrences} ocorrência(s)</small> : null}</td><td><Link href={`/cargas/${item.id}#recebimento`}>{item.receipt ? 'Conferir' : 'Receber'} →</Link></td></tr>)}
+            <div className="board-table-wrap"><table className="board-table"><thead><tr><th>Carga</th><th>Veículo</th><th>Programação</th><th>NF de entrada</th><th>Documento</th><th>Balança</th><th>Aceito</th><th>Situação</th></tr></thead><tbody>
+              {result.data.items.map((item) => <ClickableTableRow key={item.id} href={`/cargas/${item.id}#recebimento`} label={`${item.receipt ? 'Conferir' : 'Receber'} carga ${item.vehiclePlate}`}><td className="tt-mono">{item.id.slice(-8)}</td><td><strong>{item.vehiclePlate}</strong><small>{item.carrierName}</small></td><td>{formatSchedule(item.scheduledAt, item.timezone)}</td><td>{item.receipt?.inboundInvoiceNumber ?? '—'}</td><td>{weight(item.receipt?.documentWeightKg)}</td><td>{weight(item.receipt?.arrivalWeightKg)}</td><td>{weight(item.receipt?.acceptedWeightKg)}</td><td><Status tone={item.status === 'RECEIVED' ? 'positive' : item.status === 'IN_RECEIVING' ? 'warning' : 'neutral'}>{loadStatusLabel(item.status)}</Status>{item.openOccurrences ? <small>{item.openOccurrences} ocorrência(s)</small> : null}</td></ClickableTableRow>)}
             </tbody></table></div>
           </section>
         </> : null}

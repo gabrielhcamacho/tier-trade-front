@@ -132,7 +132,7 @@ function InventoryWorkspace({ data }: { data: InventoryPosition }) {
 
           <DemoSection kicker="LIVRO DE MOVIMENTOS" title="Entradas, correções e saídas" id="movimentos" aside="ordem cronológica">
             {movementRows.length > 0
-              ? <DemoTable label="Movimentos de estoque" columns={['Data', 'Movimento', 'Carga', 'Lote', 'Quantidade', 'Origem']} rows={movementRows} />
+              ? <DemoTable label="Movimentos de estoque" columns={['Data', 'Movimento', 'Carga', 'Lote', 'Quantidade', 'Origem']} rows={movementRows} rowHrefs={data.movements.map((movement) => movement.sourceLoadId ? `/cargas/${movement.sourceLoadId}` : undefined)} />
               : <p>Nenhum movimento registrado.</p>}
           </DemoSection>
 

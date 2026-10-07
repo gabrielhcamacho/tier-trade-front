@@ -1,6 +1,7 @@
 import { Status } from '@mountier/tier-trade-design-system';
 import Link from 'next/link';
 import { AppShell } from '../../app-shell';
+import { DetailNavigation } from '../../detail-navigation';
 import { currentUserContext } from '../../../lib/current-user';
 import { loadDocuments, type StoredDocument } from '../../../lib/documents';
 import { DocumentPanel } from '../../documents/document-panel';
@@ -40,7 +41,7 @@ function ContractError({ message }: { message: string }) {
   return (
     <>
       <header className="page-header">
-        <p className="breadcrumbs">Contratos <span>›</span> Detalhe</p>
+        <DetailNavigation backHref="/contratos" backLabel="Voltar aos contratos" items={[{ label: 'Contratos', href: '/contratos' }, { label: 'Detalhe' }]} />
         <h1>Contrato indisponível</h1>
       </header>
       <div className="feedback critical detail-feedback" role="alert">
@@ -61,7 +62,7 @@ function ContractDetail({ summary, documents, documentError }: {
   return (
     <>
       <header className="entity-header">
-        <p className="breadcrumbs">Contratos <span>›</span> <span className="tt-mono">{summary.id}</span></p>
+        <DetailNavigation backHref="/contratos" backLabel="Voltar aos contratos" items={[{ label: 'Contratos', href: '/contratos' }, { label: summary.id, mono: true }]} />
         <div className="entity-title-row">
           <div>
             <p className="entity-kind">Contrato de compra</p>

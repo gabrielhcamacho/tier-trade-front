@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { ClickableTableRow } from '../clickable-table-row';
 import type { ContractPortfolio } from '../../lib/contracts';
 import { commodityLabel, contractStatusLabel, formatCurrency, formatQuantity } from '../../lib/contracts';
 
@@ -16,8 +17,8 @@ export function ContractPortfolioView({ portfolio, filters }: { portfolio: Contr
         <span className="prototype-filter-actions">{portfolio.tenant.legalName}</span>
       </form>
       <div className="prototype-table-scroll"><table className="prototype-ledger">
-        <thead><tr><th>Contrato</th><th>Tipo</th><th>Contraparte</th><th>Commodity</th><th>Volume</th><th>Executado</th><th>Preço</th><th>Status</th><th></th></tr></thead>
-        <tbody>{items.map((contract) => <tr key={contract.id}>
+        <thead><tr><th>Contrato</th><th>Tipo</th><th>Contraparte</th><th>Commodity</th><th>Volume</th><th>Executado</th><th>Preço</th><th>Status</th></tr></thead>
+        <tbody>{items.map((contract) => <ClickableTableRow key={contract.id} href={`/contratos/${contract.id}`} label={`Abrir contrato de ${contract.counterparty_name}`}>
           <td className="prototype-id">CT-{contract.id.slice(-8).toUpperCase()}</td>
           <td>Compra</td>
           <td><strong>{contract.counterparty_name}</strong></td>
@@ -26,8 +27,7 @@ export function ContractPortfolioView({ portfolio, filters }: { portfolio: Contr
           <td className="prototype-number">{formatQuantity(String(Number(contract.received_weight_kg) / 60))} sc</td>
           <td className="prototype-number">{formatCurrency(contract.purchase_price_per_sc)}/sc</td>
           <td><span className="prototype-status" data-status={contract.status}>{contractStatusLabel(contract.status)}</span>{contract.pending_obligations > 0 ? <small className="contract-pending-count">{contract.pending_obligations} obrigaç{contract.pending_obligations === 1 ? 'ão' : 'ões'} em aberto</small> : null}</td>
-          <td><Link href={`/contratos/${contract.id}`}>Abrir →</Link></td>
-        </tr>)}</tbody>
+        </ClickableTableRow>)}</tbody>
       </table></div>
       {items.length === 0 ? <p className="prototype-empty">Nenhum contrato corresponde aos filtros. <Link href="/contratos">Limpar filtros</Link></p> : null}
     </>

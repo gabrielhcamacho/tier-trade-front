@@ -115,7 +115,31 @@ html { scroll-behavior: smooth; }
 @media (max-width: 720px) { .overview-dashboard { padding: 25px 16px 48px; } .overview-heading-line { display: block; } .overview-updated { margin-top: 16px; } .overview-updated small { text-align: left; } .overview-filters > div, .overview-filters > label { min-width: 42%; } .overview-filters button { margin-left: 0; } .overview-kpis { grid-template-columns: repeat(2,minmax(0,1fr)); } .overview-kpis > a { padding: 12px; } .overview-kpis > a:nth-child(3) { border-right: 1px solid #e4e9e3; } .overview-chart-pair, .overview-rail { grid-template-columns: 1fr; } .overview-margin-row { grid-template-columns: minmax(80px,35%) minmax(40px,1fr) 80px; } .overview-margin-row > strong { font-size: 10px; } }
 
 /* Prototype composition: full-width operational ledgers, with Geist throughout. */
-body, button, input, select, textarea { font-family: var(--font-geist-sans), Geist, Helvetica, sans-serif; }
+html, body { font-family: var(--font-geist-sans), "Geist", Helvetica, Arial, sans-serif; font-synthesis: none; }
+button, input, select, textarea, optgroup, option { font: inherit; letter-spacing: inherit; }
+.tt-mono, code, kbd, samp { font-family: var(--font-geist-mono), "Geist Mono", ui-monospace, monospace; }
+.detail-navigation { min-height: 34px; display: flex; align-items: center; gap: 15px; margin: 0 0 18px; color: #68736e; font-size: 12px; }
+.detail-back-link { min-height: 30px; padding: 0 10px; display: inline-flex; align-items: center; gap: 7px; border: 1px solid #c4cec6; color: #0b3a31; background: #fff; font-weight: 700; text-decoration: none; transition: background-color 140ms ease, border-color 140ms ease; }
+.detail-back-link:hover { border-color: #81998b; background: #eef7e9; }
+.detail-back-link:focus-visible { outline: 2px solid #75cd45; outline-offset: 2px; }
+.detail-breadcrumbs { margin: 0; padding: 0; display: flex; align-items: center; flex-wrap: wrap; list-style: none; }
+.detail-breadcrumbs li { display: inline-flex; align-items: center; }
+.detail-breadcrumbs li + li::before { content: "›"; padding: 0 8px; color: #a9b2ad; }
+.detail-breadcrumbs a { color: #37584d; font-weight: 650; text-decoration: none; text-underline-offset: 3px; }
+.detail-breadcrumbs a:hover { text-decoration: underline; }
+.detail-breadcrumbs [aria-current="page"] { color: #68736e; }
+.clickable-table-row { cursor: pointer; outline: none; }
+.clickable-table-row > th, .clickable-table-row > td { position: relative; transition: background-color 140ms ease; }
+.clickable-table-row > :first-child::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; background: #75cd45; opacity: 0; transition: opacity 140ms ease; }
+.clickable-table-row:focus-visible > th, .clickable-table-row:focus-visible > td { background: #eff8ea; }
+.clickable-table-row:focus-visible > :first-child::before { opacity: 1; }
+@media (hover: hover) and (pointer: fine) {
+  .clickable-table-row:hover > th, .clickable-table-row:hover > td { background: #f3f8f0; }
+  .clickable-table-row:hover > :first-child::before { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .detail-back-link, .clickable-table-row > th, .clickable-table-row > td, .clickable-table-row > :first-child::before { transition-duration: 80ms; }
+}
 .prototype-list-page, .prototype-overview { min-height: calc(100dvh - 106px); padding: 28px 40px 70px; background: #fff; }
 .prototype-list-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 32px; margin-bottom: 30px; }
 .prototype-breadcrumb { margin: 0 0 8px; color: #68736e; font-size: 13px; }

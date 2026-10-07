@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { currentUserContext } from '../../../../lib/current-user';
 import { formatFinancialDate, formatMoney, loadFinance, titleStatusLabel } from '../../../../lib/finance';
 import { AppShell } from '../../../app-shell';
+import { DetailNavigation } from '../../../detail-navigation';
 import { DemoNotice } from '../../../demo-notice';
 
 export default async function SettlementDetailPage({
@@ -34,7 +35,7 @@ export default async function SettlementDetailPage({
   return (
     <AppShell activeDomain="financial" userLabel={userLabel}>
       <header className="entity-header settlement-header">
-        <p className="breadcrumbs">Financeiro <span>›</span> Previsões <span>›</span> {dispatchReference}</p>
+        <DetailNavigation backHref="/financeiro" backLabel="Voltar ao financeiro" items={[{ label: 'Financeiro', href: '/financeiro' }, { label: 'Previsões', href: '/financeiro' }, { label: dispatchReference }]} />
         <div className="entity-title-row">
           <div>
             <p className="entity-kind">Recebível de venda</p>

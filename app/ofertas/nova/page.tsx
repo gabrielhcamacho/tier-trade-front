@@ -1,4 +1,5 @@
 import { AppShell } from '../../app-shell';
+import { DetailNavigation } from '../../detail-navigation';
 import { OfferWorkspace } from '../../offer-workspace';
 import { currentUserContext } from '../../../lib/current-user';
 
@@ -8,7 +9,7 @@ export default async function Page() {
   return (
     <AppShell activeDomain="commercial" userLabel={userLabel}>
         <header className="page-header">
-          <p className="breadcrumbs">Comercial <span>›</span> <a href="/">Ofertas</a> <span>›</span> Nova oferta</p>
+          <DetailNavigation backHref="/" backLabel="Voltar às ofertas" items={[{ label: 'Comercial', href: '/' }, { label: 'Ofertas', href: '/' }, { label: 'Nova oferta' }]} />
           <div className="page-header-row">
             <div>
               <p className="entity-kind">Oferta de compra</p>

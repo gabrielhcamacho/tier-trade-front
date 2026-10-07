@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { DetailNavigation } from '../../detail-navigation';
 import { DemoNotice } from '../../demo-notice';
 import { DemoSection, DemoStatus, DemoTable } from '../../demo-ui';
 
@@ -6,7 +7,7 @@ export function DemoLoadDetail({ loadId }: { loadId: string }) {
   return (
     <>
       <header className="entity-header load-demo-header">
-        <p className="breadcrumbs">Operações <span>›</span> Cargas <span>›</span> {loadId}</p>
+        <DetailNavigation backHref="/cargas?modo=demonstracao" backLabel="Voltar às cargas" items={[{ label: 'Operações', href: '/cargas' }, { label: 'Cargas', href: '/cargas?modo=demonstracao' }, { label: loadId, mono: true }]} />
         <div className="entity-title-row"><div><p className="entity-kind">Carga de recebimento</p><h1>Milho · RBC-7H55 · Rodogrãos</h1><p className="entity-id">{loadId} · cenário demonstrativo</p></div><div className="entity-actions"><DemoStatus tone="attention">Contraprova concluída</DemoStatus><button className="tt-button" data-variant="primary" data-size="md" type="button" disabled>Registrar decisão</button></div></div>
         <dl className="entity-facts"><div><dt>Contrato</dt><dd>CT-2026-00512</dd></div><div><dt>Janela</dt><dd>06/10 · 10:30</dd></div><div><dt>Previsto</dt><dd>47.368 kg</dd></div><div><dt>Motorista</dt><dd>Marcos Vinícius</dd></div><div><dt>Destino</dt><dd>ARM-RV01</dd></div></dl>
         <ol className="trace-rail" aria-label="Etapas da carga"><Trace label="Programada" value="06/10 · 10:30" state="done" /><Trace label="Pesagem" value="47.620 kg" state="done" /><Trace label="Classificação" value="Contraprova" state="current" /><Trace label="Romaneio" value="Pendente" state="future" /><Trace label="NF-e" value="001.285" state="current" /><Trace label="Liquidação" value="Bloqueada" state="future" /></ol>

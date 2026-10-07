@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { ClickableTableRow } from './clickable-table-row';
 
 export function DemoPageHeader({
   domain,
@@ -55,16 +56,24 @@ export function DemoTable({
   label,
   columns,
   rows,
+  rowHrefs,
 }: {
   label: string;
   columns: string[];
   rows: Array<Array<ReactNode>>;
+  rowHrefs?: Array<string | undefined>;
 }) {
   return (
     <div className="demo-table-wrap">
       <table className="demo-table" aria-label={label}>
         <thead><tr>{columns.map((column) => <th key={column}>{column}</th>)}</tr></thead>
-        <tbody>{rows.map((row, rowIndex) => <tr key={rowIndex}>{row.map((cell, cellIndex) => cellIndex === 0 ? <th key={cellIndex}>{cell}</th> : <td key={cellIndex}>{cell}</td>)}</tr>)}</tbody>
+        <tbody>{rows.map((row, rowIndex) => {
+          const cells = row.map((cell, cellIndex) => cellIndex === 0 ? <th key={cellIndex}>{cell}</th> : <td key={cellIndex}>{cell}</td>);
+          const href = rowHrefs?.[rowIndex];
+          return href
+            ? <ClickableTableRow key={rowIndex} href={href} label={`Abrir ${label.toLocaleLowerCase('pt-BR')}`}>{cells}</ClickableTableRow>
+            : <tr key={rowIndex}>{cells}</tr>;
+        })}</tbody>
       </table>
     </div>
   );

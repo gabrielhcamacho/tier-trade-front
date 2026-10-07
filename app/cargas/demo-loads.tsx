@@ -39,7 +39,7 @@ export function DemoLoadsAgenda() {
         <div className="demo-domain-layout">
           <div className="demo-main-stack">
             <DemoSection kicker="PROGRAMAÇÃO OPERACIONAL" title="Próximas cargas" aside="5 de 38 cargas">
-              <DemoTable label="Agenda demonstrativa de cargas" columns={['Carga', 'Janela', 'Placa', 'Transportadora', 'Previsto', 'Líquido', 'Desconto', 'Status']} rows={loadRows} />
+              <DemoTable label="Agenda demonstrativa de cargas" columns={['Carga', 'Janela', 'Placa', 'Transportadora', 'Previsto', 'Líquido', 'Desconto', 'Status']} rows={loadRows} rowHrefs={['CG-26-10421', 'CG-26-10422', 'CG-26-10423', 'CG-26-10424', 'CG-26-10425'].map((id) => `/cargas/${id}?modo=demonstracao`)} />
               <div className="demo-table-actions"><span>As demais 33 cargas seguem a cadência acordada até 28/11.</span><button className="tt-button" data-variant="primary" data-size="md" type="button" disabled>Programar carga</button></div>
             </DemoSection>
 

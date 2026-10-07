@@ -342,7 +342,7 @@ export function FinancialWorkspace({ data }: { data: FinanceWorkspace }) {
         <div className="demo-main-stack">
           <DemoSection kicker="PREVISÃO POR EXPEDIÇÃO" title="Eventos financeiros" id="liquidacoes" aside="contrato, expedição e cálculo">
             {forecastRows.length
-              ? <DemoTable label="Previsões financeiras" columns={['Expedição', 'Cliente', 'Contrato', 'Quantidade', 'Valor bruto', 'Situação']} rows={forecastRows} />
+              ? <DemoTable label="Previsões financeiras" columns={['Expedição', 'Cliente', 'Contrato', 'Quantidade', 'Valor bruto', 'Situação']} rows={forecastRows} rowHrefs={salesEvents.map((event) => `/financeiro/liquidacoes/${event.id}`)} />
               : <p>Nenhuma expedição gerou previsão financeira para este tenant.</p>}
           </DemoSection>
           <DemoSection kicker="DIREITOS" title="Contas a receber" id="receber" aside="títulos e saldo">

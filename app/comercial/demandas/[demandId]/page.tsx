@@ -1,5 +1,5 @@
-import Link from 'next/link';
 import { AppShell } from '../../../app-shell';
+import { DetailNavigation } from '../../../detail-navigation';
 import { currentUserContext } from '../../../../lib/current-user';
 import { formatCurrency, formatDate } from '../../../../lib/contracts';
 import { loadDemand, loadDemands } from '../../../../lib/demands';
@@ -13,7 +13,7 @@ export default async function DemandDetailPage({ params }: { params: Promise<{ d
   const demand = detail.data?.demand;
   return <AppShell activeDomain="commercial" userLabel={user.userLabel}>
     <div className="prototype-list-page"><header className="prototype-list-header"><div>
-      <p className="prototype-breadcrumb"><Link href="/comercial/demandas">Comercial › Demandas</Link> <span>›</span> Detalhe</p>
+      <DetailNavigation backHref="/comercial/demandas" backLabel="Voltar às demandas" items={[{ label: 'Comercial', href: '/' }, { label: 'Demandas', href: '/comercial/demandas' }, { label: 'Detalhe' }]} />
       <h1>{demand ? `${demand.direction === 'PURCHASE' ? 'Compra' : 'Venda'} · ${demand.counterparty_name}` : 'Demanda'}</h1>
       <p>{demand ? `${demand.commodity === 'MILHO' ? 'Milho' : 'Soja'} · ${demand.status === 'OPEN' ? 'Aberta' : 'Encerrada'} · versão ${demand.version}` : 'Consulta de intenção comercial'}</p>
     </div></header>

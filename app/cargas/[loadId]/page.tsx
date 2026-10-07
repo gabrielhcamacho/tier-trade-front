@@ -1,6 +1,7 @@
 import { Status } from '@mountier/tier-trade-design-system';
 import Link from 'next/link';
 import { AppShell } from '../../app-shell';
+import { DetailNavigation } from '../../detail-navigation';
 import { DemoLoadDetail } from './demo-load-detail';
 import { currentUserContext } from '../../../lib/current-user';
 import { loadDocuments, type StoredDocument } from '../../../lib/documents';
@@ -45,7 +46,7 @@ function LoadDetail({ load, summary, documents, documentError }: {
   return (
     <>
       <header className="entity-header load-entity-header">
-        <p className="breadcrumbs">Operações <span>›</span> <Link href={`/cargas?contractId=${summary.id}`}>Cargas</Link> <span>›</span> <span className="tt-mono">{load.id.slice(-8)}</span></p>
+        <DetailNavigation backHref={`/cargas?contractId=${summary.id}`} backLabel="Voltar às cargas" items={[{ label: 'Operações', href: '/cargas' }, { label: 'Cargas', href: `/cargas?contractId=${summary.id}` }, { label: load.id.slice(-8), mono: true }]} />
         <div className="entity-title-row">
           <div><p className="entity-kind">Carga de recebimento</p><h1>{load.vehiclePlate}</h1><p className="entity-id tt-mono">Carga {load.id}</p></div>
           <div className="entity-actions"><Status tone="positive">{loadStatusLabel(load.status)}</Status></div>
