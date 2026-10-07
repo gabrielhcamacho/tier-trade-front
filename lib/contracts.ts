@@ -51,6 +51,22 @@ export type ContractSummary = {
   policy_version: number;
   load_count: number;
   obligations: ContractObligation[];
+  purchase_terms: PurchaseContractTerms | null;
+};
+
+export type PurchaseContractTerms = {
+  externalNumber: string;
+  cropYear: string;
+  signedOn: string | null;
+  pickupLocation: string | null;
+  deliveryCondition: string | null;
+  freightPayer: 'BUYER' | 'SELLER' | 'THIRD_PARTY' | null;
+  weighingResponsibility: string | null;
+  qualityTerms: string | null;
+  requiredDocuments: string | null;
+  paymentTerms: string | null;
+  version: number;
+  updatedAt: string;
 };
 
 export type ContractSummaryResult =

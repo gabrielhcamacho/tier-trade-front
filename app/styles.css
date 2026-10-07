@@ -478,6 +478,11 @@ main { min-width: 0; }
 .detail-data-grid dt { margin-bottom: 7px; color: var(--ink-muted); font-size: 10px; }
 .detail-data-grid dd { margin: 0; font-family: var(--font-mono); font-size: 14px; font-weight: 650; font-variant-numeric: tabular-nums; }
 .detail-data-grid small { display: block; margin-top: 5px; color: var(--ink-muted); font-size: 9px; }
+.purchase-terms-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 18px; }
+.purchase-terms-form textarea { resize: vertical; }
+.purchase-terms-form > .tt-field:nth-of-type(n+8) { grid-column: 1 / -1; }
+.purchase-terms-action { grid-column: 1 / -1; display: flex; gap: 12px; align-items: center; justify-content: flex-end; }
+.purchase-terms-action .fulfillment-feedback { flex: 1; }
 
 .economic-ledger { margin: 0; border-top: 1px solid var(--ink); }
 .economic-ledger > div { min-height: 45px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; gap: 24px; border-bottom: 1px solid var(--line); font-size: 11px; }
@@ -1116,6 +1121,8 @@ main { min-width: 0; }
   .entity-facts > div:last-child { border-bottom: 0; }
   .detail-tabs { gap: 22px; }
   .detail-data-grid { grid-template-columns: 1fr; }
+  .purchase-terms-form { grid-template-columns: 1fr; }
+  .purchase-terms-form > .tt-field:nth-of-type(n+8) { grid-column: auto; }
   .detail-data-grid > div { border-right: 0; }
   .contract-obligation-item > summary { grid-template-columns: 18px minmax(0, 1fr); }
   .contract-obligation-item > summary > .tt-status { grid-column: 2; justify-self: start; }

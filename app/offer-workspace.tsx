@@ -2,6 +2,7 @@
 
 import { Button, DecimalField, Field, FormSection, Status, normalizeDecimalInput } from '@mountier/tier-trade-design-system';
 import { type FormEvent, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '../lib/supabase/client';
 import { hasSupabaseConfiguration } from '../lib/supabase/configuration';
 
@@ -15,6 +16,12 @@ type OfferResult = {
 type SubmissionResult = { offerId: string; status: string; decision: string; approvalId?: string };
 type ContractResult = { contractId: string; offerId: string; status: string };
 type ContractSummary = { id: string; status: string; obligations: Array<{ code: string; status: string }> };
+type OfferDetail = OfferResult & {
+  counterpartyId: string; commodity: Commodity; unit: 'SC_60KG'; quantitySc: string;
+  deliveryStart: string; deliveryEnd: string; purchasePricePerSc: string;
+  saleReferencePerSc: string; costs: Array<{ code: string; amountPerSc: string }>;
+  approval: { id: string; status: string } | null; contractId: string | null;
+};
 type MarginPolicy = {
   policyId?: string;
   commodity: string;
@@ -31,8 +38,10 @@ type Counterparty = {
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
-export function OfferWorkspace() {
+export function OfferWorkspace({ initialOfferId }: { initialOfferId?: string }) {
+  const router = useRouter();
   const [offer, setOffer] = useState<OfferResult | null>(null);
+  const [detail, setDetail] = useState<OfferDetail | null>(null);
   const [submission, setSubmission] = useState<SubmissionResult | null>(null);
   const [contract, setContract] = useState<ContractResult | null>(null);
   const [summary, setSummary] = useState<ContractSummary | null>(null);
@@ -98,15 +107,29 @@ export function OfferWorkspace() {
       setBootstrapFailed(false);
       setPending('bootstrap');
       try {
-        const [loadedCounterparties, cornPolicy, soyPolicy] = await Promise.all([
+        const [loadedCounterparties, cornPolicy, soyPolicy, loadedDetail] = await Promise.all([
           request<Counterparty[]>('/v1/counterparties', 'GET'),
           request<MarginPolicy | null>('/v1/settings/margin-policy/MILHO', 'GET'),
           request<MarginPolicy | null>('/v1/settings/margin-policy/SOJA', 'GET'),
+          initialOfferId ? request<OfferDetail>(`/v1/offers/${initialOfferId}`, 'GET') : Promise.resolve(null),
         ]);
         if (!active) return;
         setCounterparties(loadedCounterparties);
         setPolicies({ ...(cornPolicy ? { MILHO: cornPolicy } : {}), ...(soyPolicy ? { SOJA: soyPolicy } : {}) });
-        if (loadedCounterparties.length === 1) setCounterpartyId(loadedCounterparties[0]!.id);
+        if (loadedDetail) {
+          setDetail(loadedDetail);
+          setOffer(loadedDetail);
+          setCommodity(loadedDetail.commodity);
+          setCounterpartyId(loadedDetail.counterpartyId);
+          if (loadedDetail.approval) setSubmission({ offerId: loadedDetail.offerId,
+            status: loadedDetail.status, decision: 'APPROVAL_REQUIRED',
+            approvalId: loadedDetail.approval.id });
+          if (loadedDetail.contractId) {
+            setContract({ contractId: loadedDetail.contractId, offerId: loadedDetail.offerId, status: 'ACTIVE' });
+            const loadedSummary = await request<ContractSummary>(`/v1/contracts/${loadedDetail.contractId}/summary`, 'GET');
+            if (active) setSummary(loadedSummary);
+          }
+        } else if (loadedCounterparties.length === 1) setCounterpartyId(loadedCounterparties[0]!.id);
       } catch (cause) {
         if (active) {
           setError(errorMessage(cause));
@@ -120,14 +143,14 @@ export function OfferWorkspace() {
     return () => { active = false; };
     // Recarrega apenas no início e quando o usuário solicita uma nova tentativa.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [envReady, bootstrapAttempt]);
+  }, [envReady, bootstrapAttempt, initialOfferId]);
 
   function offerInput(data: FormData) {
     return {
       counterpartyId: data.get('counterpartyId'),
       commodity,
       unit: 'SC_60KG',
-      quantitySc: decimalValue(data, 'quantitySc', 0),
+      quantitySc: quantityValue(data),
       deliveryStart: data.get('deliveryStart'),
       deliveryEnd: data.get('deliveryEnd'),
       purchasePricePerSc: decimalValue(data, 'purchasePricePerSc'),
@@ -135,6 +158,9 @@ export function OfferWorkspace() {
       costs: [
         { code: 'FREIGHT', amountPerSc: decimalValue(data, 'freight') },
         { code: 'STORAGE', amountPerSc: decimalValue(data, 'storage') },
+        { code: 'QUALITY', amountPerSc: decimalValue(data, 'quality') },
+        { code: 'FINANCIAL', amountPerSc: decimalValue(data, 'financial') },
+        { code: 'OTHER', amountPerSc: decimalValue(data, 'other') },
       ],
     };
   }
@@ -180,7 +206,12 @@ export function OfferWorkspace() {
         : await request<OfferResult>('/v1/offers', 'POST', offerInput(data));
       setOffer(saved);
       setNotice(offer ? `Cenário ${saved.scenarioVersion} salvo sem apagar a versão anterior.` : 'Oferta registrada e margem calculada.');
-      if (!offer) { setSubmission(null); setContract(null); setSummary(null); }
+      if (!offer) {
+        setSubmission(null); setContract(null); setSummary(null);
+        router.replace(`/ofertas/${saved.offerId}`);
+      } else {
+        setDetail(await request<OfferDetail>(`/v1/offers/${saved.offerId}`, 'GET'));
+      }
     } catch (cause) { setError(errorMessage(cause)); } finally { setPending(null); }
   }
 
@@ -229,29 +260,17 @@ export function OfferWorkspace() {
   }
 
   function startNewOffer() {
+    if (initialOfferId) { router.push('/ofertas/nova'); return; }
     setOffer(null); setSubmission(null); setContract(null); setSummary(null);
+    setDetail(null);
     setFormResetKey((current) => current + 1);
     setCancellationReason(''); setError(null);
     setNotice('Novo formulário iniciado. As ofertas anteriores permanecem salvas no backend.');
   }
 
-  async function configurePolicy(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null); setNotice(null); setPending('policy-save');
-    const data = new FormData(event.currentTarget);
-    try {
-      const configured = await request<MarginPolicy>('/v1/settings/margin-policy', 'PATCH', {
-        commodity,
-        autoApprovalMarginPerSc: decimalValue(data, 'autoApprovalMarginPerSc'),
-        absoluteFloorMarginPerSc: decimalValue(data, 'absoluteFloorMarginPerSc'),
-      });
-      setPolicies((current) => ({ ...current, [commodity]: configured }));
-      setNotice(policy ? `Política de margem atualizada para a versão ${configured.version}.` : 'Primeira política de margem publicada.');
-    } catch (cause) { setError(errorMessage(cause)); } finally { setPending(null); }
-  }
-
   const approved = submission?.status === 'APPROVED' || offer?.status === 'APPROVED';
-  const editable = !offer || (offer.status === 'DRAFT' && !submission);
+  const extendedPrecision = hasExtendedPricePrecision(detail);
+  const editable = !offer || (offer.status === 'DRAFT' && !submission && !extendedPrecision);
   const cancellable = Boolean(offer && !contract && offer.status !== 'CANCELLED');
   const readyForOffer = Boolean(policy && selectedCounterparty && selectedCounterparty.partyType !== 'UNCLASSIFIED');
 
@@ -265,6 +284,7 @@ export function OfferWorkspace() {
       {!envReady ? <div className="feedback critical">As variáveis de ambiente da API e da autenticação não estão completas.</div> : null}
       {error ? <div className="feedback critical" role="alert"><strong>Não foi possível concluir</strong><span>{error}</span>{bootstrapFailed ? <Button type="button" variant="tertiary" size="sm" onClick={() => setBootstrapAttempt((current) => current + 1)} disabled={pending !== null}>Tentar novamente</Button> : null}</div> : null}
       {notice ? <div className="feedback positive" role="status"><strong>Alteração salva</strong><span>{notice}</span></div> : null}
+      {extendedPrecision ? <div className="feedback critical" role="alert">Este cenário contém valores monetários com mais de duas casas decimais. A edição está bloqueada nesta tela para não alterar o preço ou os custos por arredondamento. O registro permanece consultável.</div> : null}
 
       {counterparties?.length === 0 || showCounterpartyForm ? (
         <section className="setup-panel" aria-labelledby="primeira-contraparte">
@@ -287,7 +307,7 @@ export function OfferWorkspace() {
         <div className="onboarding-note">
           <span>2</span>
           <div><strong>Publique a política de margem antes de calcular a primeira oferta.</strong><p>Os limites são configurados por você e ficam versionados.</p></div>
-          <a href="#politica-margem">Configurar política</a>
+          <a href="/comercial/politica-margem">Configurar política</a>
         </div>
       ) : null}
 
@@ -304,7 +324,7 @@ export function OfferWorkspace() {
 
       <div className="offer-layout" id="nova-oferta">
         <section className="offer-form-panel">
-          <form key={formResetKey} onSubmit={saveOffer}>
+          <form key={`${formResetKey}-${detail?.offerId ?? 'new'}`} onSubmit={saveOffer}>
             <FormSection number={1} title="Contraparte" hint="Cadastro pertencente ao tenant atual">
               <Field label="Contraparte" required className="field-span-2">
                 <select name="counterpartyId" value={counterpartyId} onChange={(event) => setCounterpartyId(event.target.value)} required disabled={!editable || !counterparties?.length}>
@@ -320,16 +340,19 @@ export function OfferWorkspace() {
             <FormSection number={2} title="Condição comercial" hint="Compra com entrega futura · soja ou milho">
               <Field label="Commodity" source="Escopo do MVP"><select name="commodity" value={commodity} onChange={(event) => setCommodity(event.target.value as Commodity)} disabled={Boolean(offer)}><option value="MILHO">Milho</option><option value="SOJA">Soja</option></select></Field>
               <Field label="Unidade" source="Catálogo do piloto"><input value="Saca de 60 kg" disabled /></Field>
-              <DecimalField name="quantitySc" label="Quantidade" suffix="sc" defaultValue="0" fractionDigits={0} required disabled={!editable} hint="Informe o volume negociado em sacas." />
-              <Field label="Início da entrega" required><input name="deliveryStart" type="date" required disabled={!editable} /></Field>
-              <Field label="Fim da entrega" required><input name="deliveryEnd" type="date" required disabled={!editable} /></Field>
+              <Field label="Quantidade (sc)" required hint="Aceita até seis casas decimais; use vírgula para frações."><input name="quantitySc" inputMode="decimal" defaultValue={detail?.quantitySc ?? ''} placeholder="Ex.: 10000 ou 10000,5" required disabled={!editable} /></Field>
+              <Field label="Início da entrega" required><input name="deliveryStart" type="date" defaultValue={detail?.deliveryStart} required disabled={!editable} /></Field>
+              <Field label="Fim da entrega" required><input name="deliveryEnd" type="date" defaultValue={detail?.deliveryEnd} required disabled={!editable} /></Field>
             </FormSection>
 
             <FormSection number={3} title="Formação de preço" hint="Valores em reais por saca de 60 kg">
-              <DecimalField name="purchasePricePerSc" label="Preço de compra" prefix="R$" suffix="/sc" defaultValue="0" required disabled={!editable} />
-              <DecimalField name="saleReferencePerSc" label="Referência de venda" prefix="R$" suffix="/sc" defaultValue="0" required disabled={!editable} />
-              <DecimalField name="freight" label="Frete" prefix="R$" suffix="/sc" defaultValue="0" required disabled={!editable} />
-              <DecimalField name="storage" label="Armazenagem" prefix="R$" suffix="/sc" defaultValue="0" required disabled={!editable} />
+              <DecimalField name="purchasePricePerSc" label="Preço de compra" prefix="R$" suffix="/sc" defaultValue={detail?.purchasePricePerSc ?? '0'} required disabled={!editable} />
+              <DecimalField name="saleReferencePerSc" label="Referência de venda" prefix="R$" suffix="/sc" defaultValue={detail?.saleReferencePerSc ?? '0'} required disabled={!editable} />
+              <DecimalField name="freight" label="Frete" prefix="R$" suffix="/sc" defaultValue={costAmount(detail, 'FREIGHT')} required disabled={!editable} />
+              <DecimalField name="storage" label="Armazenagem" prefix="R$" suffix="/sc" defaultValue={costAmount(detail, 'STORAGE')} required disabled={!editable} />
+              <DecimalField name="quality" label="Qualidade" prefix="R$" suffix="/sc" defaultValue={costAmount(detail, 'QUALITY')} required disabled={!editable} />
+              <DecimalField name="financial" label="Financeiro" prefix="R$" suffix="/sc" defaultValue={costAmount(detail, 'FINANCIAL')} required disabled={!editable} />
+              <DecimalField name="other" label="Outros custos" prefix="R$" suffix="/sc" defaultValue={costAmount(detail, 'OTHER')} required disabled={!editable} />
             </FormSection>
 
             <div className="form-action-bar">
@@ -379,19 +402,6 @@ export function OfferWorkspace() {
         </section>
       ) : null}
 
-      <section className="policy-section" id="politica-margem">
-        <div className="policy-intro">
-          <p className="section-kicker">GOVERNANÇA COMERCIAL</p>
-          <h2>Política de margem: {commodity === 'MILHO' ? 'milho' : 'soja'}</h2>
-          <p>A publicação cria uma nova versão. Ofertas já calculadas preservam os limites usados no cenário.</p>
-          {policy ? <Status tone="positive">Versão {policy.version} vigente</Status> : <Status tone="warning">Ainda não configurada</Status>}
-        </div>
-        <form key={`${commodity}-${policy?.version ?? 'new-policy'}`} onSubmit={configurePolicy} className="policy-form">
-          <DecimalField name="autoApprovalMarginPerSc" label="Margem para aprovação automática" prefix="R$" suffix="/sc" defaultValue={policy?.autoApprovalMarginPerSc ?? '0'} emptyWhenZero={!policy} required hint="Acima deste valor, a oferta segue sem exceção." />
-          <DecimalField name="absoluteFloorMarginPerSc" label="Piso absoluto de margem" prefix="R$" suffix="/sc" defaultValue={policy?.absoluteFloorMarginPerSc ?? '0'} emptyWhenZero={!policy} required hint="Abaixo deste valor, a submissão é bloqueada." />
-          <div className="policy-actions"><span>O limite automático deve ser igual ou maior que o piso absoluto.</span><Button type="submit" disabled={pending !== null}>{pending === 'policy-save' ? 'Publicando…' : policy ? 'Publicar nova versão' : 'Publicar primeira política'}</Button></div>
-        </form>
-      </section>
     </>
   );
 }
@@ -400,8 +410,8 @@ function ProcessRail({ offer, submission, contract }: { offer: OfferResult | nul
   const steps = [
     { label: 'Oferta', state: offer ? 'done' : 'current' },
     { label: 'Cálculo', state: offer ? 'done' : 'future' },
-    { label: 'Aprovação', state: contract || submission?.status === 'APPROVED' ? 'done' : submission ? 'current' : 'future' },
-    { label: 'Contrato', state: contract ? 'done' : submission?.status === 'APPROVED' ? 'current' : 'future' },
+    { label: 'Aprovação', state: contract || offer?.status === 'APPROVED' || submission?.status === 'APPROVED' ? 'done' : submission ? 'current' : 'future' },
+    { label: 'Contrato', state: contract ? 'done' : offer?.status === 'APPROVED' || submission?.status === 'APPROVED' ? 'current' : 'future' },
   ];
   return <ol className="process-rail" aria-label="Etapas da oferta">{steps.map((step, index) => <li key={step.label} data-state={step.state}><span>{step.state === 'done' ? '✓' : index + 1}</span><strong>{step.label}</strong></li>)}</ol>;
 }
@@ -418,13 +428,30 @@ function readableError(value: unknown) {
     ACTIVE_MEMBERSHIP_NOT_FOUND: 'Seu usuário não possui vínculo ativo com este tenant.',
     ACTIVE_MEMBERSHIP_REQUIRED: 'Seu usuário ainda não possui acesso ativo a uma empresa.',
     INVALID_DELIVERY_WINDOW: 'A data final da entrega deve ser igual ou posterior à data inicial.',
+    OFFER_NOT_FOUND: 'Esta oferta não existe ou não pertence à sua empresa.',
   };
   return messages[code] ?? (code || 'A operação não pôde ser concluída.');
 }
 
 function errorMessage(cause: unknown) { return cause instanceof Error ? cause.message : 'Falha inesperada.'; }
+function costAmount(detail: OfferDetail | null, code: string) {
+  return detail?.costs.find((cost) => cost.code === code)?.amountPerSc ?? '0';
+}
+function hasExtendedPricePrecision(detail: OfferDetail | null) {
+  if (!detail) return false;
+  const values = [detail.purchasePricePerSc, detail.saleReferencePerSc,
+    ...detail.costs.map((cost) => cost.amountPerSc)];
+  return values.some((value) => /[1-9]/.test((value.split('.')[1] ?? '').slice(2)));
+}
 function decimalValue(data: FormData, name: string, fractionDigits = 2) {
   return normalizeDecimalInput(String(data.get(name) ?? ''), fractionDigits) ?? '';
+}
+function quantityValue(data: FormData) {
+  const raw = String(data.get('quantitySc') ?? '').trim();
+  if (!/^\d+(?:[,.]\d{1,6})?$/.test(raw) || Number(raw.replace(',', '.')) <= 0) {
+    throw new Error('Informe uma quantidade maior que zero, sem separador de milhar e com até seis casas decimais.');
+  }
+  return raw.replace(',', '.');
 }
 function obligationLabel(code: string) { return code === 'SIGNED_CONTRACT' ? 'Contrato assinado' : code === 'DELIVERY_SCHEDULE' ? 'Programação de entrega' : code; }
 function statusLabel(status?: string) { return status === 'CANCELLED' ? 'Cancelada' : status === 'IN_APPROVAL' ? 'Em aprovação' : status === 'APPROVED' ? 'Aprovada' : status === 'CONVERTED' ? 'Contratada' : 'Rascunho'; }

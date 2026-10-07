@@ -5,6 +5,7 @@ import { currentUserContext } from '../../../lib/current-user';
 import { loadDocuments, type StoredDocument } from '../../../lib/documents';
 import { DocumentPanel } from '../../documents/document-panel';
 import { ContractObligations } from '../contract-obligations';
+import { PurchaseTerms } from '../purchase-terms';
 import {
   commodityLabel,
   contractStatusLabel,
@@ -55,6 +56,8 @@ function ContractDetail({ summary, documents, documentError }: {
   summary: ContractSummary; documents: StoredDocument[]; documentError: string | null;
 }) {
   const signed = summary.obligations.find((item) => item.code === 'SIGNED_CONTRACT');
+  const hasSignedDocument = !documentError && documents.some((item) =>
+    item.document_type === 'SIGNED_CONTRACT' && item.status === 'AVAILABLE');
   return (
     <>
       <header className="entity-header">
@@ -63,7 +66,7 @@ function ContractDetail({ summary, documents, documentError }: {
           <div>
             <p className="entity-kind">Contrato de compra</p>
             <h1>{commodityLabel(summary.commodity)} · {formatQuantity(summary.quantity_sc)} sc</h1>
-            <p className="entity-id tt-mono">{summary.id}</p>
+            <p className="entity-id tt-mono">{summary.purchase_terms?.externalNumber ?? summary.id}</p>
           </div>
           <div className="entity-actions">
             <Status tone="positive">{contractStatusLabel(summary.status)}</Status>
@@ -92,6 +95,7 @@ function ContractDetail({ summary, documents, documentError }: {
         <nav className="detail-tabs" aria-label="Seções do contrato">
           <a className="active" aria-current="page" href="#visao-geral">Visão geral</a>
           <Link href={`/cargas?contractId=${summary.id}`}>Entregas</Link>
+          <a href="#termos-compra">Formalização</a>
           <a href="#obrigacoes">Obrigações</a>
           <a href="#custos-margem">Custos e margem</a>
           <a href="#documentos">Documentos e auditoria</a>
@@ -109,6 +113,8 @@ function ContractDetail({ summary, documents, documentError }: {
               <div><dt>Fim da entrega</dt><dd>{formatDate(summary.delivery_end)}</dd></div>
             </dl>
           </section>
+
+          <PurchaseTerms contractId={summary.id} terms={summary.purchase_terms} />
 
           <section className="detail-section" id="custos-margem" aria-labelledby="contract-economics-title">
             <header><p className="section-kicker">ESTADO ECONÔMICO</p><h2 id="contract-economics-title">Custos e margem contratados</h2></header>
@@ -136,8 +142,12 @@ function ContractDetail({ summary, documents, documentError }: {
         <aside className="contract-side-column" aria-label="Situação do contrato">
           <section>
             <p className="section-kicker">PRONTO PARA EXECUTAR?</p>
-            <h2>{signed?.status === 'COMPLETED' ? 'Contrato formalizado' : 'Assinatura pendente'}</h2>
-            <p>A agenda operacional está conectada a este contrato. Cadastre e acompanhe as cargas enquanto as obrigações são concluídas.</p>
+            <h2>{signed?.status === 'COMPLETED' && summary.purchase_terms && hasSignedDocument
+              ? 'Contrato formalizado' : 'Formalização pendente'}</h2>
+            <p>{!summary.purchase_terms
+              ? 'Registre os termos do instrumento de compra e anexe o documento assinado antes de considerar a formalização concluída.'
+              : !hasSignedDocument ? 'Anexe o documento assinado e conclua a obrigação correspondente para confirmar a formalização.'
+                : 'A agenda operacional está conectada a este contrato. Acompanhe as cargas e as obrigações até a conclusão.'}</p>
             <Link className="operational-link" href={`/cargas?contractId=${summary.id}`}>Abrir execução física <span aria-hidden="true">→</span></Link>
           </section>
           <section>

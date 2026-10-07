@@ -39,13 +39,13 @@ export default async function CommercialPage({ searchParams }: { searchParams: P
           <div className="prototype-table-scroll"><table className="prototype-ledger">
             <thead><tr><th>Oferta</th><th>Contraparte</th><th>Commodity</th><th>Volume</th><th>Preço pedido</th><th>Recebida</th><th>Status</th></tr></thead>
             <tbody>{items.map((offer) => <tr key={offer.id}>
-              <td className="prototype-id">OF-{offer.id.slice(-8).toUpperCase()}</td>
+              <td className="prototype-id"><Link href={`/ofertas/${offer.id}`}>OF-{offer.id.slice(-8).toUpperCase()}</Link></td>
               <td><strong>{offer.counterparty_name}</strong></td>
               <td>{commodityLabel(offer.commodity)}</td>
               <td className="prototype-number">{formatQuantity(offer.quantity_sc)} sc</td>
               <td className="prototype-number">{formatCurrency(offer.purchase_price_per_sc)}/sc</td>
               <td>{new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeZone: 'America/Sao_Paulo' }).format(new Date(offer.created_at))}</td>
-              <td><span className="prototype-status" data-status={offer.status}>{statuses[offer.status] ?? offer.status}</span></td>
+              <td><span className="prototype-status" data-status={offer.status}>{statuses[offer.status] ?? offer.status}</span> <Link href={`/ofertas/${offer.id}`}>Abrir</Link></td>
             </tr>)}</tbody>
           </table></div>
           {items.length === 0 ? <p className="prototype-empty">{allItems.length === 0 ? 'Ainda não há ofertas neste tenant.' : 'Nenhuma oferta corresponde aos filtros.'} <Link href={allItems.length === 0 ? '/ofertas/nova' : '/'}>{allItems.length === 0 ? 'Criar a primeira oferta' : 'Limpar filtros'}</Link></p> : null}

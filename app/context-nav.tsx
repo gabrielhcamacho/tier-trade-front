@@ -13,11 +13,11 @@ const tabs: Record<Domain, Tab[]> = {
     { label: 'Alertas' }, { label: 'Roteiro de demonstração', href: '/demonstracao' },
   ],
   commercial: [
-    { label: 'Carteira' }, { label: 'Ofertas', href: '/' }, { label: 'Demandas' }, { label: 'Política de margem' },
+    { label: 'Carteira' }, { label: 'Ofertas', href: '/' }, { label: 'Demandas' }, { label: 'Política de margem', href: '/comercial/politica-margem' },
     { label: 'Negociações' }, { label: 'Formação de preço' }, { label: 'Confirmações' },
   ],
   contracts: [
-    { label: 'Lista', href: '/contratos' }, { label: 'Obrigações' }, { label: 'Fixações' },
+    { label: 'Lista', href: '/contratos' }, { label: 'Obrigações', href: '/contratos/obrigacoes' }, { label: 'Fixações' },
     { label: 'Entregas' }, { label: 'Custos e margem' }, { label: 'Comissões' }, { label: 'Garantias' }, { label: 'Aditivos' }, { label: 'Assinaturas' },
   ],
   operations: [

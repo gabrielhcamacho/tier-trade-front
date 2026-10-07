@@ -10,6 +10,7 @@ const messages: Record<string, string> = {
   CONTRACT_NOT_ACTIVE: 'Somente contratos ativos aceitam novas obrigações.',
   CONTRACT_OBLIGATION_NOT_FOUND: 'A obrigação não existe ou não pertence a este contrato.',
   CAPABILITY_NOT_FOUND: 'Seu usuário não possui permissão para alterar obrigações contratuais.',
+  PURCHASE_TERMS_VERSION_CONFLICT: 'Este contrato foi alterado por outra pessoa. Atualize a página antes de salvar.',
 };
 
 export async function saveContractObligationAction(
@@ -56,6 +57,50 @@ export async function saveContractObligationAction(
       ok: true,
       message: obligationId ? 'Obrigação atualizada e auditada.' : 'Obrigação criada e vinculada ao contrato.',
     };
+  } catch {
+    return fail('Não foi possível acessar a API configurada.');
+  }
+}
+
+export async function savePurchaseTermsAction(
+  _state: ContractActionState,
+  formData: FormData,
+): Promise<ContractActionState> {
+  const contractId = String(formData.get('contractId') ?? '');
+  const payload = {
+    expectedVersion: Number(formData.get('expectedVersion') ?? 0),
+    externalNumber: String(formData.get('externalNumber') ?? '').trim(),
+    cropYear: String(formData.get('cropYear') ?? '').trim(),
+    signedOn: nullable(formData.get('signedOn')),
+    pickupLocation: nullable(formData.get('pickupLocation')),
+    deliveryCondition: nullable(formData.get('deliveryCondition')),
+    freightPayer: nullable(formData.get('freightPayer')),
+    weighingResponsibility: nullable(formData.get('weighingResponsibility')),
+    qualityTerms: nullable(formData.get('qualityTerms')),
+    requiredDocuments: nullable(formData.get('requiredDocuments')),
+    paymentTerms: nullable(formData.get('paymentTerms')),
+  };
+  if (!/^[0-9a-f-]{36}$/i.test(contractId) || !Number.isInteger(payload.expectedVersion)
+    || payload.expectedVersion < 0 || !payload.externalNumber || !payload.cropYear) {
+    return fail('Informe o número externo e a safra do contrato.');
+  }
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const { identityHeaders } = await currentUserContext();
+  if (!apiUrl || Object.keys(identityHeaders).length === 0) return fail('API ou identidade não configurada.');
+  try {
+    const response = await fetch(`${apiUrl}/v1/contracts/${encodeURIComponent(contractId)}/purchase-terms`, {
+      method: 'PUT',
+      headers: { ...identityHeaders, 'content-type': 'application/json' },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({})) as { code?: string; issues?: Array<{ message: string }> };
+      return fail((body.code && messages[body.code]) || body.issues?.[0]?.message
+        || 'Não foi possível salvar os termos do contrato.');
+    }
+    revalidatePath(`/contratos/${contractId}`);
+    return { ok: true, message: 'Termos salvos, versionados e auditados.' };
   } catch {
     return fail('Não foi possível acessar a API configurada.');
   }
