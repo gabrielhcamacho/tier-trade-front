@@ -9,7 +9,7 @@ const logos = {
 export function BrandLogo({ variant = 'dark' }: { variant?: keyof typeof logos }) {
   return <Image
     className="brand-logo"
-    src={encodeURI(logos[variant])}
+    src={logos[variant].split('/').map(encodeURIComponent).join('/')}
     alt="Tier Trade"
     width={2172}
     height={724}
