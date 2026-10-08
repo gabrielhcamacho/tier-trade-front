@@ -58,7 +58,8 @@ export async function loadReportView(domain: ReportDomain, requestedType: string
     if (!result.data) return { ...base, records: [], error: result.error };
     const data = result.data;
     const eventLink = (event: typeof data.events[number]) => event.direction === 'INFLOW'
-      ? related('Abrir recebível e memória de cálculo', `/financeiro/liquidacoes/${event.id}`)
+      ? [...related('Abrir recebível e memória de cálculo', `/financeiro/liquidacoes/${event.id}`),
+        ...related('Abrir contrato de venda', event.salesContractId ? `/comercial/vendas/${event.salesContractId}` : null)]
       : [...related('Abrir carga de origem', event.loadId ? `/cargas/${event.loadId}` : null), ...related('Abrir contrato de compra', event.purchaseContractId ? `/contratos/${event.purchaseContractId}` : null)];
     let records: ReportRecord[] = [];
     if (type === 'eventos') records = data.events.filter((item) => matchesReportFilters(filters, item.dispatchedAt ?? item.expectedOn, [item.eventType, item.direction, item.beneficiaryName, item.contractReference, item.loadId, item.dispatchDocumentReference, item.calculationStatus])).map((item) => ({
@@ -116,7 +117,7 @@ export async function loadReportView(domain: ReportDomain, requestedType: string
     }));
     if (type === 'obrigacoes') records = data.obligations.filter((item) => matchesReportFilters(filters, item.dueDate, [item.tax, item.authority.name, item.paymentResponsibility, item.status, item.payable?.titleNumber])).map((item) => ({
       id: item.id, reference: `${item.tax} · ${item.authority.name}`, date: item.dueDate, description: item.paymentResponsibility, value: item.amount, status: item.status,
-      fields: fields([['Obrigação', item.id], ['Cálculo', item.calculationId], ['Competência', item.competenceDate], ['Vencimento', item.dueDate], ['Tributo', item.tax], ['Autoridade', item.authority.name], ['Retido', item.retained ? 'Sim' : 'Não'], ['Responsável', item.paymentResponsibility], ['Valor', item.amount], ['Título', item.payable?.titleNumber], ['Pago', item.payable?.paidAmount], ['Saldo', item.payable?.outstandingAmount]]),
+      fields: fields([['Obrigação', item.id], ['Cálculo', item.calculationId], ['Origem fiscal', data.calculations.find((calculation) => calculation.id === item.calculationId)?.context.sourceType], ['ID da origem', data.calculations.find((calculation) => calculation.id === item.calculationId)?.context.sourceId], ['Competência', item.competenceDate], ['Vencimento', item.dueDate], ['Tributo', item.tax], ['Autoridade', item.authority.name], ['Retido', item.retained ? 'Sim' : 'Não'], ['Responsável', item.paymentResponsibility], ['Valor', item.amount], ['Título', item.payable?.titleNumber], ['Pago', item.payable?.paidAmount], ['Saldo', item.payable?.outstandingAmount]]),
       links: related('Abrir cálculo fiscal', `/relatorios/fiscal?tipo=calculos&registro=${encodeURIComponent(item.calculationId)}`),
     }));
     return { ...base, records, error: null };

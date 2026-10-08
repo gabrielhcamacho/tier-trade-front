@@ -1,6 +1,5 @@
 'use server';
 
-import { createClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 import { currentUserContext } from '../../lib/current-user';
 import type { DocumentAggregateType, DocumentType } from '../../lib/documents';
@@ -20,63 +19,54 @@ const messages: Record<string, string> = {
   CAPABILITY_NOT_FOUND: 'Seu usuário não possui permissão para anexar documentos.',
 };
 
-export async function uploadDocumentAction(
-  _state: DocumentActionState,
-  formData: FormData,
-): Promise<DocumentActionState> {
-  const file = formData.get('file');
-  if (!(file instanceof File) || file.size === 0) return fail('Selecione um arquivo para enviar.');
-  if (file.size > 26_214_400) return fail('O arquivo deve ter no máximo 25 MB.');
-  if (!allowedTypes.has(file.type)) return fail('Use PDF, JPEG, PNG, DOCX ou XLSX.');
-
+export async function prepareDocumentUploadAction(input: {
+  aggregateType: DocumentAggregateType;
+  aggregateId: string;
+  documentType: DocumentType;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  notes: string | null;
+}): Promise<{ ok: true; id: string; storagePath: string; uploadToken: string } | { ok: false; message: string }> {
+  if (!input.sizeBytes || input.sizeBytes > 26_214_400) return fail('O arquivo deve ter no máximo 25 MB.');
+  if (!allowedTypes.has(input.mimeType)) return fail('Use PDF, JPEG, PNG, DOCX ou XLSX.');
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   const { identityHeaders } = await currentUserContext();
-  if (!apiUrl || !supabaseUrl || !publishableKey || Object.keys(identityHeaders).length === 0) {
-    return fail('A API, o Supabase ou a identidade do ambiente ainda não está configurada.');
+  if (!apiUrl || Object.keys(identityHeaders).length === 0) {
+    return fail('A API ou a identidade do ambiente ainda não está configurada.');
   }
-
-  const aggregateType = String(formData.get('aggregateType') ?? '') as DocumentAggregateType;
-  const aggregateId = String(formData.get('aggregateId') ?? '');
-  const documentType = String(formData.get('documentType') ?? '') as DocumentType;
-  const notes = String(formData.get('notes') ?? '').trim() || null;
   try {
     const request = await fetch(`${apiUrl}/v1/documents/upload-request`, {
       method: 'POST',
       headers: { ...identityHeaders, 'content-type': 'application/json' },
-      body: JSON.stringify({
-        aggregateType, aggregateId, documentType, fileName: file.name,
-        mimeType: file.type, sizeBytes: file.size, notes,
-      }),
+      body: JSON.stringify(input),
       cache: 'no-store',
     });
     if (!request.ok) return apiFailure(request);
     const upload = await request.json() as { id: string; storagePath: string; uploadToken: string };
-    const supabase = createClient(supabaseUrl, publishableKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    const stored = await supabase.storage.from('tier-trade-documents').uploadToSignedUrl(
-      upload.storagePath,
-      upload.uploadToken,
-      bytes,
-      { contentType: file.type, upsert: false },
-    );
-    if (stored.error) return fail('O envio do arquivo falhou. Tente novamente.');
+    return { ok: true, ...upload };
+  } catch {
+    return fail('Não foi possível acessar a API para preparar o envio.');
+  }
+}
 
-    const completed = await fetch(`${apiUrl}/v1/documents/${encodeURIComponent(upload.id)}/complete`, {
+export async function completeDocumentUploadAction(documentId: string, returnPath: string): Promise<DocumentActionState> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const { identityHeaders } = await currentUserContext();
+  if (!apiUrl || Object.keys(identityHeaders).length === 0) return fail('A API ou a identidade do ambiente ainda não está configurada.');
+  try {
+    const completed = await fetch(`${apiUrl}/v1/documents/${encodeURIComponent(documentId)}/complete`, {
       method: 'POST',
       headers: { ...identityHeaders, 'content-type': 'application/json' },
       body: '{}',
       cache: 'no-store',
     });
     if (!completed.ok) return apiFailure(completed);
-    const returnPath = String(formData.get('returnPath') ?? '');
     if (returnPath.startsWith('/') && !returnPath.startsWith('//')) revalidatePath(returnPath);
+    revalidatePath('/documentos');
     return { ok: true, message: 'Documento enviado, vinculado e auditado.' };
   } catch {
-    return fail('Não foi possível acessar a API ou o armazenamento configurado.');
+    return fail('Não foi possível confirmar o arquivo armazenado.');
   }
 }
 
@@ -125,11 +115,11 @@ export async function recordDocumentSignatureAction(
   }
 }
 
-async function apiFailure(response: Response): Promise<DocumentActionState> {
+async function apiFailure(response: Response): Promise<{ ok: false; message: string }> {
   const body = await response.json().catch(() => ({})) as { code?: string; issues?: Array<{ message: string }> };
   return fail((body.code && messages[body.code]) || body.issues?.[0]?.message || 'Não foi possível concluir a operação.');
 }
 
-function fail(message: string): DocumentActionState {
+function fail(message: string): { ok: false; message: string } {
   return { ok: false, message };
 }

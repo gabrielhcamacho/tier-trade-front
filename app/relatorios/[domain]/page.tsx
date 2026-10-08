@@ -4,6 +4,8 @@ import { currentUserContext } from '../../../lib/current-user';
 import { loadReportView, reportDomains, type ReportDomain } from '../../../lib/report-explorer';
 import { reportFilters } from '../../../lib/report-filters';
 import { reportDate, reportField, reportStatus, reportValue } from '../../../lib/report-format';
+import { documentTypeLabel, formatDocumentSize } from '../../../lib/documents';
+import { loadReportDocuments, reportDocumentSources } from '../../../lib/report-documents';
 import { AppShell } from '../../app-shell';
 import { DemoPageHeader, DemoSection, DemoTable } from '../../demo-ui';
 import { EmptyState, PageFeedback } from '../../page-state';
@@ -28,6 +30,8 @@ export default async function ReportExplorerPage({
   const filters = reportFilters(new URLSearchParams({ de: query.de ?? '', ate: query.ate ?? '', criterio: query.criterio ?? '' }));
   const report = await loadReportView(reportDomain, query.tipo, filters, user.identityHeaders);
   const selected = report.records.find((item) => item.id === query.registro);
+  const sources = selected ? reportDocumentSources(reportDomain, report.type, selected) : [];
+  const attachments = await loadReportDocuments(user.identityHeaders, sources);
   const selectedTypeLabel = report.types.find((item) => item.value === report.type)?.label ?? report.type;
   const queryFor = (recordId?: string) => {
     const params = new URLSearchParams({ tipo: report.type });
@@ -50,7 +54,20 @@ export default async function ReportExplorerPage({
           {selected ? <DemoSection kicker="RASTREABILIDADE" title={selected.reference} aside={selected.id} id="detalhe">
             <div className="report-record-detail">
               <dl>{selected.fields.map(([label, value], index) => <div key={`${label}-${index}`}><dt>{label}</dt><dd>{reportField(label, value)}</dd></div>)}</dl>
-              <aside><h3>Registros relacionados</h3>{selected.links.length ? <nav aria-label="Registros relacionados">{selected.links.map((item) => <Link key={`${item.href}-${item.label}`} href={item.href}>{item.label} <span aria-hidden="true">→</span></Link>)}</nav> : <p>Não há uma tela de origem vinculada a este registro.</p>}<p>Referências de NF-e, tickets e documentos são mostradas quando constam no backend. Arquivos só podem ser abertos quando foram anexados à operação de origem.</p><Link href={`/relatorios/${reportDomain}?${queryFor()}`}>Fechar detalhe</Link></aside>
+              <aside>
+                <h3>Registros relacionados</h3>
+                {selected.links.length ? <nav aria-label="Registros relacionados">{selected.links.map((item) => <Link key={`${item.href}-${item.label}`} href={item.href}>{item.label} <span aria-hidden="true">→</span></Link>)}</nav> : <p>Não há uma tela de origem vinculada a este registro.</p>}
+                <h3>Anexos armazenados</h3>
+                {attachments.error ? <p role="alert">{attachments.error}</p> : attachments.items.filter((item) => item.status === 'AVAILABLE').length ? (
+                  <ul className="report-attachments">{attachments.items.filter((item) => item.status === 'AVAILABLE').map((item) => <li key={item.id}>
+                    <a href={`/documentos/${item.id}/download`}>{item.file_name} <span aria-hidden="true">↗</span></a>
+                    <small>{documentTypeLabel(item.document_type)} · {formatDocumentSize(item.size_bytes)}</small>
+                  </li>)}</ul>
+                ) : <p>Nenhum arquivo armazenado para este registro. A referência textual de NF-e ou ticket não substitui o anexo.</p>}
+                {sources.some((source) => source.href) ? <nav aria-label="Adicionar anexos">{sources.filter((source) => source.href).map((source) => <Link key={`${source.aggregateType}-${source.aggregateId}`} href={source.href!}>Ver anexos na origem <span aria-hidden="true">→</span></Link>)}</nav> : null}
+                <Link href="/documentos">Consultar arquivo de documentos</Link>
+                <Link href={`/relatorios/${reportDomain}?${queryFor()}`}>Fechar detalhe</Link>
+              </aside>
             </div>
           </DemoSection> : query.registro ? <PageFeedback tone="info" title="Registro não localizado no filtro atual" message="Ele pode ter sido alterado ou estar fora do período selecionado." /> : null}
         </>}

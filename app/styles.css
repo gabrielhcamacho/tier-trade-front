@@ -1441,11 +1441,29 @@ main { min-width: 0; }
 .report-record-detail aside nav { display: grid; gap: 0.45rem; }
 .report-record-detail aside a { color: #073b32; font-weight: 700; }
 .report-record-detail aside p { color: #65716c; font-size: 0.85rem; line-height: 1.5; }
+.report-attachments { border-top: 1px solid #e1e7e2; list-style: none; margin: 0.5rem 0 1rem; padding: 0; }
+.report-attachments li { border-bottom: 1px solid #e1e7e2; display: grid; gap: 0.2rem; padding: 0.65rem 0; }
+.report-attachments a { overflow-wrap: anywhere; }
+.report-attachments small { color: #65716c; }
+.document-archive-filters { align-items: end; border-bottom: 1px solid #cfd8d2; display: grid; gap: 0.8rem; grid-template-columns: repeat(3, minmax(9rem, 1fr)) repeat(2, minmax(8rem, 0.7fr)) minmax(12rem, 1.2fr) auto; padding: 1rem 0; }
+.document-archive-filters label { color: #65716c; display: grid; font-size: 0.76rem; gap: 0.3rem; }
+.document-archive-filters input, .document-archive-filters select { background: #fff; border: 0; border-bottom: 1px solid #8ca096; color: #1d2924; min-height: 2.4rem; min-width: 0; padding: 0.3rem 0; }
+.document-archive-filters button { background: #a6ed70; border: 1px solid #a6ed70; color: #073b32; cursor: pointer; font-weight: 700; min-height: 2.4rem; padding: 0.3rem 0.8rem; }
+.document-archive-scroll { overflow-x: auto; }
+.document-archive-table { border-collapse: collapse; text-align: left; width: 100%; }
+.document-archive-table th, .document-archive-table td { border-bottom: 1px solid #e1e7e2; padding: 0.85rem 0.7rem; vertical-align: top; }
+.document-archive-table th { color: #65716c; font-size: 0.74rem; }
+.document-archive-table td { font-size: 0.86rem; }
+.document-archive-table td:first-child { min-width: 12rem; }
+.document-archive-table small { color: #65716c; display: block; font-size: 0.73rem; margin-top: 0.3rem; overflow-wrap: anywhere; }
+.document-archive-table a { color: #073b32; font-weight: 700; }
+.document-archive-table tr:hover td { background: #f3f8ef; }
 @media (max-width: 900px) {
   .report-filter-bar { grid-template-columns: 1fr 1fr; }
   .report-criterion { grid-column: 1 / -1; }
   .report-record-detail { grid-template-columns: 1fr; }
   .report-record-detail aside { border-left: 0; border-top: 1px solid #d9dfda; padding: 1rem 0 0; }
+  .document-archive-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 .traceability-filters {

@@ -49,14 +49,15 @@ export type DocumentsResult =
 
 export async function loadDocuments(
   identityHeaders: Record<string, string>,
-  aggregateType: DocumentAggregateType,
+  aggregateType?: DocumentAggregateType,
   aggregateId?: string,
 ): Promise<DocumentsResult> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   if (!apiUrl || Object.keys(identityHeaders).length === 0) {
     return { items: [], error: 'A API ou a identidade do ambiente ainda não está configurada.' };
   }
-  const query = new URLSearchParams({ aggregateType });
+  const query = new URLSearchParams();
+  if (aggregateType) query.set('aggregateType', aggregateType);
   if (aggregateId) query.set('aggregateId', aggregateId);
   try {
     const response = await fetch(`${apiUrl}/v1/documents?${query}`, {

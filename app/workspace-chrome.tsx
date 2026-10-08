@@ -18,7 +18,7 @@ function domainForPath(pathname: string): Domain {
   if (pathname.startsWith('/relatorios/estoque')) return 'inventory';
   if (pathname.startsWith('/relatorios/operacoes')) return 'operations';
   if (pathname.startsWith('/central') || pathname.startsWith('/demonstracao')) return 'central';
-  if (pathname.startsWith('/contratos')) return 'contracts';
+  if (pathname.startsWith('/contratos') || pathname === '/documentos') return 'contracts';
   if (pathname.startsWith('/cargas') || pathname.startsWith('/patio') || pathname.startsWith('/recebimentos')
     || pathname.startsWith('/qualidade') || pathname.startsWith('/ocorrencias')) return 'operations';
   if (pathname.startsWith('/estoque')) return 'inventory';

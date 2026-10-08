@@ -1,12 +1,14 @@
 'use client';
 
 import { Button, Field } from '@mountier/tier-trade-design-system';
-import { useActionState } from 'react';
+import { createClient } from '@supabase/supabase-js';
+import { useRouter } from 'next/navigation';
+import { useActionState, useState, type FormEvent } from 'react';
 import {
   documentTypeLabel, formatDocumentSize,
   type DocumentAggregateType, type DocumentType, type StoredDocument,
 } from '../../lib/documents';
-import { recordDocumentSignatureAction, uploadDocumentAction } from './actions';
+import { completeDocumentUploadAction, prepareDocumentUploadAction, recordDocumentSignatureAction } from './actions';
 
 const initialState = { ok: false, message: '' };
 
@@ -19,17 +21,51 @@ export function DocumentPanel({ aggregateType, aggregateId, documents, error, re
   allowedDocumentTypes: DocumentType[];
   sectionId?: string;
 }) {
-  const [state, action, pending] = useActionState(uploadDocumentAction, initialState);
+  const router = useRouter();
+  const [state, setState] = useState(initialState);
+  const [pending, setPending] = useState(false);
+
+  async function upload(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (pending) return;
+    const form = event.currentTarget;
+    const input = new FormData(form);
+    const file = input.get('file');
+    if (!(file instanceof File) || !file.size) { setState({ ok: false, message: 'Selecione um arquivo para enviar.' }); return; }
+    if (file.size > 26_214_400) { setState({ ok: false, message: 'O arquivo deve ter no máximo 25 MB.' }); return; }
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    if (!supabaseUrl || !publishableKey) { setState({ ok: false, message: 'O armazenamento ainda não está configurado.' }); return; }
+    setPending(true);
+    setState(initialState);
+    try {
+      const prepared = await prepareDocumentUploadAction({
+        aggregateType, aggregateId, documentType: String(input.get('documentType')) as DocumentType,
+        fileName: file.name, mimeType: file.type, sizeBytes: file.size,
+        notes: String(input.get('notes') ?? '').trim() || null,
+      });
+      if (!prepared.ok) { setState(prepared); return; }
+      const supabase = createClient(supabaseUrl, publishableKey, { auth: { persistSession: false, autoRefreshToken: false } });
+      const stored = await supabase.storage.from('tier-trade-documents').uploadToSignedUrl(
+        prepared.storagePath, prepared.uploadToken, file, { contentType: file.type, upsert: false },
+      );
+      if (stored.error) { setState({ ok: false, message: 'O envio do arquivo falhou. Tente novamente.' }); return; }
+      const completed = await completeDocumentUploadAction(prepared.id, returnPath);
+      setState(completed);
+      if (completed.ok) { form.reset(); router.refresh(); }
+    } catch {
+      setState({ ok: false, message: 'Não foi possível acessar o armazenamento. Tente novamente.' });
+    } finally {
+      setPending(false);
+    }
+  }
   return (
     <section className="document-panel" id={sectionId ?? `documentos-${aggregateId}`} aria-labelledby={`documents-${aggregateId}`}>
       <header>
         <div><p className="section-kicker">ARQUIVOS PRIVADOS</p><h2 id={`documents-${aggregateId}`}>Documentos e evidências</h2></div>
         <span>{documents.length} arquivo{documents.length === 1 ? '' : 's'}</span>
       </header>
-      <form action={action} className="document-upload-form">
-        <input type="hidden" name="aggregateType" value={aggregateType} />
-        <input type="hidden" name="aggregateId" value={aggregateId} />
-        <input type="hidden" name="returnPath" value={returnPath} />
+      <form onSubmit={upload} className="document-upload-form">
         <Field label="Tipo do documento" required>
           <select name="documentType" defaultValue={allowedDocumentTypes[0]} required>
             {allowedDocumentTypes.map((type) => <option value={type} key={type}>{documentTypeLabel(type)}</option>)}

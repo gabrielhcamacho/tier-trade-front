@@ -22,6 +22,7 @@ const tabs: Record<Domain, Tab[]> = {
   ],
   contracts: [
     { label: 'Lista', href: '/contratos' }, { label: 'Obrigações', href: '/contratos/obrigacoes' },
+    { label: 'Documentos', href: '/documentos' },
     { label: 'Fixações', unavailableReason: 'Disponível após a homologação das regras de preço a fixar e fixações parciais.' },
     { label: 'Entregas', href: '/contratos?view=deliveries' }, { label: 'Custos e margem', href: '/contratos?view=economics' },
     { label: 'Comissões', href: '/contratos/comissoes' }, { label: 'Garantias', href: '/contratos?view=guarantees' },
