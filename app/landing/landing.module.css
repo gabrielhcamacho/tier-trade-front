@@ -37,7 +37,8 @@
 .heroOrb{position:absolute;left:50%;top:55%;width:60vw;height:55vw;max-width:900px;max-height:780px;border-radius:50%;background:radial-gradient(circle,rgba(129,197,128,.3),rgba(188,215,179,.1) 50%,transparent 72%);filter:blur(16px);transform:translate(-50%,-50%);animation:orbFloat 12s ease-in-out infinite alternate}
 .heroPanel{position:absolute;width:min(820px,63vw);right:-6%;top:23%;transform:rotate(-13deg) skewY(4deg);opacity:.11;filter:blur(1.5px);box-shadow:0 40px 100px rgba(27,82,51,.3);border-radius:18px;overflow:hidden}
 .heroPanel img{display:block;width:100%;height:auto}
-.heroVideo{object-fit:cover;opacity:.44}
+.heroVideo{object-fit:cover;opacity:0;transition:opacity .6s ease}
+.hero[data-video="playing"] .heroVideo{opacity:.58}
 .heroVeil{background:radial-gradient(ellipse 43% 34% at 50% 47%,rgba(243,242,235,.84),transparent 100%),linear-gradient(180deg,rgba(243,242,235,.12) 60%,#f3f2eb 100%)}
 .heroContent{position:relative;z-index:2;text-align:center;width:min(1050px,100%);margin-top:-5vh}
 .heroContent h1{font-size:clamp(48px,7.5vw,101px);line-height:.98}

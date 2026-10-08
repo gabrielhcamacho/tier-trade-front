@@ -52,15 +52,12 @@ export function HeroVideo({ className }: { className?: string }) {
       loop
       playsInline
       preload="metadata"
-      poster="/videos/tier-trade-hero-poster.webp"
       aria-hidden="true"
       tabIndex={-1}
       disablePictureInPicture
       disableRemotePlayback
     >
-      <source src="/videos/tier-trade-hero-loop-1080.webm" type="video/webm" media="(max-width: 1280px)" />
       <source src="/videos/tier-trade-hero-loop-1080.mp4" type="video/mp4" media="(max-width: 1280px)" />
-      <source src="/videos/tier-trade-hero-loop.webm" type="video/webm" />
       <source src="/videos/tier-trade-hero-loop.mp4" type="video/mp4" />
     </video>
   );

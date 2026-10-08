@@ -1,14 +1,13 @@
 # Hero da landing page
 
-Coloque os arquivos finais nesta pasta com estes nomes:
+O hero usa os arquivos nesta pasta:
 
-- `tier-trade-hero-loop.webm` - formato preferencial do navegador.
-- `tier-trade-hero-loop.mp4` - fallback de compatibilidade.
+- `tier-trade-hero-loop.mp4` - vídeo principal para telas grandes.
+- `tier-trade-hero-loop-1080.mp4` - versão mais leve para telas de até 1280px.
 
-A landing já referencia os dois arquivos em `/landing`. Enquanto eles não
-existem, o hero mantém um fundo mineral com degradê e textura. Basta adicionar
-um dos vídeos acima para que ele apareça
-por trás do texto e do véu de leitura.
+A landing já referencia os dois arquivos em `/` e `/landing`. Enquanto o vídeo
+carrega, ou quando o visitante prefere movimento reduzido, o hero mantém o
+fundo com degradê e textura.
 
 Recomendações de exportação:
 

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { BrandLogo } from '../brand-logo';
+import { HeroVideo } from './hero-video';
 import { LandingMotion } from './motion';
 import { ContractScene, IntakeScene, LoadScene, ManagementScene, OfferScene, PortfolioScene, RiskScene, RolesScene, StockScene, TraceScene, WorkflowScene } from './product-scenes';
 import s from './landing.module.css';
@@ -31,7 +32,7 @@ export default function LandingPage() {
     <main id="conteudo">
       <section className={s.hero} aria-labelledby="hero-title">
         <div className={s.heroBackdrop} aria-hidden="true"><div className={s.heroGrid} /><div className={s.heroOrb} /></div>
-        <video className={s.heroVideo} autoPlay muted loop playsInline preload="none" aria-hidden="true"><source src="/videos/tier-trade-hero-loop.webm" type="video/webm" /><source src="/videos/tier-trade-hero-loop.mp4" type="video/mp4" /></video>
+        <HeroVideo className={s.heroVideo} />
         <div className={s.heroVeil} />
         <div className={s.heroContent}><h1 id="hero-title"><span>Feito para tradings,</span><br /><span>pensado para quem</span><br /><span>move o agro.</span></h1><p>Da negociação ao caixa, o Tier Trade reúne pessoas, decisões e execução física em um fluxo que acompanha a operação de verdade.</p><div className={s.heroActions}><Cta /><a href="#plataforma" className={s.ghostButton}>Conhecer a plataforma <span aria-hidden="true">↘</span></a></div></div>
         <div className={s.heroBottom}><div className={s.container}><span>Uma plataforma. A operação inteira.</span><div className={s.marquee} aria-label="Áreas do Tier Trade"><div>{[...modules, ...modules].map((name, i) => <span key={i}>{name}</span>)}</div></div></div></div>
