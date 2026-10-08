@@ -47,6 +47,54 @@ export type DocumentsResult =
   | { items: StoredDocument[]; error: null }
   | { items: []; error: string };
 
+export type DocumentArchiveFilters = {
+  aggregateType?: DocumentAggregateType;
+  documentType?: DocumentType;
+  status?: StoredDocument['status'];
+  from?: string;
+  to?: string;
+  criterion?: string;
+  page: number;
+};
+
+export type DocumentArchiveResult = {
+  items: StoredDocument[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  error: string | null;
+};
+
+export async function loadDocumentArchive(
+  identityHeaders: Record<string, string>, filters: DocumentArchiveFilters,
+): Promise<DocumentArchiveResult> {
+  const fallback = (message: string): DocumentArchiveResult => ({
+    items: [], total: 0, page: filters.page, pageSize: 25, totalPages: 1, error: message,
+  });
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (!apiUrl || Object.keys(identityHeaders).length === 0) {
+    return fallback('A API ou a identidade do ambiente ainda não está configurada.');
+  }
+  const query = new URLSearchParams({ page: String(filters.page) });
+  if (filters.aggregateType) query.set('aggregateType', filters.aggregateType);
+  if (filters.documentType) query.set('documentType', filters.documentType);
+  if (filters.status) query.set('status', filters.status);
+  if (filters.from) query.set('from', filters.from);
+  if (filters.to) query.set('to', filters.to);
+  if (filters.criterion) query.set('criterion', filters.criterion);
+  try {
+    const response = await fetch(`${apiUrl}/v1/documents/archive?${query}`, {
+      headers: identityHeaders, cache: 'no-store',
+    });
+    if (!response.ok) return fallback('Não foi possível carregar o arquivo de documentos.');
+    const body = await response.json() as Omit<DocumentArchiveResult, 'error'>;
+    return { ...body, error: null };
+  } catch {
+    return fallback('Não foi possível acessar o arquivo de documentos.');
+  }
+}
+
 export async function loadDocuments(
   identityHeaders: Record<string, string>,
   aggregateType?: DocumentAggregateType,

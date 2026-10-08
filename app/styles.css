@@ -1459,6 +1459,12 @@ main { min-width: 0; }
 .document-archive-table small { color: #65716c; display: block; font-size: 0.73rem; margin-top: 0.3rem; overflow-wrap: anywhere; }
 .document-archive-table a { color: #073b32; font-weight: 700; }
 .document-archive-table tr:hover td { background: #f3f8ef; }
+.document-archive-pagination { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 18px 0 4px; color: #65716c; font-size: 12px; }
+.document-archive-pagination > div { display: flex; align-items: center; gap: 8px; }
+.document-archive-pagination a, .document-archive-pagination > div > span { min-width: 88px; min-height: 36px; display: inline-grid; place-items: center; padding: 7px 12px; border: 1px solid #b7c9bc; color: #0b3a31; font-weight: 650; text-decoration: none; }
+.document-archive-pagination a:hover { background: #edf6e9; border-color: #7ea98a; }
+.document-archive-pagination a:focus-visible { outline: 2px solid #75cd45; outline-offset: 2px; }
+.document-archive-pagination > div > span { color: #9ba79f; background: #f3f5f2; border-color: #e0e6e0; }
 @media (max-width: 900px) {
   .report-filter-bar { grid-template-columns: 1fr 1fr; }
   .report-criterion { grid-column: 1 / -1; }
