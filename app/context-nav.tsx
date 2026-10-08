@@ -63,11 +63,12 @@ function ContextNavContent({ activeDomain }: { activeDomain: Domain }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentView = searchParams.get('view');
+  const currentFrom = searchParams.get('from');
   const hasExactPathTarget = tabs[activeDomain].some(({ href }) => href?.split('?')[0] === pathname);
   return (
     <nav className="context-bar" aria-label={`Telas de ${domainLabels[activeDomain]}`}>
       {tabs[activeDomain].map(({ label, href, unavailableReason }) => href ? (
-        <Link key={label} className={isActiveTab(pathname, currentView, href, hasExactPathTarget) ? 'active' : undefined} aria-current={isActiveTab(pathname, currentView, href, hasExactPathTarget) ? 'page' : undefined} href={href}>{label}</Link>
+        <Link key={label} className={isActiveTab(pathname, currentView, currentFrom, href, hasExactPathTarget) ? 'active' : undefined} aria-current={isActiveTab(pathname, currentView, currentFrom, href, hasExactPathTarget) ? 'page' : undefined} href={href}>{label}</Link>
       ) : (
         <span key={label} aria-disabled="true" title={unavailableReason ?? 'Tela planejada, ainda indisponível'}>{label}</span>
       ))}
@@ -83,7 +84,8 @@ export function ContextNav({ activeDomain }: { activeDomain: Domain }) {
   );
 }
 
-function isActiveTab(pathname: string, currentView: string | null, href: string, hasExactPathTarget: boolean): boolean {
+function isActiveTab(pathname: string, currentView: string | null, currentFrom: string | null, href: string, hasExactPathTarget: boolean): boolean {
+  if (pathname.startsWith('/contratos/') && currentFrom === 'obligations') return href === '/contratos/obrigacoes';
   const [targetPath, query = ''] = href.split('?');
   const targetView = new URLSearchParams(query).get('view');
   const pathMatches = pathname === targetPath

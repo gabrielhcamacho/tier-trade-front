@@ -34,7 +34,11 @@ export function ClickableRowNavigation() {
       const surface = targetFrom(target);
       const href = surface?.dataset.href;
       if (!surface || !href || isNestedControl(target, surface)) return;
-      router.push(href);
+      const destination = new URL(href, window.location.href);
+      // A row opening another page starts at its header. In-page report rows still
+      // keep their anchor, since they reveal a detail in the current page.
+      if (destination.pathname !== window.location.pathname) destination.hash = '';
+      router.push(`${destination.pathname}${destination.search}${destination.hash}`, { scroll: true });
     }
 
     function onClick(event: MouseEvent) {

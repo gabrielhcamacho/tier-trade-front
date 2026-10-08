@@ -18,7 +18,7 @@ export function DetailNavigation({
   return (
     <div className="detail-navigation">
       <Link className="detail-back-link" href={backHref} aria-label={backLabel}>
-        <span aria-hidden="true">←</span><span>{backLabel}</span>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m14.5 5.5-6.5 6.5 6.5 6.5" /></svg>
       </Link>
       <nav aria-label="Navegação estrutural">
         <ol className="detail-breadcrumbs">

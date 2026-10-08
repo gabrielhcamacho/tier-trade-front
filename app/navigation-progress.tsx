@@ -31,7 +31,7 @@ function NavigationProgressContent() {
     return () => window.clearTimeout(timeout);
   }, [pending]);
 
-  return <div className="navigation-progress" data-pending={pending ? 'true' : undefined} role="status" aria-live="polite"><span className="navigation-progress-bar" /><span className="navigation-progress-message" aria-hidden={!pending}><i aria-hidden="true" />{pending ? 'Abrindo página…' : ''}</span></div>;
+  return <div className="navigation-progress" data-pending={pending ? 'true' : undefined} role="progressbar" aria-label="Carregando conteúdo" aria-hidden={!pending}><span className="navigation-progress-bar" /></div>;
 }
 
 export function NavigationProgress() {

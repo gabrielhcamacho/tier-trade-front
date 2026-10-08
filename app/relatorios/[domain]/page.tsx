@@ -10,6 +10,7 @@ import { AppShell } from '../../app-shell';
 import { DemoPageHeader, DemoSection, DemoTable } from '../../demo-ui';
 import { EmptyState, PageFeedback } from '../../page-state';
 import { ReportFilterBar } from '../../report-filter-bar';
+import { DetailNavigation } from '../../detail-navigation';
 
 const sourcePages: Record<ReportDomain, string> = {
   financeiro: '/financeiro', fiscal: '/fiscal', estoque: '/estoque', operacoes: '/recebimentos',
@@ -45,7 +46,7 @@ export default async function ReportExplorerPage({
     <AppShell activeDomain={appDomains[reportDomain]} userLabel={user.userLabel}>
       <DemoPageHeader domain={report.title} section="Relatórios" eyebrow="DADOS DO TENANT" title={`Relatório de ${selectedTypeLabel.toLocaleLowerCase('pt-BR')}`} description="Consulte o registro, seus vínculos e documentos de origem. A exportação utiliza os mesmos filtros." scope="Dados persistidos no backend" />
       <div className="demo-page demo-workspace report-explorer">
-        <Link className="report-back-link" href={sourcePages[reportDomain]}>← Voltar ao módulo</Link>
+        <DetailNavigation backHref={sourcePages[reportDomain]} backLabel="Voltar ao módulo" items={[{ label: report.title, href: sourcePages[reportDomain] }, { label: 'Relatórios' }]} />
         <ReportFilterBar action={report.exportPath} types={report.types} defaultType={report.type} initialFrom={filters.from ?? ''} initialTo={filters.to ?? ''} initialCriterion={query.criterio ?? ''} />
         {report.error ? <PageFeedback title="Não foi possível consultar o relatório" message={report.error} action={{ href: sourcePages[reportDomain], label: 'Voltar ao módulo' }} /> : <>
           <DemoSection kicker="RESULTADOS" title={`${report.records.length} registro(s) encontrados`} aside="Selecione uma linha para examinar a origem">

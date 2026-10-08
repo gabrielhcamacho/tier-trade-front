@@ -34,7 +34,7 @@ export function ContractPortfolioView({ portfolio, filters, view }: {
       </form>
       <div className="prototype-table-scroll"><table className="prototype-ledger">
         <ContractTableHead view={view} />
-        <tbody>{items.map((contract) => <ContractTableRow key={contract.id} contract={contract} view={view} />)}</tbody>
+        <tbody>{items.map((contract) => <ContractTableRow key={contract.id} contract={contract} view={view} filters={filters} />)}</tbody>
       </table></div>
       {items.length === 0 ? <p className="prototype-empty">Nenhum contrato corresponde aos filtros. <Link href={view === 'list' ? '/contratos' : `/contratos?view=${view}`}>Limpar filtros</Link></p> : null}
     </>
@@ -94,8 +94,8 @@ function ContractTableHead({ view }: { view: ContractPortfolioViewKey }) {
   return <thead><tr>{columns[view].map((column) => <th key={column}>{column}</th>)}</tr></thead>;
 }
 
-function ContractTableRow({ contract, view }: { contract: ContractListItem; view: ContractPortfolioViewKey }) {
-  const href = contractHref(contract.id, view);
+function ContractTableRow({ contract, view, filters }: { contract: ContractListItem; view: ContractPortfolioViewKey; filters: Filters }) {
+  const href = contractHref(contract.id, view, filters);
   const id = contract.external_number || `CT-${contract.id.slice(-8).toUpperCase()}`;
   if (view === 'deliveries') return <ClickableTableRow href={href} label={`Abrir entregas do contrato ${id}`}>
     <td className="prototype-id">{id}</td><td><strong>{contract.counterparty_name}</strong></td>
@@ -143,12 +143,12 @@ function ContractTableRow({ contract, view }: { contract: ContractListItem; view
   </ClickableTableRow>;
 }
 
-function contractHref(id: string, view: ContractPortfolioViewKey): string {
-  if (view === 'deliveries') return `/cargas?contractId=${id}`;
-  if (view === 'economics') return `/contratos/${id}#custos-margem`;
-  if (view === 'guarantees' || view === 'signatures') return `/contratos/${id}#documentos`;
-  if (view === 'amendments') return `/contratos/${id}#termos-compra`;
-  return `/contratos/${id}`;
+function contractHref(id: string, view: ContractPortfolioViewKey, filters: Filters): string {
+  const query = new URLSearchParams();
+  if (view !== 'list') query.set('view', view);
+  if (filters.commodity) query.set('commodity', filters.commodity);
+  if (filters.status) query.set('status', filters.status);
+  return `/contratos/${id}${query.size ? `?${query.toString()}` : ''}`;
 }
 
 function formatMass(value: string): string {

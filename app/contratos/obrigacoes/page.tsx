@@ -24,7 +24,7 @@ export default async function ObligationsPage() {
         {!result.error ? <>
           <div className="prototype-table-scroll"><table className="prototype-ledger">
             <thead><tr><th>Obrigação</th><th>Contrato</th><th>Contraparte</th><th>Commodity</th><th>Responsável</th><th>Prazo</th><th>Status</th></tr></thead>
-            <tbody>{result.items.map((item) => <ClickableTableRow key={item.id} href={`/contratos/${item.contract_id}#obrigacoes`} label={`Abrir obrigação ${item.title}`}>
+            <tbody>{result.items.map((item) => <ClickableTableRow key={item.id} href={`/contratos/${item.contract_id}?from=obligations`} label={`Abrir obrigação ${item.title}`}>
               <td><strong>{item.title}</strong>{item.description ? <small>{item.description}</small> : null}</td>
               <td className="prototype-id">{item.contract_id.slice(-8).toUpperCase()}</td>
               <td>{item.counterparty_name}</td>

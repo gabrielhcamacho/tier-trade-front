@@ -24,10 +24,13 @@ import { PageFeedback } from '../../page-state';
 
 export default async function ContractDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ contractId: string }>;
+  searchParams: Promise<{ view?: string; from?: string; commodity?: string; status?: string }>;
 }) {
-  const [{ contractId }, user] = await Promise.all([params, currentUserContext()]);
+  const [{ contractId }, filters, user] = await Promise.all([params, searchParams, currentUserContext()]);
+  const origin = contractOrigin(filters);
   const [result, documentResult, versionsResult] = await Promise.all([
     loadContractSummary(contractId, user.identityHeaders),
     loadDocuments(user.identityHeaders, 'CONTRACT', contractId),
@@ -36,9 +39,10 @@ export default async function ContractDetailPage({
 
   return (
     <AppShell activeDomain="contracts" userLabel={user.userLabel}>
-      {result.error ? <ContractError message={result.error} /> : null}
+      {result.error ? <ContractError message={result.error} origin={origin} /> : null}
       {result.summary ? <ContractDetail
         summary={result.summary}
+        origin={origin}
         documents={documentResult.items}
         documentError={documentResult.error}
         versions={versionsResult.versions}
@@ -48,20 +52,46 @@ export default async function ContractDetailPage({
   );
 }
 
-function ContractError({ message }: { message: string }) {
+type ContractOrigin = { href: string; label: string; items: { label: string; href?: string; mono?: boolean }[] };
+
+function contractOrigin(filters: { view?: string; from?: string; commodity?: string; status?: string }): ContractOrigin {
+  if (filters.from === 'obligations') return {
+    href: '/contratos/obrigacoes',
+    label: 'Voltar às obrigações',
+    items: [{ label: 'Contratos', href: '/contratos' }, { label: 'Obrigações', href: '/contratos/obrigacoes' }],
+  };
+  const labels: Record<string, string> = {
+    deliveries: 'Entregas', economics: 'Custos e margem', guarantees: 'Garantias',
+    amendments: 'Aditivos', signatures: 'Assinaturas',
+  };
+  const view = filters.view && Object.hasOwn(labels, filters.view) ? filters.view : undefined;
+  const query = new URLSearchParams();
+  if (view) query.set('view', view);
+  if (filters.commodity === 'MILHO' || filters.commodity === 'SOJA') query.set('commodity', filters.commodity);
+  if (filters.status && ['DRAFT', 'AWAITING_SIGNATURE', 'SIGNED', 'ACTIVE', 'CLOSED'].includes(filters.status)) query.set('status', filters.status);
+  const href = `/contratos${query.size ? `?${query.toString()}` : ''}`;
+  return {
+    href,
+    label: view ? `Voltar a ${labels[view]}` : 'Voltar aos contratos',
+    items: [{ label: 'Contratos', href: '/contratos' }, ...(view ? [{ label: labels[view], href }] : [])],
+  };
+}
+
+function ContractError({ message, origin }: { message: string; origin: ContractOrigin }) {
   return (
     <>
       <header className="page-header">
-        <DetailNavigation backHref="/contratos" backLabel="Voltar aos contratos" items={[{ label: 'Contratos', href: '/contratos' }, { label: 'Detalhe' }]} />
+        <DetailNavigation backHref={origin.href} backLabel={origin.label} items={[...origin.items, { label: 'Detalhe' }]} />
         <h1>Contrato indisponível</h1>
       </header>
-      <PageFeedback title="Não foi possível abrir o contrato" message={message} action={{ href: '/contratos', label: 'Voltar aos contratos' }} />
+      <PageFeedback title="Não foi possível abrir o contrato" message={message} action={{ href: origin.href, label: origin.label }} />
     </>
   );
 }
 
-function ContractDetail({ summary, documents, documentError, versions, versionsError }: {
+function ContractDetail({ summary, origin, documents, documentError, versions, versionsError }: {
   summary: ContractSummary;
+  origin: ContractOrigin;
   documents: StoredDocument[];
   documentError: string | null;
   versions: ContractVersion[];
@@ -73,7 +103,7 @@ function ContractDetail({ summary, documents, documentError, versions, versionsE
   return (
     <>
       <header className="entity-header">
-        <DetailNavigation backHref="/contratos" backLabel="Voltar aos contratos" items={[{ label: 'Contratos', href: '/contratos' }, { label: summary.id, mono: true }]} />
+        <DetailNavigation backHref={origin.href} backLabel={origin.label} items={[...origin.items, { label: summary.id, mono: true }]} />
         <div className="entity-title-row">
           <div>
             <p className="entity-kind">Contrato de compra</p>
