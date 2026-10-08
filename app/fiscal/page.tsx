@@ -6,6 +6,7 @@ import { DemoNotice } from '../demo-notice';
 import { DemoPageHeader } from '../demo-ui';
 import { FiscalWorkspaceView } from './fiscal-workspace';
 import { PageFeedback } from '../page-state';
+import Link from 'next/link';
 
 const views = {
   overview: ['Visão fiscal', 'Configuração, recebimento e validação', 'Visão fiscal'],
@@ -36,6 +37,9 @@ export default async function FiscalPage({ searchParams }: { searchParams: Promi
         scope={result.data ? `${result.data.tenant.legalName} · posição atual` : 'Dados indisponíveis'}
       />
       <div className="demo-page demo-workspace module-view" data-workspace-view={view}>
+        <nav className="report-actions" aria-label="Exportações fiscais">
+          <span>Exportar:</span><Link href="/fiscal/relatorio">Saídas</Link><Link href="/fiscal/relatorio?tipo=entradas">Entradas</Link><Link href="/fiscal/relatorio?tipo=calculos">Cálculos</Link><Link href="/fiscal/relatorio?tipo=obrigacoes">Obrigações</Link>
+        </nav>
         {result.data?.tenant.isDemo ? <DemoNotice persisted /> : null}
         {result.error || !result.data
           ? <PageFeedback title="Não foi possível carregar o fiscal" message={result.error} action={{ href: '/fiscal', label: 'Tentar novamente' }} />

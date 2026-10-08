@@ -9,6 +9,7 @@ import { formatFiscalDate, formatFiscalMoney } from '../../lib/fiscal';
 import type { StoredDocument } from '../../lib/documents';
 import { DocumentPanel } from '../documents/document-panel';
 import { DemoMetricStrip, DemoSection, DemoStatus, DemoTable } from '../demo-ui';
+import { EmptyState } from '../page-state';
 import {
   activateFiscalConfigurationAction, createFiscalConfigurationAction, createFiscalDocumentAction,
   acceptFiscalCalculationAction, createFiscalAuthorityAction, createFiscalCalculationAction,
@@ -142,7 +143,7 @@ export function FiscalWorkspaceView({ data, attachments, attachmentError }: {
       <DemoSection kicker="MEMÓRIA DE CÁLCULO" title="Resultados persistidos" id="memorias" aside="entrada, regra, versão e arredondamento preservados">
         {data.calculations.length
           ? <div className="fiscal-calculation-list">{data.calculations.map((calculation) => <FiscalCalculationCard calculation={calculation} authorities={data.authorities} key={calculation.id} />)}</div>
-          : <p>Nenhum cálculo fiscal registrado para este tenant.</p>}
+          : <EmptyState compact eyebrow="SEM CÁLCULOS" title="Nenhuma memória fiscal registrada" description="Ative uma configuração completa e calcule uma operação para preservar regra, versão e arredondamento." />}
       </DemoSection>
 
       <DemoSection kicker="OBRIGAÇÕES CONFIRMADAS" title="Agenda fiscal e reflexos financeiros" id="obrigacoes" aside="recolhimentos do tenant e retenções da contraparte permanecem distintos">
@@ -153,7 +154,7 @@ export function FiscalWorkspaceView({ data, attachments, attachmentError }: {
           fiscalObligationStatusLabel(obligation.status),
           obligation.paymentResponsibility === 'TENANT' ? 'Tenant recolhe' : 'Contraparte recolhe',
           obligation.payable ? `Título ${obligation.payable.titleNumber}` : obligation.titleAdjustment ? 'Título de origem reduzido' : 'Sem título a pagar',
-        ])} /> : <p>Nenhuma obrigação fiscal confirmada.</p>}
+        ])} /> : <EmptyState compact eyebrow="SEM OBRIGAÇÕES" title="Nenhuma obrigação fiscal confirmada" description="As obrigações são criadas somente após o aceite explícito de um cálculo fiscal." />}
       </DemoSection>
 
       <DemoSection kicker="ENTRADA FISCAL" title="Registrar NF-e de saída" id="entrada" aside="salva no backend e isolada por tenant">
@@ -187,7 +188,7 @@ export function FiscalWorkspaceView({ data, attachments, attachmentError }: {
           <DemoSection kicker="REGISTRO FISCAL" title="Documentos e vínculos" id="documentos" aside="expedição → contrato → financeiro">
             {rows.length
               ? <DemoTable label="Documentos fiscais" columns={['Documento', 'Cliente', 'Contrato', 'Expedição', 'Valor', 'Status', 'Título']} rows={rows} />
-              : <p>Nenhum documento fiscal recebido para este tenant.</p>}
+              : <EmptyState compact eyebrow="SEM DOCUMENTOS" title="Nenhum documento fiscal de saída recebido" description="Registre a NF-e correspondente a uma expedição elegível para iniciar a conferência." />}
           </DemoSection>
           <div id="validacoes">
             {data.documents.map((document) => <FiscalDocumentEditor

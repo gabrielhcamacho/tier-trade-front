@@ -12,7 +12,7 @@ const tabs: Record<Domain, Tab[]> = {
   central: [
     { label: 'Visão geral', href: '/central' }, { label: 'Minha fila', href: '/central/fila' },
     { label: 'Aprovações', href: '/central/fila?view=approvals' },
-    { label: 'Alertas', href: '/central/fila?view=alerts' }, { label: 'Roteiro de demonstração', href: '/demonstracao' },
+    { label: 'Alertas', href: '/central/fila?view=alerts' }, { label: 'Rastreabilidade', href: '/rastreabilidade' }, { label: 'Roteiro de demonstração', href: '/demonstracao' },
   ],
   commercial: [
     { label: 'Carteira', href: '/comercial/carteira' }, { label: 'Ofertas', href: '/ofertas' }, { label: 'Vendas', href: '/comercial/vendas' }, { label: 'Demandas', href: '/comercial/demandas' }, { label: 'Política de margem', href: '/comercial/politica-margem' },

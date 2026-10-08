@@ -5,6 +5,7 @@ import { useActionState, useMemo, useState } from 'react';
 import type { FiscalWorkspace } from '../../../lib/fiscal';
 import { formatFiscalDate, formatFiscalMoney } from '../../../lib/fiscal';
 import { DemoMetricStrip, DemoSection, DemoStatus, DemoTable } from '../../demo-ui';
+import { EmptyState } from '../../page-state';
 import {
   createPurchaseFiscalDocumentAction, rejectFiscalDocumentAction, updateFiscalDocumentAction,
   validateFiscalDocumentAction,
@@ -62,7 +63,7 @@ export function PurchaseFiscalWorkspace({ data }: { data: FiscalWorkspace }) {
         formatFiscalMoney(document.expectedAmount), formatFiscalDate(document.dueDate),
         <DemoStatus key={document.id} tone={document.status === 'VALIDATED' ? 'positive' : document.status === 'REJECTED' ? 'critical' : 'attention'}>{document.status === 'VALIDATED' ? 'Validada' : document.status === 'REJECTED' ? 'Rejeitada' : 'Em conferência'}</DemoStatus>,
         document.payable ? formatFiscalMoney(document.payable.outstandingAmount) : 'Título ainda não emitido',
-      ])} /> : <p>Nenhuma NF-e de compra registrada.</p>}
+      ])} /> : <EmptyState compact eyebrow="SEM ENTRADAS" title="Nenhuma NF-e de compra registrada" description="Receba e aceite uma carga para disponibilizar o vínculo da nota fiscal de entrada." action={{ href: '/recebimentos', label: 'Abrir recebimentos' }} />}
     </DemoSection>
 
     {data.purchaseDocuments.filter((item) => item.status !== 'VALIDATED').map((document) => <PurchaseDecision document={document} key={document.id} />)}

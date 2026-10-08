@@ -1390,3 +1390,26 @@ main { min-width: 0; }
   .commercial-portfolio-actions { justify-content: stretch; }
   .commercial-portfolio-actions .tt-button { flex: 1; }
 }
+.report-actions {
+  align-items: center;
+  border-bottom: 1px solid var(--border-subtle, #d9dfda);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  padding: 0.75rem 0;
+}
+
+.report-actions span { color: #66716d; font-size: 0.8125rem; }
+.report-actions a,
+.report-link {
+  border: 1px solid #9bad9f;
+  color: #073b32;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  padding: 0.45rem 0.7rem;
+  text-decoration: none;
+}
+.report-actions a:hover,
+.report-link:hover { background: #eaf5e4; border-color: #5f7e68; }
+.board-page-header { align-items: flex-end; display: flex; justify-content: space-between; gap: 1rem; }

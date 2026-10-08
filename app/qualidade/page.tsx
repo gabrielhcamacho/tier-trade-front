@@ -1,4 +1,5 @@
 import { Status } from '@mountier/tier-trade-design-system';
+import Link from 'next/link';
 import { AppShell } from '../app-shell';
 import { ClickableTableRow } from '../clickable-table-row';
 import { EmptyState, PageFeedback } from '../page-state';
@@ -11,7 +12,7 @@ export default async function QualityPage() {
   return (
     <AppShell activeDomain="operations" userLabel={user.userLabel}>
       <main className="operations-board-page">
-        <header className="board-page-header"><div><p className="breadcrumbs">Operações <span>›</span> Qualidade</p><p className="page-kicker">CLASSIFICAÇÃO</p><h1>Qualidade</h1><p>Decisões humanas e resultados de classificação preservados por versão do recebimento.</p></div></header>
+        <header className="board-page-header"><div><p className="breadcrumbs">Operações <span>›</span> Qualidade</p><p className="page-kicker">CLASSIFICAÇÃO</p><h1>Qualidade</h1><p>Decisões humanas e resultados de classificação preservados por versão do recebimento.</p></div><Link className="report-link" href="/operacoes/relatorio?tipo=qualidade">Exportar CSV</Link></header>
         {result.error ? <PageFeedback title="Não foi possível carregar a qualidade" message={result.error} action={{ href: '/qualidade', label: 'Tentar novamente' }} /> : null}
         {result.data ? <>
           <section className="board-metrics" aria-label="Resumo da qualidade">

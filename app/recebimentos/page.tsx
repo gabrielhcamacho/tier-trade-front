@@ -1,4 +1,5 @@
 import { Status } from '@mountier/tier-trade-design-system';
+import Link from 'next/link';
 import { AppShell } from '../app-shell';
 import { ClickableTableRow } from '../clickable-table-row';
 import { EmptyState, PageFeedback } from '../page-state';
@@ -11,7 +12,7 @@ export default async function ReceivingPage() {
   return (
     <AppShell activeDomain="operations" userLabel={user.userLabel}>
       <main className="operations-board-page">
-        <header className="board-page-header"><div><p className="breadcrumbs">Operações <span>›</span> Recebimento</p><p className="page-kicker">NOTA FISCAL E PESAGEM</p><h1>Recebimento</h1><p>Conciliação explícita entre documento, balança, aceite operacional e estoque.</p></div></header>
+        <header className="board-page-header"><div><p className="breadcrumbs">Operações <span>›</span> Recebimento</p><p className="page-kicker">NOTA FISCAL E PESAGEM</p><h1>Recebimento</h1><p>Conciliação explícita entre documento, balança, aceite operacional e estoque.</p></div><Link className="report-link" href="/operacoes/relatorio">Exportar CSV</Link></header>
         {result.error ? <PageFeedback title="Não foi possível carregar os recebimentos" message={result.error} action={{ href: '/recebimentos', label: 'Tentar novamente' }} /> : null}
         {result.data ? <>
           <section className="board-metrics" aria-label="Resumo dos recebimentos">

@@ -13,7 +13,7 @@ import {
 } from '../../lib/inventory';
 import { FulfillmentForms } from './fulfillment-forms';
 import { InventoryGovernanceForms } from './inventory-governance-forms';
-import { PageFeedback } from '../page-state';
+import { EmptyState, PageFeedback } from '../page-state';
 
 const views = {
   overview: ['Posição', 'Custódia e disponibilidade', 'Posição de estoque'],
@@ -40,6 +40,9 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
         scope="Fonte: livro imutável de movimentos"
       />
       <div className="demo-page demo-workspace module-view" data-workspace-view={view}>
+        <nav className="report-actions" aria-label="Exportações do estoque">
+          <span>Exportar:</span><Link href="/estoque/relatorio">Lotes</Link><Link href="/estoque/relatorio?tipo=movimentos">Movimentos</Link><Link href="/estoque/relatorio?tipo=vendas">Vendas</Link>
+        </nav>
         {result.data
           ? <InventoryWorkspace data={result.data} />
           : <InventoryError message={result.error} />}
@@ -120,7 +123,7 @@ function InventoryWorkspace({ data }: { data: InventoryPosition }) {
                 `${formatTonnes(contract.dispatched_kg)} t`,
                 `${formatTonnes(String(Number(contract.quantity_kg) - Number(contract.dispatched_kg)))} t`,
               ])} />
-              : <p>Nenhum contrato de venda cadastrado.</p>}
+              : <EmptyState compact eyebrow="SEM VENDAS" title="Nenhum contrato de venda cadastrado" description="Cadastre a venda no Comercial para reservar lotes e registrar expedições." action={{ href: '/comercial/vendas', label: 'Cadastrar venda' }} />}
           </DemoSection>
           <DemoSection kicker="GOVERNANÇA FÍSICA" title="Titularidade, custódia, remaneio e perdas" id="governanca-estoque" aside="eventos auditáveis">
             <InventoryGovernanceForms data={data} />
@@ -128,19 +131,19 @@ function InventoryWorkspace({ data }: { data: InventoryPosition }) {
           <DemoSection kicker="POSIÇÃO CONSOLIDADA" title="Saldo por lote e localização" id="posicao-estoque" aside={`${data.lots.length} lotes visíveis`}>
             {positionRows.length > 0
               ? <DemoTable label="Posição de estoque" columns={['Localização', 'Lote', 'Contrato', 'Produto', 'Titularidade', 'Físico', 'Custódia', 'Disponível', 'Situação']} rows={positionRows} />
-              : <p>Nenhum recebimento aceito gerou estoque para este tenant.</p>}
+              : <EmptyState compact eyebrow="SEM SALDO" title="Nenhum recebimento aceito gerou estoque" description="Programe e receba uma carga para que o lote seja criado pelo livro de movimentos." action={{ href: '/cargas', label: 'Abrir agenda de cargas' }} />}
           </DemoSection>
 
           <DemoSection kicker="RASTREABILIDADE FÍSICA" title="Composição dos lotes" id="lotes" aside="origem, qualidade e vínculo">
             <div className="lot-ledger">
-              {data.lots.map((lot) => <LotCard lot={lot} key={lot.id} />)}
+              {data.lots.length ? data.lots.map((lot) => <LotCard lot={lot} key={lot.id} />) : <EmptyState compact eyebrow="SEM LOTES" title="Nenhum lote disponível" description="Os lotes são criados automaticamente depois do aceite do recebimento." action={{ href: '/recebimentos', label: 'Abrir recebimentos' }} />}
             </div>
           </DemoSection>
 
           <DemoSection kicker="LIVRO DE MOVIMENTOS" title="Entradas, correções e saídas" id="movimentos" aside="ordem cronológica">
             {movementRows.length > 0
               ? <DemoTable label="Movimentos de estoque" columns={['Data', 'Movimento', 'Carga', 'Lote', 'Quantidade', 'Origem']} rows={movementRows} rowHrefs={data.movements.map((movement) => movement.sourceLoadId ? `/cargas/${movement.sourceLoadId}` : undefined)} />
-              : <p>Nenhum movimento registrado.</p>}
+              : <EmptyState compact eyebrow="LIVRO VAZIO" title="Nenhum movimento registrado" description="Entradas, correções, remaneios e expedições aparecerão aqui sem edição direta do saldo." action={{ href: '/recebimentos', label: 'Abrir recebimentos' }} />}
           </DemoSection>
 
           <DemoSection kicker="CONTROLE" title="Integridade do saldo" id="reconciliacao" aside="calculado, nunca editado diretamente">

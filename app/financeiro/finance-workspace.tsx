@@ -6,6 +6,7 @@ import { useActionState, useState } from 'react';
 import type { FinanceWorkspace } from '../../lib/finance';
 import { formatFinancialDate, formatMoney, payableStatusLabel, titleStatusLabel } from '../../lib/finance';
 import { DemoMetricStrip, DemoSection, DemoStatus, DemoTable } from '../demo-ui';
+import { EmptyState } from '../page-state';
 import {
   approvePaymentBatchAction,
   accrueCommissionAction,
@@ -158,7 +159,7 @@ export function FinancialWorkspace({ data }: { data: FinanceWorkspace }) {
             ? <DemoTable label="Componentes da compra" columns={['Título', 'Tipo', 'Efeito', 'Valor', 'Descrição', 'Status']}
               rows={data.governance.purchaseCostComponents.map((item) => [item.title_number, item.component_type, item.payable_impact,
                 formatMoney(item.amount), item.description, item.reversed_at ? 'Estornado' : 'Ativo'])} />
-            : <p>Nenhum componente adicional registrado.</p>}</div>
+            : <EmptyState compact eyebrow="SEM COMPONENTES" title="Nenhum custo ou desconto adicional" description="Registre somente frete, qualidade, armazenagem ou retenções respaldados por regra e documento." />}</div>
         </div>
       </DemoSection>
 
@@ -188,7 +189,7 @@ export function FinancialWorkspace({ data }: { data: FinanceWorkspace }) {
           <div><h3>Políticas cadastradas</h3>{data.governance.commissionPolicies.length
             ? <DemoTable label="Políticas de comissão" columns={['Código', 'Versão', 'Favorecido', 'Commodity', 'Taxa', 'Status']}
               rows={data.governance.commissionPolicies.map((policy) => [policy.code, `v${policy.version}`, policy.beneficiary_name, policy.commodity ?? 'Todas', `${Number(policy.rate_pct).toLocaleString('pt-BR', { maximumFractionDigits: 6 })}%`, policy.status])} />
-            : <p>Nenhuma política de comissão cadastrada.</p>}</div>
+            : <EmptyState compact eyebrow="SEM POLÍTICA" title="Nenhuma política de comissão cadastrada" description="Crie uma versão para calcular comissão sobre uma base financeira persistida." />}</div>
         </div>
         {data.governance.commissionAccruals.length ? <DemoTable label="Comissões apropriadas" columns={['Política', 'Evento', 'Base', 'Comissão', 'Status', 'Data']}
           rows={data.governance.commissionAccruals.map((item) => [item.policy_code, item.financial_event_id, formatMoney(item.basis_amount), formatMoney(item.commission_amount), item.status, formatFinancialDate(item.created_at)])} /> : null}
@@ -343,27 +344,27 @@ export function FinancialWorkspace({ data }: { data: FinanceWorkspace }) {
           <DemoSection kicker="PREVISÃO POR EXPEDIÇÃO" title="Eventos financeiros" id="liquidacoes" aside="contrato, expedição e cálculo">
             {forecastRows.length
               ? <DemoTable label="Previsões financeiras" columns={['Expedição', 'Cliente', 'Contrato', 'Quantidade', 'Valor bruto', 'Situação']} rows={forecastRows} rowHrefs={salesEvents.map((event) => `/financeiro/liquidacoes/${event.id}`)} />
-              : <p>Nenhuma expedição gerou previsão financeira para este tenant.</p>}
+              : <EmptyState compact eyebrow="SEM PREVISÕES" title="Nenhuma expedição gerou previsão financeira" description="Expedições de venda confirmadas aparecem aqui antes da emissão do título." action={{ href: '/estoque', label: 'Abrir execução de venda' }} />}
           </DemoSection>
           <DemoSection kicker="DIREITOS" title="Contas a receber" id="receber" aside="títulos e saldo">
             {titleRows.length
               ? <DemoTable label="Contas a receber" columns={['Título', 'Cliente', 'Vencimento', 'Valor', 'Ajustes', 'Recebido', 'Saldo', 'Status']} rows={titleRows} />
-              : <p>Nenhum título emitido.</p>}
+              : <EmptyState compact eyebrow="SEM RECEBÍVEIS" title="Nenhum título a receber emitido" description="Emita o título a partir de uma previsão pronta para iniciar a liquidação." />}
           </DemoSection>
           <DemoSection kicker="OBRIGAÇÕES" title="Contas a pagar" id="pagar" aside="fornecedores e autoridades identificados pela origem">
             {payableRows.length
               ? <DemoTable label="Contas a pagar" columns={['Título', 'Favorecido', 'Referência', 'Vencimento', 'Valor', 'Pago', 'Saldo', 'Status']} rows={payableRows} />
-              : <p>Nenhum título fiscal a pagar.</p>}
+              : <EmptyState compact eyebrow="SEM PAGÁVEIS" title="Nenhum título a pagar emitido" description="Títulos de compra e tributos aparecem após a validação das respectivas origens." action={{ href: '/fiscal', label: 'Abrir Fiscal' }} />}
           </DemoSection>
           <DemoSection kicker="CAIXA" title="Recebimentos e estornos" id="conciliacao" aside="referência bancária preservada">
             {settlementRows.length
               ? <DemoTable label="Baixas financeiras" columns={['Título', 'Referência', 'Data', 'Valor', 'Status']} rows={settlementRows} />
-              : <p>Nenhum recebimento registrado.</p>}
+              : <EmptyState compact eyebrow="SEM RECEBIMENTOS" title="Nenhuma baixa de cliente registrada" description="Selecione um título em aberto para registrar uma baixa auditável." />}
           </DemoSection>
           <DemoSection kicker="CAIXA" title="Pagamentos fiscais e estornos" id="pagamentos" aside="referência bancária preservada">
             {paymentRows.length
               ? <DemoTable label="Pagamentos fiscais" columns={['Título', 'Favorecido', 'Referência', 'Data', 'Valor', 'Status']} rows={paymentRows} />
-              : <p>Nenhum pagamento fiscal registrado.</p>}
+              : <EmptyState compact eyebrow="SEM PAGAMENTOS" title="Nenhum pagamento registrado" description="Selecione um título a pagar em aberto para registrar ou incluir em lote." />}
           </DemoSection>
         </div>
         <aside className="demo-side-stack">
