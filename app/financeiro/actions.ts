@@ -32,6 +32,8 @@ const messages: Record<string, string> = {
   COMMISSION_POLICY_OUTSIDE_EFFECTIVE_PERIOD: 'O evento está fora da vigência da política.',
   COMMISSION_ROUNDING_POLICY_REQUIRED: 'O cálculo gera fração de centavo. A política de arredondamento precisa ser homologada.',
   COMMISSION_ALREADY_ACCRUED: 'Este evento já possui comissão apropriada por essa política.',
+  ACTIVE_BANK_ACCOUNT_NOT_FOUND: 'Selecione uma conta bancária ativa.',
+  BANK_STATEMENT_ADAPTER_NOT_AVAILABLE: 'Esse formato ainda não possui adaptador homologado.',
 };
 
 export async function createCommissionPolicyAction(_state: FinanceActionState, formData: FormData) {
@@ -106,6 +108,24 @@ export async function createBankStatementEntryAction(_state: FinanceActionState,
     bankReference: String(formData.get('bankReference') ?? ''),
     description: String(formData.get('description') ?? '').trim() || null,
   }, 'Lançamento de extrato importado.');
+}
+
+export async function importBankStatementAction(_state: FinanceActionState, formData: FormData): Promise<FinanceActionState> {
+  const file = formData.get('statementFile');
+  if (!(file instanceof File) || file.size === 0) return { ok: false, message: 'Selecione um arquivo CSV.' };
+  if (file.size > 2_000_000) return { ok: false, message: 'O arquivo deve ter no máximo 2 MB.' };
+  try {
+    const entries = parseTierTradeCsv(await file.text());
+    const result = await send('/v1/finance/bank-statement-imports', {
+      bankAccountId: String(formData.get('bankAccountId') ?? ''), sourceFormat: 'TIER_TRADE_CSV',
+      originalFileName: file.name, adapterVersion: 'tier-trade-csv-v1',
+      mapping: { data: 'occurredAt', direcao: 'direction', valor: 'amount', referencia: 'bankReference', descricao: 'description' },
+      entries,
+    }, `${entries.length} lançamento(s) processado(s). Duplicidades são ignoradas pelo backend.`);
+    return result;
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : 'Não foi possível interpretar o arquivo.' };
+  }
 }
 
 export async function reconcileBankStatementEntryAction(_state: FinanceActionState, formData: FormData) {
@@ -195,4 +215,58 @@ async function send(path: string, payload: unknown, success: string): Promise<Fi
 
 function decimal(value: FormDataEntryValue | null): string {
   return String(value ?? '').replace(/\./g, '').replace(',', '.');
+}
+
+function parseTierTradeCsv(content: string) {
+  const lines = content.replace(/^\uFEFF/, '').split(/\r?\n/).filter((line) => line.trim());
+  if (lines.length < 2) throw new Error('O CSV precisa conter cabeçalho e ao menos um lançamento.');
+  if (lines.length > 1001) throw new Error('O arquivo excede o limite de 1.000 lançamentos por lote.');
+  const delimiter = lines[0]!.includes(';') ? ';' : ',';
+  const header = parseCsvLine(lines[0]!, delimiter).map((value) => normalizeHeader(value));
+  const required = ['data', 'direcao', 'valor', 'referencia'];
+  if (required.some((column) => !header.includes(column))) {
+    throw new Error('Use as colunas data, direcao, valor, referencia e, opcionalmente, descricao.');
+  }
+  return lines.slice(1).map((line, index) => {
+    const values = parseCsvLine(line, delimiter);
+    const row = Object.fromEntries(header.map((column, columnIndex) => [column, values[columnIndex]?.trim() ?? '']));
+    const direction = normalizeHeader(row.direcao) === 'credito' ? 'CREDIT'
+      : normalizeHeader(row.direcao) === 'debito' ? 'DEBIT' : null;
+    const occurredAt = normalizeStatementDate(row.data);
+    const amount = normalizeStatementAmount(row.valor);
+    if (!direction || !occurredAt || !amount || !row.referencia) throw new Error(`Linha ${index + 2}: data, direção, valor ou referência inválidos.`);
+    return { sourceLineNumber: index + 2, occurredAt, direction, amount,
+      bankReference: row.referencia.slice(0, 80), description: row.descricao?.slice(0, 500) || null };
+  });
+}
+
+function parseCsvLine(line: string, delimiter: string): string[] {
+  const cells: string[] = []; let cell = ''; let quoted = false;
+  for (let index = 0; index < line.length; index += 1) {
+    const character = line[index]!;
+    if (character === '"' && quoted && line[index + 1] === '"') { cell += '"'; index += 1; }
+    else if (character === '"') quoted = !quoted;
+    else if (character === delimiter && !quoted) { cells.push(cell); cell = ''; }
+    else cell += character;
+  }
+  if (quoted) throw new Error('O CSV contém aspas não fechadas.');
+  cells.push(cell); return cells;
+}
+
+function normalizeHeader(value: string | undefined): string {
+  return String(value ?? '').trim().toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function normalizeStatementDate(value: string | undefined): string | null {
+  const text = String(value ?? '').trim();
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?(?:Z|[+-]\d{2}:\d{2})$/.test(text)) return text;
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(text)) return `${text}:00-03:00`;
+  const match = text.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}))?$/);
+  return match ? `${match[3]}-${match[2]}-${match[1]}T${match[4] ?? '12'}:${match[5] ?? '00'}:00-03:00` : null;
+}
+
+function normalizeStatementAmount(value: string | undefined): string | null {
+  const text = String(value ?? '').trim().replace(/\s/g, '');
+  const normalized = text.includes(',') ? text.replace(/\./g, '').replace(',', '.') : text;
+  return /^\d+(?:\.\d{1,2})?$/.test(normalized) && Number(normalized) > 0 ? Number(normalized).toFixed(2) : null;
 }

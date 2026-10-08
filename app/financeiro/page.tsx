@@ -5,7 +5,7 @@ import { DemoNotice } from '../demo-notice';
 import { DemoPageHeader } from '../demo-ui';
 import { FinancialWorkspace } from './finance-workspace';
 import { PageFeedback } from '../page-state';
-import Link from 'next/link';
+import { ReportFilterBar } from '../report-filter-bar';
 
 const views = {
   overview: ['Visão geral', 'Liquidação e caixa', 'Controle financeiro'],
@@ -35,9 +35,7 @@ export default async function FinancialPage({ searchParams }: { searchParams: Pr
         scope={result.data ? `${result.data.tenant.legalName} · posição atual` : 'Dados indisponíveis'}
       />
       <div className="demo-page demo-workspace module-view" data-workspace-view={view}>
-        <nav className="report-actions" aria-label="Exportações do financeiro">
-          <span>Exportar:</span><Link href="/financeiro/relatorio">Eventos</Link><Link href="/financeiro/relatorio?tipo=titulos">Títulos</Link><Link href="/financeiro/relatorio?tipo=liquidacoes">Liquidações</Link><Link href="/financeiro/relatorio?tipo=conciliacao">Conciliação</Link>
-        </nav>
+        <ReportFilterBar action="/financeiro/relatorio" defaultType="eventos" types={[{ value: 'eventos', label: 'Eventos' }, { value: 'titulos', label: 'Títulos' }, { value: 'liquidacoes', label: 'Liquidações' }, { value: 'conciliacao', label: 'Conciliação' }]} />
         {result.data?.tenant.isDemo ? <DemoNotice persisted /> : null}
         {result.error || !result.data
           ? <PageFeedback title="Não foi possível carregar o financeiro" message={result.error} action={{ href: '/financeiro', label: 'Tentar novamente' }} />

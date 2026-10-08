@@ -1,5 +1,5 @@
 import { Status } from '@mountier/tier-trade-design-system';
-import Link from 'next/link';
+import { ReportFilterBar } from '../report-filter-bar';
 import { AppShell } from '../app-shell';
 import { ClickableSurface } from '../clickable-surface';
 import { EmptyState, PageFeedback } from '../page-state';
@@ -12,7 +12,8 @@ export default async function OccurrencesPage() {
   return (
     <AppShell activeDomain="operations" userLabel={user.userLabel}>
       <main className="operations-board-page">
-        <header className="board-page-header"><div><p className="breadcrumbs">Operações <span>›</span> Ocorrências</p><p className="page-kicker">EXCEÇÕES OPERACIONAIS</p><h1>Ocorrências</h1><p>Pendências de documento, peso, qualidade, veículo e pátio.</p></div><Link className="report-link" href="/operacoes/relatorio?tipo=ocorrencias">Exportar CSV</Link></header>
+        <header className="board-page-header"><div><p className="breadcrumbs">Operações <span>›</span> Ocorrências</p><p className="page-kicker">EXCEÇÕES OPERACIONAIS</p><h1>Ocorrências</h1><p>Pendências de documento, peso, qualidade, veículo e pátio.</p></div></header>
+        <ReportFilterBar action="/operacoes/relatorio" defaultType="ocorrencias" types={[{ value: 'ocorrencias', label: 'Ocorrências' }]} criterionPlaceholder="Categoria, severidade, status…" />
         {result.error ? <PageFeedback title="Não foi possível carregar as ocorrências" message={result.error} action={{ href: '/ocorrencias', label: 'Tentar novamente' }} /> : null}
         {result.data ? <>
           <section className="board-metrics board-metrics-three" aria-label="Resumo das ocorrências">

@@ -1,5 +1,5 @@
 import { Status } from '@mountier/tier-trade-design-system';
-import Link from 'next/link';
+import { ReportFilterBar } from '../report-filter-bar';
 import { AppShell } from '../app-shell';
 import { ClickableTableRow } from '../clickable-table-row';
 import { EmptyState, PageFeedback } from '../page-state';
@@ -12,7 +12,8 @@ export default async function YardPage() {
   return (
     <AppShell activeDomain="operations" userLabel={user.userLabel}>
       <main className="operations-board-page">
-        <header className="board-page-header"><div><p className="breadcrumbs">Operações <span>›</span> Pátio</p><p className="page-kicker">FLUXO FÍSICO</p><h1>Pátio</h1><p>Cargas aguardando chegada, em movimentação e liberadas.</p></div><Link className="report-link" href="/operacoes/relatorio?tipo=patio">Exportar CSV</Link></header>
+        <header className="board-page-header"><div><p className="breadcrumbs">Operações <span>›</span> Pátio</p><p className="page-kicker">FLUXO FÍSICO</p><h1>Pátio</h1><p>Cargas aguardando chegada, em movimentação e liberadas.</p></div></header>
+        <ReportFilterBar action="/operacoes/relatorio" defaultType="patio" types={[{ value: 'patio', label: 'Pátio' }]} criterionPlaceholder="Veículo, transportadora, etapa…" />
         {result.error ? <PageFeedback title="Não foi possível carregar o pátio" message={result.error} action={{ href: '/patio', label: 'Tentar novamente' }} /> : null}
         {result.data ? <>
           <section className="board-metrics" aria-label="Resumo do pátio">

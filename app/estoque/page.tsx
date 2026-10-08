@@ -14,6 +14,7 @@ import {
 import { FulfillmentForms } from './fulfillment-forms';
 import { InventoryGovernanceForms } from './inventory-governance-forms';
 import { EmptyState, PageFeedback } from '../page-state';
+import { ReportFilterBar } from '../report-filter-bar';
 
 const views = {
   overview: ['Posição', 'Custódia e disponibilidade', 'Posição de estoque'],
@@ -40,9 +41,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
         scope="Fonte: livro imutável de movimentos"
       />
       <div className="demo-page demo-workspace module-view" data-workspace-view={view}>
-        <nav className="report-actions" aria-label="Exportações do estoque">
-          <span>Exportar:</span><Link href="/estoque/relatorio">Lotes</Link><Link href="/estoque/relatorio?tipo=movimentos">Movimentos</Link><Link href="/estoque/relatorio?tipo=vendas">Vendas</Link>
-        </nav>
+        <ReportFilterBar action="/estoque/relatorio" defaultType="lotes" types={[{ value: 'lotes', label: 'Lotes' }, { value: 'movimentos', label: 'Movimentos' }, { value: 'vendas', label: 'Vendas' }]} />
         {result.data
           ? <InventoryWorkspace data={result.data} />
           : <InventoryError message={result.error} />}

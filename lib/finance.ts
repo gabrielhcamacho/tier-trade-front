@@ -87,6 +87,13 @@ export type FinanceGovernance = {
     direction: 'CREDIT' | 'DEBIT'; amount: string; bank_reference: string;
     description: string | null; status: 'UNMATCHED' | 'MATCHED'; matched_type: string | null;
     matched_id: string | null;
+    import_id: string | null; source_line_number: number | null;
+  }>;
+  bankStatementImports: Array<{
+    id: string; bank_account_id: string; bank_account_code: string;
+    source_format: 'TIER_TRADE_CSV' | 'NORMALIZED_JSON' | 'OFX' | 'CNAB240' | 'CNAB400';
+    original_file_name: string | null; content_sha256: string; adapter_version: string;
+    imported_count: number; skipped_count: number; mapping: Record<string, string>; created_at: string;
   }>;
   realizedMargin: {
     status: 'COMPLETE' | 'NO_DATA'; revenueAmount: string; totalCostAmount: string;
