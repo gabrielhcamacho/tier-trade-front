@@ -13,6 +13,10 @@ type Domain = 'central' | 'commercial' | 'contracts' | 'operations' | 'inventory
 export const UserLabelContext = createContext<Dispatch<SetStateAction<string>> | null>(null);
 
 function domainForPath(pathname: string): Domain {
+  if (pathname.startsWith('/relatorios/financeiro')) return 'financial';
+  if (pathname.startsWith('/relatorios/fiscal')) return 'fiscal';
+  if (pathname.startsWith('/relatorios/estoque')) return 'inventory';
+  if (pathname.startsWith('/relatorios/operacoes')) return 'operations';
   if (pathname.startsWith('/central') || pathname.startsWith('/demonstracao')) return 'central';
   if (pathname.startsWith('/contratos')) return 'contracts';
   if (pathname.startsWith('/cargas') || pathname.startsWith('/patio') || pathname.startsWith('/recebimentos')

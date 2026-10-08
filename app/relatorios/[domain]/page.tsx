@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { currentUserContext } from '../../../lib/current-user';
 import { loadReportView, reportDomains, type ReportDomain } from '../../../lib/report-explorer';
 import { reportFilters } from '../../../lib/report-filters';
+import { reportDate, reportField, reportStatus, reportValue } from '../../../lib/report-format';
 import { AppShell } from '../../app-shell';
 import { DemoPageHeader, DemoSection, DemoTable } from '../../demo-ui';
 import { EmptyState, PageFeedback } from '../../page-state';
@@ -44,11 +45,11 @@ export default async function ReportExplorerPage({
         <ReportFilterBar action={report.exportPath} types={report.types} defaultType={report.type} initialFrom={filters.from ?? ''} initialTo={filters.to ?? ''} initialCriterion={query.criterio ?? ''} />
         {report.error ? <PageFeedback title="Não foi possível consultar o relatório" message={report.error} action={{ href: sourcePages[reportDomain], label: 'Voltar ao módulo' }} /> : <>
           <DemoSection kicker="RESULTADOS" title={`${report.records.length} registro(s) encontrados`} aside="Selecione uma linha para examinar a origem">
-            {report.records.length ? <DemoTable label={`Relatório de ${selectedTypeLabel}`} columns={['Referência', 'Data', 'Descrição', 'Valor ou quantidade', 'Situação']} rows={report.records.map((item) => [item.reference, item.date?.slice(0, 10) ?? '—', item.description, item.value, item.status])} rowHrefs={report.records.map((item) => `/relatorios/${reportDomain}?${queryFor(item.id)}#detalhe`)} /> : <EmptyState compact title="Nenhum registro neste filtro" description="Ajuste o período ou o critério para consultar os dados existentes." />}
+            {report.records.length ? <DemoTable label={`Relatório de ${selectedTypeLabel}`} columns={['Referência', 'Data', 'Descrição', 'Valor ou quantidade', 'Situação']} rows={report.records.map((item) => [item.reference, reportDate(item.date), item.description, reportValue(reportDomain, item.value), reportStatus(item.status)])} rowHrefs={report.records.map((item) => `/relatorios/${reportDomain}?${queryFor(item.id)}#detalhe`)} /> : <EmptyState compact title="Nenhum registro neste filtro" description="Ajuste o período ou o critério para consultar os dados existentes." />}
           </DemoSection>
           {selected ? <DemoSection kicker="RASTREABILIDADE" title={selected.reference} aside={selected.id} id="detalhe">
             <div className="report-record-detail">
-              <dl>{selected.fields.map(([label, value], index) => <div key={`${label}-${index}`}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
+              <dl>{selected.fields.map(([label, value], index) => <div key={`${label}-${index}`}><dt>{label}</dt><dd>{reportField(label, value)}</dd></div>)}</dl>
               <aside><h3>Registros relacionados</h3>{selected.links.length ? <nav aria-label="Registros relacionados">{selected.links.map((item) => <Link key={`${item.href}-${item.label}`} href={item.href}>{item.label} <span aria-hidden="true">→</span></Link>)}</nav> : <p>Não há uma tela de origem vinculada a este registro.</p>}<p>Referências de NF-e, tickets e documentos são mostradas quando constam no backend. Arquivos só podem ser abertos quando foram anexados à operação de origem.</p><Link href={`/relatorios/${reportDomain}?${queryFor()}`}>Fechar detalhe</Link></aside>
             </div>
           </DemoSection> : query.registro ? <PageFeedback tone="info" title="Registro não localizado no filtro atual" message="Ele pode ter sido alterado ou estar fora do período selecionado." /> : null}
