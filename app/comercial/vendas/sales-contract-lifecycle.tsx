@@ -29,6 +29,6 @@ export function SalesContractLifecycle({ contractId, status }: { contractId: str
       <Field label="Motivo do cancelamento"><input name="reason" minLength={3} required /></Field>
       <Button type="submit" disabled={pending} data-variant="secondary">Cancelar contrato</Button>
     </form>
-    {state.message ? <p className="fulfillment-feedback" data-ok={state.ok || undefined}>{state.message}</p> : null}
+    {state.message ? <p className="fulfillment-feedback" data-ok={state.ok || undefined} role={state.ok ? 'status' : 'alert'} aria-live={state.ok ? 'polite' : 'assertive'}>{state.message}</p> : null}
   </section>;
 }

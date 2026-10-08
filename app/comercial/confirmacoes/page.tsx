@@ -2,6 +2,7 @@ import { AppShell } from '../../app-shell';
 import { currentUserContext } from '../../../lib/current-user';
 import { loadOffers } from '../../../lib/offers';
 import { CommercialConfirmationsView } from '../commercial-portfolio-view';
+import { PageFeedback } from '../../page-state';
 
 export default async function CommercialConfirmationsPage() {
   const user = await currentUserContext();
@@ -13,7 +14,7 @@ export default async function CommercialConfirmationsPage() {
         <h1>Confirmações comerciais</h1>
         <p>Aprovação, aceite e conversão da oferta em contrato</p>
       </div></header>
-      {result.error ? <div className="feedback critical"><strong>Não foi possível carregar as confirmações</strong><span>{result.error}</span></div> : null}
+      {result.error ? <PageFeedback title="Não foi possível carregar as confirmações" message={result.error} action={{ href: '/comercial/confirmacoes', label: 'Tentar novamente' }} /> : null}
       {result.data ? <CommercialConfirmationsView offers={result.data} /> : null}
     </div>
   </AppShell>;

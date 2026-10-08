@@ -378,7 +378,7 @@ export function FinancialWorkspace({ data }: { data: FinanceWorkspace }) {
 
 function Feedback({ state }: { state: { ok: boolean; message: string } }) {
   return state.message
-    ? <p className="fulfillment-feedback" data-ok={state.ok || undefined}>{state.message}</p>
+    ? <p className="fulfillment-feedback" data-ok={state.ok || undefined} role={state.ok ? 'status' : 'alert'} aria-live={state.ok ? 'polite' : 'assertive'}>{state.message}</p>
     : null;
 }
 

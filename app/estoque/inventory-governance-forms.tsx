@@ -69,7 +69,7 @@ function OperationForm({ title, step, action, timezoneOffsetMinutes, children }:
 }) {
   const [state, formAction, pending] = action;
   return <form action={formAction}><input type="hidden" name="timezoneOffsetMinutes" value={timezoneOffsetMinutes} /><header><div><p className="section-kicker">{step} · CONTROLE</p><h3>{title}</h3></div></header>{children}
-    {state.message ? <p className="fulfillment-feedback" data-ok={state.ok || undefined}>{state.message}</p> : null}
+    {state.message ? <p className="fulfillment-feedback" data-ok={state.ok || undefined} role={state.ok ? 'status' : 'alert'} aria-live={state.ok ? 'polite' : 'assertive'}>{state.message}</p> : null}
     <Button type="submit" disabled={pending}>{pending ? 'Salvando…' : 'Confirmar'}</Button></form>;
 }
 

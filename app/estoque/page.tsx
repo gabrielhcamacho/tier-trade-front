@@ -13,6 +13,7 @@ import {
 } from '../../lib/inventory';
 import { FulfillmentForms } from './fulfillment-forms';
 import { InventoryGovernanceForms } from './inventory-governance-forms';
+import { PageFeedback } from '../page-state';
 
 const views = {
   overview: ['Posição', 'Custódia e disponibilidade', 'Posição de estoque'],
@@ -48,13 +49,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
 }
 
 function InventoryError({ message }: { message: string }) {
-  return (
-    <section className="detail-section demo-section">
-      <p className="section-kicker">ESTOQUE INDISPONÍVEL</p>
-      <h2>Não foi possível carregar a posição</h2>
-      <p>{message}</p>
-    </section>
-  );
+  return <PageFeedback title="Não foi possível carregar a posição de estoque" message={message} action={{ href: '/estoque', label: 'Tentar novamente' }} />;
 }
 
 function InventoryWorkspace({ data }: { data: InventoryPosition }) {

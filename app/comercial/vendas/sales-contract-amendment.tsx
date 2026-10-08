@@ -35,7 +35,7 @@ export function SalesContractAmendment({ contract, counterparties }: {
         <Field label="Documentos exigidos"><input name="requiredDocuments" defaultValue={contract.required_documents.join(', ')} /></Field>
         <Field label="Prazo financeiro"><input type="number" name="paymentTermDays" min={0} max={730} defaultValue={contract.payment_term_days ?? ''} /></Field>
       </div>
-      {state.message ? <p className="fulfillment-feedback" data-ok={state.ok || undefined}>{state.message}</p> : null}
+      {state.message ? <p className="fulfillment-feedback" data-ok={state.ok || undefined} role={state.ok ? 'status' : 'alert'} aria-live={state.ok ? 'polite' : 'assertive'}>{state.message}</p> : null}
       <Button type="submit" disabled={pending}>{pending ? 'Registrando…' : 'Registrar aditivo'}</Button>
     </form>
   </section>;

@@ -84,7 +84,7 @@ export function RiskWorkspaceView({ data }: { data: RiskWorkspace }) {
               <input type="hidden" name="commodity" value={primary.commodity} />
               <DecimalField name="maxNetOpenKg" label="Limite líquido" suffix="kg" defaultValue={primary.limit.maxNetOpenKg ?? '0'} fractionDigits={3} emptyWhenZero required />
               <DecimalField name="warningThresholdPct" label="Alertar a partir de" suffix="%" defaultValue={primary.limit.warningThresholdPct ?? '80'} fractionDigits={2} emptyWhenZero required />
-              {state.message ? <p className="fulfillment-feedback" data-ok={state.ok || undefined}>{state.message}</p> : null}
+              {state.message ? <p className="fulfillment-feedback" data-ok={state.ok || undefined} role={state.ok ? 'status' : 'alert'} aria-live={state.ok ? 'polite' : 'assertive'}>{state.message}</p> : null}
               <Button type="submit" disabled={pending}>{pending ? 'Salvando…' : 'Salvar nova versão'}</Button>
             </form>
           </section>

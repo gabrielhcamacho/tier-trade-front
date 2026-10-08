@@ -36,7 +36,7 @@ export function SalesContractForm({ contracts, counterparties }: {
       <Field label="Documentos exigidos" hint="Separe por vírgula."><input name="requiredDocuments" defaultValue={editing?.required_documents.join(', ') ?? ''} placeholder="Nota fiscal, romaneio" /></Field>
       <Field label="Prazo financeiro" hint="Dias corridos após expedição; vazio se indefinido."><input type="number" name="paymentTermDays" min={0} max={730} defaultValue={editing?.payment_term_days ?? ''} placeholder="7" /></Field>
     </div>
-    {state.message ? <p className="fulfillment-feedback" data-ok={state.ok || undefined}>{state.message}</p> : null}
+    {state.message ? <p className="fulfillment-feedback" data-ok={state.ok || undefined} role={state.ok ? 'status' : 'alert'} aria-live={state.ok ? 'polite' : 'assertive'}>{state.message}</p> : null}
     <Button type="submit" disabled={pending}>{pending ? 'Salvando…' : editing ? 'Atualizar contrato' : 'Criar contrato'}</Button>
   </form>;
 }

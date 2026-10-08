@@ -1,10 +1,10 @@
-import Link from 'next/link';
 import { currentUserContext } from '../../lib/current-user';
 import { loadFinance } from '../../lib/finance';
 import { AppShell } from '../app-shell';
 import { DemoNotice } from '../demo-notice';
 import { DemoPageHeader } from '../demo-ui';
 import { FinancialWorkspace } from './finance-workspace';
+import { PageFeedback } from '../page-state';
 
 const views = {
   overview: ['Visão geral', 'Liquidação e caixa', 'Controle financeiro'],
@@ -12,6 +12,7 @@ const views = {
   receivables: ['Contas a receber', 'Direitos', 'Contas a receber'],
   payables: ['Contas a pagar', 'Obrigações', 'Contas a pagar'],
   reconciliation: ['Conciliação', 'Movimentos bancários', 'Conciliação financeira'],
+  commissions: ['Comissões', 'Políticas e apropriações', 'Comissionamento'],
   cashflow: ['Fluxo de caixa', 'Previsão e realizado', 'Fluxo de caixa'],
 } as const;
 
@@ -35,7 +36,7 @@ export default async function FinancialPage({ searchParams }: { searchParams: Pr
       <div className="demo-page demo-workspace module-view" data-workspace-view={view}>
         {result.data?.tenant.isDemo ? <DemoNotice persisted /> : null}
         {result.error || !result.data
-          ? <div className="feedback critical"><strong>Não foi possível concluir</strong><span>{result.error}</span><Link href="/financeiro">Tentar novamente</Link></div>
+          ? <PageFeedback title="Não foi possível carregar o financeiro" message={result.error} action={{ href: '/financeiro', label: 'Tentar novamente' }} />
           : <FinancialWorkspace data={result.data} />}
       </div>
     </AppShell>

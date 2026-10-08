@@ -1,13 +1,15 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
 
-export function NavigationProgress() {
+function NavigationProgressContent() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const query = searchParams.toString();
   const [pending, setPending] = useState(false);
 
-  useEffect(() => { setPending(false); }, [pathname]);
+  useEffect(() => { setPending(false); }, [pathname, query]);
 
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
@@ -15,7 +17,8 @@ export function NavigationProgress() {
       const anchor = (event.target as Element).closest<HTMLAnchorElement>('a[href]');
       if (!anchor || anchor.hasAttribute('download') || anchor.target === '_blank') return;
       const destination = new URL(anchor.href, window.location.href);
-      if (destination.origin !== window.location.origin || destination.pathname === window.location.pathname) return;
+      const sameRoute = destination.pathname === window.location.pathname && destination.search === window.location.search;
+      if (destination.origin !== window.location.origin || sameRoute) return;
       setPending(true);
     };
     document.addEventListener('click', onClick, true);
@@ -29,4 +32,8 @@ export function NavigationProgress() {
   }, [pending]);
 
   return <div className="navigation-progress" data-pending={pending ? 'true' : undefined} role="status" aria-live="polite"><span className="navigation-progress-bar" /><span className="navigation-progress-message" aria-hidden={!pending}><i aria-hidden="true" />{pending ? 'Abrindo página…' : ''}</span></div>;
+}
+
+export function NavigationProgress() {
+  return <Suspense fallback={<div className="navigation-progress" aria-hidden="true" />}><NavigationProgressContent /></Suspense>;
 }

@@ -78,7 +78,7 @@ function ObligationEditor({ contractId, obligation, documents }: {
           <textarea name="description" defaultValue={obligation.description ?? ''} minLength={3} maxLength={1000} rows={3} />
         </Field>
         <div className="contract-obligation-action">
-          {state.message ? <p className="fulfillment-feedback" data-ok={state.ok || undefined}>{state.message}</p> : null}
+          {state.message ? <p className="fulfillment-feedback" data-ok={state.ok || undefined} role={state.ok ? 'status' : 'alert'} aria-live={state.ok ? 'polite' : 'assertive'}>{state.message}</p> : null}
           <Button type="submit" disabled={pending}>{pending ? 'Salvando…' : 'Salvar obrigação'}</Button>
         </div>
       </form>
@@ -101,7 +101,7 @@ function ObligationEditor({ contractId, obligation, documents }: {
               {availableDocuments.map((item) => <option value={item.id} key={item.id}>{item.file_name}</option>)}
             </select>
           </Field>
-          {evidenceState.message ? <p className="fulfillment-feedback" data-ok={evidenceState.ok || undefined}>{evidenceState.message}</p> : null}
+          {evidenceState.message ? <p className="fulfillment-feedback" data-ok={evidenceState.ok || undefined} role={evidenceState.ok ? 'status' : 'alert'} aria-live={evidenceState.ok ? 'polite' : 'assertive'}>{evidenceState.message}</p> : null}
           <Button type="submit" disabled={evidencePending || availableDocuments.length === 0}>
             {evidencePending ? 'Vinculando…' : 'Vincular evidência'}
           </Button>
@@ -125,7 +125,7 @@ function NewObligation({ contractId }: { contractId: string }) {
         <Field label="Prazo"><input name="dueDate" type="date" /></Field>
         <Field label="Descrição"><textarea name="description" minLength={3} maxLength={1000} rows={3} /></Field>
         <div className="contract-obligation-action">
-          {state.message ? <p className="fulfillment-feedback" data-ok={state.ok || undefined}>{state.message}</p> : null}
+          {state.message ? <p className="fulfillment-feedback" data-ok={state.ok || undefined} role={state.ok ? 'status' : 'alert'} aria-live={state.ok ? 'polite' : 'assertive'}>{state.message}</p> : null}
           <Button type="submit" disabled={pending}>{pending ? 'Criando…' : 'Criar obrigação'}</Button>
         </div>
       </form>

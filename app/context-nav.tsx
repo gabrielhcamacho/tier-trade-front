@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 
 type Domain = 'central' | 'commercial' | 'contracts' | 'operations' | 'inventory' | 'risk' | 'financial' | 'fiscal';
-type Tab = { label: string; href?: string };
+type Tab = { label: string; href?: string; unavailableReason?: string };
 
 // Only implemented screens receive a link. Planned screens stay visible and inert.
 const tabs: Record<Domain, Tab[]> = {
@@ -16,12 +16,15 @@ const tabs: Record<Domain, Tab[]> = {
   ],
   commercial: [
     { label: 'Carteira', href: '/comercial/carteira' }, { label: 'Ofertas', href: '/ofertas' }, { label: 'Vendas', href: '/comercial/vendas' }, { label: 'Demandas', href: '/comercial/demandas' }, { label: 'Política de margem', href: '/comercial/politica-margem' },
-    { label: 'Negociações', href: '/comercial/negociacoes' }, { label: 'Formação de preço' }, { label: 'Confirmações', href: '/comercial/confirmacoes' },
+    { label: 'Negociações', href: '/comercial/negociacoes' },
+    { label: 'Formação de preço', unavailableReason: 'A formação já existe dentro de cada oferta; a tela consolidada ainda não foi construída.' },
+    { label: 'Confirmações', href: '/comercial/confirmacoes' },
   ],
   contracts: [
-    { label: 'Lista', href: '/contratos' }, { label: 'Obrigações', href: '/contratos/obrigacoes' }, { label: 'Fixações' },
+    { label: 'Lista', href: '/contratos' }, { label: 'Obrigações', href: '/contratos/obrigacoes' },
+    { label: 'Fixações', unavailableReason: 'Disponível após a homologação das regras de preço a fixar e fixações parciais.' },
     { label: 'Entregas', href: '/contratos?view=deliveries' }, { label: 'Custos e margem', href: '/contratos?view=economics' },
-    { label: 'Comissões' }, { label: 'Garantias', href: '/contratos?view=guarantees' },
+    { label: 'Comissões', href: '/contratos/comissoes' }, { label: 'Garantias', href: '/contratos?view=guarantees' },
     { label: 'Aditivos', href: '/contratos?view=amendments' }, { label: 'Assinaturas', href: '/contratos?view=signatures' },
   ],
   operations: [
@@ -40,7 +43,8 @@ const tabs: Record<Domain, Tab[]> = {
   financial: [
     { label: 'Visão financeira', href: '/financeiro' }, { label: 'Liquidações', href: '/financeiro?view=settlements' },
     { label: 'Contas a receber', href: '/financeiro?view=receivables' }, { label: 'Contas a pagar', href: '/financeiro?view=payables' },
-    { label: 'Conciliação', href: '/financeiro?view=reconciliation' }, { label: 'Fluxo de caixa', href: '/financeiro?view=cashflow' },
+    { label: 'Conciliação', href: '/financeiro?view=reconciliation' }, { label: 'Comissões', href: '/financeiro?view=commissions' },
+    { label: 'Fluxo de caixa', href: '/financeiro?view=cashflow' },
   ],
   fiscal: [
     { label: 'Visão fiscal', href: '/fiscal' }, { label: 'Documentos', href: '/fiscal?view=documents' },
@@ -61,10 +65,10 @@ function ContextNavContent({ activeDomain }: { activeDomain: Domain }) {
   const hasExactPathTarget = tabs[activeDomain].some(({ href }) => href?.split('?')[0] === pathname);
   return (
     <nav className="context-bar" aria-label={`Telas de ${domainLabels[activeDomain]}`}>
-      {tabs[activeDomain].map(({ label, href }) => href ? (
+      {tabs[activeDomain].map(({ label, href, unavailableReason }) => href ? (
         <Link key={label} className={isActiveTab(pathname, currentView, href, hasExactPathTarget) ? 'active' : undefined} aria-current={isActiveTab(pathname, currentView, href, hasExactPathTarget) ? 'page' : undefined} href={href}>{label}</Link>
       ) : (
-        <span key={label} aria-disabled="true" title="Tela planejada, ainda indisponível">{label}</span>
+        <span key={label} aria-disabled="true" title={unavailableReason ?? 'Tela planejada, ainda indisponível'}>{label}</span>
       ))}
     </nav>
   );

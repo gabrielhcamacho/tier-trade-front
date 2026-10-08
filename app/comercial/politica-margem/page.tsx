@@ -2,6 +2,7 @@ import { Button, DecimalField, Status } from '@mountier/tier-trade-design-system
 import { AppShell } from '../../app-shell';
 import { currentUserContext } from '../../../lib/current-user';
 import { publishMarginPolicy } from './actions';
+import { PageFeedback } from '../../page-state';
 
 type Policy = {
   commodity: 'MILHO' | 'SOJA'; version: number;
@@ -38,8 +39,8 @@ export default async function MarginPolicyPage({ searchParams }: {
           <h1>Política de margem</h1>
           <p>Limites por commodity, versionados e aplicados aos cenários de preço da sua empresa.</p>
         </div></header>
-        {feedback ? <div className={`feedback ${query.resultado === 'salvo' ? 'positive' : 'critical'}`} role={query.resultado === 'salvo' ? 'status' : 'alert'}>{feedback}</div> : null}
-        {!policies ? <div className="feedback critical" role="alert">Não foi possível consultar a API. As políticas não foram alteradas.</div> : null}
+        {feedback ? <PageFeedback title={query.resultado === 'salvo' ? 'Política publicada' : 'Não foi possível publicar'} message={feedback} tone={query.resultado === 'salvo' ? 'positive' : 'critical'} /> : null}
+        {!policies ? <PageFeedback title="Não foi possível consultar a API" message="As políticas não foram alteradas." action={{ href: '/comercial/politica-margem', label: 'Tentar novamente' }} /> : null}
         {policies?.map((policy, index) => {
           const commodity = index === 0 ? 'MILHO' : 'SOJA';
           return <section key={commodity} className="policy-section">

@@ -43,5 +43,5 @@ export function FulfillmentForms({ data }: { data: FulfillmentData }) {
 }
 
 function Feedback({ state }: { state: { ok: boolean; message: string } }) {
-  return state.message ? <p className="fulfillment-feedback" data-ok={state.ok || undefined}>{state.message}</p> : null;
+  return state.message ? <p className="fulfillment-feedback" data-ok={state.ok || undefined} role={state.ok ? 'status' : 'alert'} aria-live={state.ok ? 'polite' : 'assertive'}>{state.message}</p> : null;
 }

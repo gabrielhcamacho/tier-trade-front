@@ -45,7 +45,7 @@ export function PurchaseTerms({ contractId, terms, status }: {
         <Field label="Documentos exigidos"><textarea name="requiredDocuments" defaultValue={terms?.requiredDocuments ?? ''} maxLength={2000} rows={3} /></Field>
         <Field label="Condições de pagamento"><textarea name="paymentTerms" defaultValue={terms?.paymentTerms ?? ''} maxLength={2000} rows={3} /></Field>
         <div className="purchase-terms-action">
-          {state.message ? <p className="fulfillment-feedback" data-ok={state.ok || undefined} role="status">{state.message}</p> : null}
+          {state.message ? <p className="fulfillment-feedback" data-ok={state.ok || undefined} role={state.ok ? 'status' : 'alert'} aria-live={state.ok ? 'polite' : 'assertive'}>{state.message}</p> : null}
           <Button type="submit" disabled={pending}>{pending ? 'Salvando…' : isAmendment ? 'Registrar aditivo' : 'Salvar formalização'}</Button>
         </div>
       </form>

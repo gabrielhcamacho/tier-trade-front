@@ -15,9 +15,12 @@ import {
   formatDate,
   formatQuantity,
   loadContractSummary,
+  loadContractVersions,
   unitLabel,
   type ContractSummary,
+  type ContractVersion,
 } from '../../../lib/contracts';
+import { PageFeedback } from '../../page-state';
 
 export default async function ContractDetailPage({
   params,
@@ -25,15 +28,22 @@ export default async function ContractDetailPage({
   params: Promise<{ contractId: string }>;
 }) {
   const [{ contractId }, user] = await Promise.all([params, currentUserContext()]);
-  const [result, documentResult] = await Promise.all([
+  const [result, documentResult, versionsResult] = await Promise.all([
     loadContractSummary(contractId, user.identityHeaders),
     loadDocuments(user.identityHeaders, 'CONTRACT', contractId),
+    loadContractVersions(contractId, user.identityHeaders),
   ]);
 
   return (
     <AppShell activeDomain="contracts" userLabel={user.userLabel}>
       {result.error ? <ContractError message={result.error} /> : null}
-      {result.summary ? <ContractDetail summary={result.summary} documents={documentResult.items} documentError={documentResult.error} /> : null}
+      {result.summary ? <ContractDetail
+        summary={result.summary}
+        documents={documentResult.items}
+        documentError={documentResult.error}
+        versions={versionsResult.versions}
+        versionsError={versionsResult.error}
+      /> : null}
     </AppShell>
   );
 }
@@ -45,17 +55,17 @@ function ContractError({ message }: { message: string }) {
         <DetailNavigation backHref="/contratos" backLabel="Voltar aos contratos" items={[{ label: 'Contratos', href: '/contratos' }, { label: 'Detalhe' }]} />
         <h1>Contrato indisponível</h1>
       </header>
-      <div className="feedback critical detail-feedback" role="alert">
-        <strong>Não foi possível abrir o contrato</strong>
-        <span>{message}</span>
-        <Link href="/contratos">Voltar aos contratos</Link>
-      </div>
+      <PageFeedback title="Não foi possível abrir o contrato" message={message} action={{ href: '/contratos', label: 'Voltar aos contratos' }} />
     </>
   );
 }
 
-function ContractDetail({ summary, documents, documentError }: {
-  summary: ContractSummary; documents: StoredDocument[]; documentError: string | null;
+function ContractDetail({ summary, documents, documentError, versions, versionsError }: {
+  summary: ContractSummary;
+  documents: StoredDocument[];
+  documentError: string | null;
+  versions: ContractVersion[];
+  versionsError: string | null;
 }) {
   const signed = summary.obligations.find((item) => item.code === 'SIGNED_CONTRACT');
   const hasSignedDocument = !documentError && documents.some((item) =>
@@ -72,6 +82,7 @@ function ContractDetail({ summary, documents, documentError }: {
           </div>
           <div className="entity-actions">
             <Status tone="positive">{contractStatusLabel(summary.status)}</Status>
+            <Link className="tt-button" data-variant="secondary" data-size="md" href={`/contratos/${summary.id}/relatorio`} prefetch={false}>Exportar histórico</Link>
             {summary.status === 'ACTIVE' ? <Link className="tt-button" data-variant="primary" data-size="md" href={`/cargas?contractId=${summary.id}`}>Abrir agenda de cargas</Link> : null}
           </div>
         </div>
@@ -101,6 +112,7 @@ function ContractDetail({ summary, documents, documentError }: {
           <a href="#obrigacoes">Obrigações</a>
           <a href="#custos-margem">Custos e margem</a>
           <a href="#documentos">Documentos e auditoria</a>
+          <a href="#historico-contrato">Histórico</a>
         </nav>
       </header>
 
@@ -118,6 +130,8 @@ function ContractDetail({ summary, documents, documentError }: {
 
           <PurchaseTerms contractId={summary.id} terms={summary.purchase_terms} status={summary.status} />
           <ContractLifecycle contractId={summary.id} status={summary.status} />
+
+          <ContractVersionHistory versions={versions} error={versionsError} />
 
           <section className="detail-section" id="custos-margem" aria-labelledby="contract-economics-title">
             <header><p className="section-kicker">ESTADO ECONÔMICO</p><h2 id="contract-economics-title">Custos e margem contratados</h2></header>
@@ -167,6 +181,44 @@ function ContractDetail({ summary, documents, documentError }: {
       </div>
     </>
   );
+}
+
+function ContractVersionHistory({ versions, error }: { versions: ContractVersion[]; error: string | null }) {
+  return <section className="detail-section" id="historico-contrato" aria-labelledby="contract-history-title">
+    <header>
+      <div><p className="section-kicker">RASTREABILIDADE</p><h2 id="contract-history-title">Histórico de versões</h2></div>
+      <small>{versions.length} registro{versions.length === 1 ? '' : 's'} persistido{versions.length === 1 ? '' : 's'}</small>
+    </header>
+    {error ? <p className="detail-note" role="alert">{error}</p> : null}
+    {!error && versions.length === 0 ? <p className="detail-note">Nenhuma versão registrada.</p> : null}
+    {versions.length > 0 ? <ol className="contract-version-history">
+      {versions.map((version) => <li key={version.version_number}>
+        <span className="contract-version-number">v{version.version_number}</span>
+        <div>
+          <strong>{versionChangeLabel(version.change_type)}</strong>
+          <span>{contractStatusLabel(version.lifecycle_status)}</span>
+          {version.reason ? <p>{version.reason}</p> : null}
+          <small>{formatDateTime(version.recorded_at)}{version.effective_on ? ` · vigência em ${formatDate(version.effective_on)}` : ''}</small>
+        </div>
+      </li>)}
+    </ol> : null}
+  </section>;
+}
+
+function versionChangeLabel(value: ContractVersion['change_type']): string {
+  const labels: Record<ContractVersion['change_type'], string> = {
+    CREATED: 'Contrato criado',
+    TERMS_UPDATED: 'Termos atualizados',
+    STATUS_TRANSITION: 'Status alterado',
+    AMENDMENT: 'Aditivo formalizado',
+  };
+  return labels[value];
+}
+
+function formatDateTime(value: string): string {
+  return new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short', timeStyle: 'short', timeZone: 'UTC',
+  }).format(new Date(value)) + ' UTC';
 }
 
 function TraceStep({ label, value, state }: { label: string; value: string; state: 'done' | 'current' | 'future' }) {

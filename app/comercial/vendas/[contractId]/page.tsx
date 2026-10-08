@@ -10,6 +10,7 @@ import { formatTonnes } from '../../../../lib/inventory';
 import { loadSalesPortfolio } from '../../../../lib/sales';
 import { SalesContractLifecycle } from '../sales-contract-lifecycle';
 import { SalesContractAmendment } from '../sales-contract-amendment';
+import { PageFeedback } from '../../../page-state';
 
 export default async function SalesContractDetailPage({ params }: {
   params: Promise<{ contractId: string }>;
@@ -21,7 +22,7 @@ export default async function SalesContractDetailPage({ params }: {
   ]);
   const contract = portfolio.data?.items.find((item) => item.id === contractId);
   return <AppShell activeDomain="commercial" userLabel={user.userLabel}>
-    {!contract ? <><header className="page-header"><DetailNavigation backHref="/comercial/vendas" backLabel="Voltar às vendas" items={[{ label: 'Comercial' }, { label: 'Vendas', href: '/comercial/vendas' }, { label: 'Detalhe' }]} /><h1>Contrato de venda indisponível</h1></header><div className="feedback critical"><strong>Não foi possível abrir</strong><span>{portfolio.error ?? 'O contrato não foi encontrado.'}</span></div></> : <>
+    {!contract ? <><header className="page-header"><DetailNavigation backHref="/comercial/vendas" backLabel="Voltar às vendas" items={[{ label: 'Comercial' }, { label: 'Vendas', href: '/comercial/vendas' }, { label: 'Detalhe' }]} /><h1>Contrato de venda indisponível</h1></header><PageFeedback title="Não foi possível abrir" message={portfolio.error ?? 'O contrato não foi encontrado.'} action={{ href: '/comercial/vendas', label: 'Voltar às vendas' }} /></> : <>
       <header className="entity-header">
         <DetailNavigation backHref="/comercial/vendas" backLabel="Voltar às vendas" items={[{ label: 'Comercial' }, { label: 'Vendas', href: '/comercial/vendas' }, { label: contract.reference, mono: true }]} />
         <div className="entity-title-row"><div><p className="entity-kind">Contrato de venda</p><h1>{contract.reference}</h1><p>{contract.counterparty_name}</p></div><div className="entity-actions"><Status tone={contract.status === 'ACTIVE' ? 'positive' : contract.status === 'CANCELLED' ? 'critical' : 'neutral'}>{contractStatusLabel(contract.status)}</Status><Link className="tt-button" data-variant="primary" data-size="md" href="/estoque">Abrir execução em estoque</Link></div></div>

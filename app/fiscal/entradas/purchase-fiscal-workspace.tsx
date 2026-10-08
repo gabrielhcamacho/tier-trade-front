@@ -98,7 +98,7 @@ function PurchaseDecision({ document }: { document: FiscalWorkspace['purchaseDoc
 }
 
 function Feedback({ state }: { state: { ok: boolean; message: string } }) {
-  return state.message ? <p className="fulfillment-feedback" data-ok={state.ok || undefined}>{state.message}</p> : null;
+  return state.message ? <p className="fulfillment-feedback" data-ok={state.ok || undefined} role={state.ok ? 'status' : 'alert'} aria-live={state.ok ? 'polite' : 'assertive'}>{state.message}</p> : null;
 }
 
 function toLocalInput(value: string) {

@@ -1,10 +1,10 @@
-import Link from 'next/link';
 import { currentUserContext } from '../../lib/current-user';
 import { loadRisk } from '../../lib/risk';
 import { AppShell } from '../app-shell';
 import { DemoNotice } from '../demo-notice';
 import { DemoPageHeader } from '../demo-ui';
 import { RiskWorkspaceView } from './risk-workspace';
+import { PageFeedback } from '../page-state';
 
 const views = {
   overview: ['Exposição', 'Exposição consolidada', 'Posição de risco'],
@@ -32,7 +32,7 @@ export default async function RiskPage({ searchParams }: { searchParams: Promise
       <div className="demo-page demo-workspace module-view" data-workspace-view={view}>
         {result.data?.tenant.isDemo ? <DemoNotice persisted /> : null}
         {result.error || !result.data
-          ? <div className="feedback critical"><strong>Não foi possível concluir</strong><span>{result.error}</span><Link href="/risco">Tentar novamente</Link></div>
+          ? <PageFeedback title="Não foi possível carregar o risco" message={result.error} action={{ href: '/risco', label: 'Tentar novamente' }} />
           : <RiskWorkspaceView data={result.data} />}
       </div>
     </AppShell>

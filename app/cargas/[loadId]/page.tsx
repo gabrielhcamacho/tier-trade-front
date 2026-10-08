@@ -11,6 +11,7 @@ import { formatSchedule, formatWeightKg, loadLoadDetail, loadStatusLabel, type L
 import { ReceiptWorkspace } from './receipt-workspace';
 import { OperationalWorkspace } from './operational-workspace';
 import { ScheduleControls } from './schedule-controls';
+import { PageFeedback } from '../../page-state';
 
 export default async function LoadDetailPage({ params, searchParams }: {
   params: Promise<{ loadId: string }>;
@@ -35,7 +36,7 @@ export default async function LoadDetailPage({ params, searchParams }: {
 }
 
 function LoadError({ message }: { message: string }) {
-  return <div className="feedback critical detail-feedback" role="alert"><strong>Não foi possível abrir a carga</strong><span>{message}</span><Link href="/cargas">Voltar à agenda</Link></div>;
+  return <PageFeedback title="Não foi possível abrir a carga" message={message} action={{ href: '/cargas', label: 'Voltar à agenda' }} />;
 }
 
 function LoadDetail({ load, summary, documents, documentError }: {

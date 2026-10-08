@@ -40,7 +40,7 @@ export function DocumentPanel({ aggregateType, aggregateId, documents, error, re
         </Field>
         <Field label="Observação"><input name="notes" maxLength={1000} placeholder="Referência, origem ou contexto do arquivo" /></Field>
         <div className="document-upload-action">
-          {state.message ? <p className="fulfillment-feedback" data-ok={state.ok || undefined}>{state.message}</p> : null}
+          {state.message ? <p className="fulfillment-feedback" data-ok={state.ok || undefined} role={state.ok ? 'status' : 'alert'} aria-live={state.ok ? 'polite' : 'assertive'}>{state.message}</p> : null}
           <Button type="submit" disabled={pending}>{pending ? 'Enviando…' : 'Anexar documento'}</Button>
         </div>
       </form>
@@ -88,7 +88,7 @@ function SignatureRecorder({ documentId, returnPath }: { documentId: string; ret
       <Field label="Situação" required><select name="status" defaultValue="SIGNED"><option value="SIGNED">Assinada</option><option value="SENT">Enviada para assinatura</option><option value="PENDING">Pendente</option><option value="DECLINED">Recusada</option><option value="CANCELLED">Cancelada</option></select></Field>
       <Field label="Data e hora da assinatura" hint="Obrigatória quando a situação for Assinada"><input name="signedAt" type="datetime-local" /></Field>
       <Field label="Envelope ou referência"><input name="externalEnvelopeId" maxLength={240} placeholder="Identificador externo opcional" /></Field>
-      <div className="signature-recorder-action">{state.message ? <p className="fulfillment-feedback" data-ok={state.ok || undefined}>{state.message}</p> : null}<Button type="submit" disabled={pending}>{pending ? 'Registrando…' : 'Registrar evidência'}</Button></div>
+      <div className="signature-recorder-action">{state.message ? <p className="fulfillment-feedback" data-ok={state.ok || undefined} role={state.ok ? 'status' : 'alert'} aria-live={state.ok ? 'polite' : 'assertive'}>{state.message}</p> : null}<Button type="submit" disabled={pending}>{pending ? 'Registrando…' : 'Registrar evidência'}</Button></div>
     </form>
     <p>Este registro documenta a evidência informada; não assina o arquivo nem substitui a validação jurídica.</p>
   </details>;

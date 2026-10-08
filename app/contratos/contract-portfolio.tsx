@@ -14,6 +14,10 @@ export function ContractPortfolioView({ portfolio, filters, view }: {
   const items = portfolio.items.filter((contract) =>
     (!filters.commodity || contract.commodity === filters.commodity) &&
     (!filters.status || contract.status === filters.status));
+  const exportParams = new URLSearchParams();
+  if (filters.commodity) exportParams.set('commodity', filters.commodity);
+  if (filters.status) exportParams.set('status', filters.status);
+  const exportHref = `/contratos/relatorio${exportParams.size ? `?${exportParams.toString()}` : ''}`;
   return (
     <>
       <ContractMetrics items={items} view={view} />
@@ -23,7 +27,10 @@ export function ContractPortfolioView({ portfolio, filters, view }: {
         <label><small>Commodity</small><select name="commodity" defaultValue={filters.commodity ?? ''}><option value="">Milho e soja</option><option value="MILHO">Milho</option><option value="SOJA">Soja</option></select></label>
         <label><small>Status</small><select name="status" defaultValue={filters.status ?? ''}><option value="">Todos</option><option value="DRAFT">Rascunho</option><option value="AWAITING_SIGNATURE">Aguardando assinatura</option><option value="SIGNED">Assinado</option><option value="ACTIVE">Ativo</option><option value="CLOSED">Encerrado</option></select></label>
         <button type="submit">Filtrar</button>
-        <span className="prototype-filter-actions">{portfolio.tenant.legalName}</span>
+        <span className="prototype-filter-actions">
+          {portfolio.tenant.legalName}
+          <Link href={exportHref} prefetch={false}>Exportar relatório CSV</Link>
+        </span>
       </form>
       <div className="prototype-table-scroll"><table className="prototype-ledger">
         <ContractTableHead view={view} />

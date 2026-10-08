@@ -80,6 +80,22 @@ export type ContractSummaryResult =
   | { summary: ContractSummary; error: null }
   | { summary: null; error: string };
 
+export type ContractVersion = {
+  version_number: number;
+  lifecycle_status: string;
+  change_type: 'CREATED' | 'TERMS_UPDATED' | 'STATUS_TRANSITION' | 'AMENDMENT';
+  reason: string | null;
+  terms: Record<string, unknown>;
+  recorded_by: string;
+  recorded_at: string;
+  amendment_id: string | null;
+  effective_on: string | null;
+};
+
+export type ContractVersionsResult =
+  | { versions: ContractVersion[]; error: null }
+  | { versions: []; error: string };
+
 export type ContractListItem = {
   id: string;
   status: string;
@@ -171,6 +187,30 @@ export async function loadContractSummary(
     return { summary: await response.json() as ContractSummary, error: null };
   } catch {
     return { summary: null, error: 'Não foi possível acessar a API na porta configurada.' };
+  }
+}
+
+export async function loadContractVersions(
+  contractId: string,
+  identityHeaders: Record<string, string>,
+): Promise<ContractVersionsResult> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (!apiUrl || Object.keys(identityHeaders).length === 0) {
+    return { versions: [], error: 'A API ou a identidade do ambiente ainda não está configurada.' };
+  }
+
+  try {
+    const response = await fetch(`${apiUrl}/v1/contracts/${encodeURIComponent(contractId)}/versions`, {
+      headers: identityHeaders,
+      cache: 'no-store',
+    });
+    if (!response.ok) {
+      return { versions: [], error: 'A API não conseguiu carregar o histórico do contrato.' };
+    }
+    const result = await response.json() as { versions: ContractVersion[] };
+    return { versions: result.versions, error: null };
+  } catch {
+    return { versions: [], error: 'Não foi possível acessar o histórico na API.' };
   }
 }
 

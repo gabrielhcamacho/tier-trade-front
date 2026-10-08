@@ -3,6 +3,7 @@ import { AppShell } from '../../app-shell';
 import { currentUserContext } from '../../../lib/current-user';
 import { commodityLabel, formatDate, loadOpenContractObligations, obligationStatus } from '../../../lib/contracts';
 import { ClickableTableRow } from '../../clickable-table-row';
+import { EmptyState, PageFeedback } from '../../page-state';
 
 export default async function ObligationsPage() {
   const user = await currentUserContext();
@@ -19,7 +20,7 @@ export default async function ObligationsPage() {
           </div>
           <Link className="operational-link" href="/contratos">Ver contratos</Link>
         </header>
-        {result.error ? <div className="feedback critical" role="alert"><strong>Não foi possível carregar</strong><span>{result.error}</span></div> : null}
+        {result.error ? <PageFeedback title="Não foi possível carregar as obrigações" message={result.error} action={{ href: '/contratos/obrigacoes', label: 'Tentar novamente' }} /> : null}
         {!result.error ? <>
           <div className="prototype-table-scroll"><table className="prototype-ledger">
             <thead><tr><th>Obrigação</th><th>Contrato</th><th>Contraparte</th><th>Commodity</th><th>Responsável</th><th>Prazo</th><th>Status</th></tr></thead>
@@ -33,8 +34,8 @@ export default async function ObligationsPage() {
               <td>{obligationStatus(item.status)}</td>
             </ClickableTableRow>)}</tbody>
           </table></div>
-          {result.items.length === 0 ? <p className="prototype-empty">Não há obrigações contratuais abertas neste tenant.</p> : null}
-          {result.hasMore ? <p className="prototype-empty">Exibindo as primeiras 100 obrigações. A paginação completa ainda não está disponível.</p> : null}
+          {result.items.length === 0 ? <EmptyState title="Não há obrigações contratuais abertas" description="Novos compromissos aparecerão aqui quando forem registrados nos contratos da empresa." action={{ href: '/contratos', label: 'Abrir contratos' }} /> : null}
+          {result.hasMore ? <PageFeedback tone="info" title="A lista foi limitada" message="Exibindo as primeiras 100 obrigações. Refine a consulta enquanto a paginação completa não está disponível." /> : null}
         </> : null}
       </div>
     </AppShell>

@@ -5,6 +5,7 @@ import { formatFinancialDate, formatMoney, loadFinance, titleStatusLabel } from 
 import { AppShell } from '../../../app-shell';
 import { DetailNavigation } from '../../../detail-navigation';
 import { DemoNotice } from '../../../demo-notice';
+import { PageFeedback } from '../../../page-state';
 
 export default async function SettlementDetailPage({
   params,
@@ -17,7 +18,7 @@ export default async function SettlementDetailPage({
   if (result.error || !result.data) {
     return (
       <AppShell activeDomain="financial" userLabel={userLabel}>
-        <div className="feedback critical"><strong>Não foi possível concluir</strong><span>{result.error}</span></div>
+        <PageFeedback title="Não foi possível abrir a liquidação" message={result.error} action={{ href: '/financeiro', label: 'Voltar ao financeiro' }} />
       </AppShell>
     );
   }

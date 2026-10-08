@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { currentUserContext } from '../../lib/current-user';
 import { loadFiscal } from '../../lib/fiscal';
 import { loadDocuments } from '../../lib/documents';
@@ -6,6 +5,7 @@ import { AppShell } from '../app-shell';
 import { DemoNotice } from '../demo-notice';
 import { DemoPageHeader } from '../demo-ui';
 import { FiscalWorkspaceView } from './fiscal-workspace';
+import { PageFeedback } from '../page-state';
 
 const views = {
   overview: ['Visão fiscal', 'Configuração, recebimento e validação', 'Visão fiscal'],
@@ -38,7 +38,7 @@ export default async function FiscalPage({ searchParams }: { searchParams: Promi
       <div className="demo-page demo-workspace module-view" data-workspace-view={view}>
         {result.data?.tenant.isDemo ? <DemoNotice persisted /> : null}
         {result.error || !result.data
-          ? <div className="feedback critical"><strong>Não foi possível concluir</strong><span>{result.error}</span><Link href="/fiscal">Tentar novamente</Link></div>
+          ? <PageFeedback title="Não foi possível carregar o fiscal" message={result.error} action={{ href: '/fiscal', label: 'Tentar novamente' }} />
           : <FiscalWorkspaceView data={result.data} attachments={documentResult.items} attachmentError={documentResult.error} />}
       </div>
     </AppShell>
