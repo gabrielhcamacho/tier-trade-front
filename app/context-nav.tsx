@@ -15,7 +15,7 @@ const tabs: Record<Domain, Tab[]> = {
     { label: 'Alertas', href: '/central/fila?view=alerts' }, { label: 'Roteiro de demonstração', href: '/demonstracao' },
   ],
   commercial: [
-    { label: 'Carteira', href: '/comercial/carteira' }, { label: 'Ofertas', href: '/' }, { label: 'Vendas', href: '/comercial/vendas' }, { label: 'Demandas', href: '/comercial/demandas' }, { label: 'Política de margem', href: '/comercial/politica-margem' },
+    { label: 'Carteira', href: '/comercial/carteira' }, { label: 'Ofertas', href: '/ofertas' }, { label: 'Vendas', href: '/comercial/vendas' }, { label: 'Demandas', href: '/comercial/demandas' }, { label: 'Política de margem', href: '/comercial/politica-margem' },
     { label: 'Negociações', href: '/comercial/negociacoes' }, { label: 'Formação de preço' }, { label: 'Confirmações', href: '/comercial/confirmacoes' },
   ],
   contracts: [
@@ -82,7 +82,7 @@ function isActiveTab(pathname: string, currentView: string | null, href: string,
   const [targetPath, query = ''] = href.split('?');
   const targetView = new URLSearchParams(query).get('view');
   const pathMatches = pathname === targetPath
-    || (targetPath === '/' && pathname.startsWith('/ofertas/'))
+    || (targetPath === '/ofertas' && pathname.startsWith('/ofertas/'))
     || (!hasExactPathTarget && targetPath !== '/' && pathname.startsWith(`${targetPath}/`));
   if (!pathMatches) return false;
   return targetView ? currentView === targetView : currentView === null;

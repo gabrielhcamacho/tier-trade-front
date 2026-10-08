@@ -4,6 +4,7 @@ import { ClickableSurface } from '../../clickable-surface';
 import { currentUserContext } from '../../../lib/current-user';
 import { commodityLabel, formatCurrency, formatQuantity, loadOpenContractObligations, type OpenContractObligation } from '../../../lib/contracts';
 import { loadOverview, type OverviewResponse } from '../../../lib/overview';
+import { PageFeedback } from '../../page-state';
 
 export const dynamic = 'force-dynamic';
 
@@ -111,7 +112,7 @@ export default async function CentralPage({ searchParams }: { searchParams: Prom
         <span className="environment-label">{data?.tenant.legalName ?? 'Ambiente autenticado'}</span></div></header>
     <div className="demo-page">
       {data?.tenant.isDemo ? <div className="overview-demo-note">Ambiente de demonstração · dados salvos no backend deste tenant e isolados das outras contas.</div> : null}
-      {errors.length ? <div className="feedback critical" role="alert"><strong>Dados parciais</strong><span>{errors.join(' ')}</span></div> : null}
+      {errors.length ? <PageFeedback title="Dados parciais" message={errors.join(' ')} action={{ href: '/central/fila', label: 'Tentar novamente' }} /> : null}
       <section className="central-metrics" aria-label="Indicadores da carteira">
         <article><span>Ofertas abertas</span><strong>{data ? openOffers : '—'}</strong><small>Carteira comercial do tenant</small></article>
         <article data-primary="true"><span>Obrigações em aberto</span><strong>{data ? data.indicators.pendingObligationCount : '—'}</strong><small>Contratos ativos</small></article>
@@ -134,7 +135,7 @@ export default async function CentralPage({ searchParams }: { searchParams: Prom
         </section> : null}
         {view === 'approvals' ? <section className="central-section" id="aprovacoes" aria-labelledby="approvals-title">
           <header><div><p className="section-kicker">ALÇADA COMERCIAL</p><h2 id="approvals-title">Aprovações</h2></div><span>A decisão permanece humana e auditada no Comercial</span></header>
-          {approvals.length ? approvals.map((offer, index) => <ClickableSurface className="approval-preview" key={offer.id} href={`/?status=IN_APPROVAL&commodity=${offer.commodity}`} label={`Analisar oferta de ${commodityLabel(offer.commodity)} de ${offer.counterparty_name}`}>
+          {approvals.length ? approvals.map((offer, index) => <ClickableSurface className="approval-preview" key={offer.id} href={`/ofertas?status=IN_APPROVAL&commodity=${offer.commodity}`} label={`Analisar oferta de ${commodityLabel(offer.commodity)} de ${offer.counterparty_name}`}>
             <div className="approval-heading"><span className="approval-flag">{String(index + 1).padStart(2, '0')}</span>
               <div><small>OFERTA EM APROVAÇÃO</small><h3>{commodityLabel(offer.commodity)} · {formatQuantity(offer.quantity_sc)} sc</h3><p>{offer.counterparty_name} · {offer.id.slice(0, 8)}</p></div>
               <span className="demo-status" data-tone="attention">Aguardando</span></div>

@@ -9,7 +9,7 @@ export default async function Page() {
   return (
     <AppShell activeDomain="commercial" userLabel={userLabel}>
         <header className="page-header">
-          <DetailNavigation backHref="/" backLabel="Voltar às ofertas" items={[{ label: 'Comercial', href: '/' }, { label: 'Ofertas', href: '/' }, { label: 'Nova oferta' }]} />
+          <DetailNavigation backHref="/ofertas" backLabel="Voltar às ofertas" items={[{ label: 'Comercial', href: '/ofertas' }, { label: 'Ofertas', href: '/ofertas' }, { label: 'Nova oferta' }]} />
           <div className="page-header-row">
             <div>
               <p className="entity-kind">Oferta de compra</p>

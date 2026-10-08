@@ -5,6 +5,7 @@ import { formatCurrency, formatDate } from '../../../../lib/contracts';
 import { loadDemand, loadDemands } from '../../../../lib/demands';
 import { DemandForm } from '../demand-form';
 import { CloseDemandForm, NegotiationForm } from '../negotiation-forms';
+import { PageFeedback } from '../../../page-state';
 
 export default async function DemandDetailPage({ params }: { params: Promise<{ demandId: string }> }) {
   const { demandId } = await params;
@@ -13,11 +14,11 @@ export default async function DemandDetailPage({ params }: { params: Promise<{ d
   const demand = detail.data?.demand;
   return <AppShell activeDomain="commercial" userLabel={user.userLabel}>
     <div className="prototype-list-page"><header className="prototype-list-header"><div>
-      <DetailNavigation backHref="/comercial/demandas" backLabel="Voltar às demandas" items={[{ label: 'Comercial', href: '/' }, { label: 'Demandas', href: '/comercial/demandas' }, { label: 'Detalhe' }]} />
+      <DetailNavigation backHref="/comercial/demandas" backLabel="Voltar às demandas" items={[{ label: 'Comercial', href: '/ofertas' }, { label: 'Demandas', href: '/comercial/demandas' }, { label: 'Detalhe' }]} />
       <h1>{demand ? `${demand.direction === 'PURCHASE' ? 'Compra' : 'Venda'} · ${demand.counterparty_name}` : 'Demanda'}</h1>
       <p>{demand ? `${demand.commodity === 'MILHO' ? 'Milho' : 'Soja'} · ${demand.status === 'OPEN' ? 'Aberta' : 'Encerrada'} · versão ${demand.version}` : 'Consulta de intenção comercial'}</p>
     </div></header>
-    {detail.error || list.error ? <div className="feedback critical" role="alert">{detail.error ?? list.error}</div> : null}
+    {detail.error || list.error ? <PageFeedback title="Não foi possível abrir a demanda" message={detail.error ?? list.error} action={{ href: '/comercial/demandas', label: 'Voltar às demandas' }} /> : null}
     {demand && list.data ? <>
       <section className="commercial-demand-section"><p className="section-kicker">CONDIÇÕES PRELIMINARES</p><h2>Demanda</h2>
         <p>Entrega de {formatDate(demand.delivery_start)} a {formatDate(demand.delivery_end)}. Preço indicativo: {demand.indicative_price_per_sc ? `${formatCurrency(demand.indicative_price_per_sc)}/sc` : 'não informado'}.</p>

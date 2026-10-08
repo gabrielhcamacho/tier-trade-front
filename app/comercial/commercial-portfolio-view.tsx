@@ -72,7 +72,7 @@ export function CommercialConfirmationsView({ offers }: { offers: OfferPortfolio
       <thead><tr><th>Oferta</th><th>Contraparte</th><th>Commodity</th><th>Volume</th><th>Preço</th><th>Margem / sc</th><th>Cenário</th><th>Confirmação</th></tr></thead>
       <tbody>{items.map((offer) => <ConfirmationRow key={offer.id} offer={offer} />)}</tbody>
     </table></div>
-    {items.length === 0 ? <p className="prototype-empty">Nenhuma oferta está aguardando ou concluiu confirmação. <Link href="/">Ver ofertas</Link></p> : null}
+    {items.length === 0 ? <p className="prototype-empty">Nenhuma oferta está aguardando ou concluiu confirmação. <Link href="/ofertas">Ver ofertas</Link></p> : null}
   </>;
 }
 

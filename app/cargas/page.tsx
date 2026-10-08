@@ -11,6 +11,7 @@ import {
 import {
   formatSchedule, formatWeightKg, loadContractLoads, loadStatusLabel, type LoadAgenda,
 } from '../../lib/loads';
+import { PageFeedback } from '../page-state';
 
 export default async function LoadsPage({ searchParams }: {
   searchParams: Promise<{ contractId?: string; modo?: string }>;
@@ -45,7 +46,7 @@ export default async function LoadsPage({ searchParams }: {
 }
 
 function LoadError({ message }: { message: string }) {
-  return <div className="feedback critical loads-feedback" role="alert"><strong>Não foi possível abrir o contrato</strong><span>{message}</span><Link href="/">Voltar ao Comercial</Link></div>;
+  return <PageFeedback title="Não foi possível abrir o contrato" message={message} action={{ href: '/ofertas', label: 'Voltar ao Comercial' }} />;
 }
 
 function NoContractSelected() {
@@ -53,7 +54,7 @@ function NoContractSelected() {
     <section className="loads-empty-state" aria-labelledby="loads-empty-title">
       <span className="loads-empty-mark" aria-hidden="true">CT</span><p className="section-kicker">CONTRATO NECESSÁRIO</p><h2 id="loads-empty-title">Selecione um contrato ativo</h2>
       <p>A agenda começa no contrato. Ative uma oferta no Comercial, abra o contrato e siga para a execução física sem perder a rastreabilidade.</p>
-      <Link className="tt-button" data-variant="primary" data-size="md" href="/">Ir para ofertas</Link>
+      <Link className="tt-button" data-variant="primary" data-size="md" href="/ofertas">Ir para ofertas</Link>
     </section>
   );
 }

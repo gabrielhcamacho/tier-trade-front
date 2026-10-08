@@ -12,7 +12,7 @@ export default function UpdatePasswordPage() {
     const data = new FormData(event.currentTarget);
     const { error } = await createClient().auth.updateUser({ password: String(data.get('password')) });
     if (error) { setMessage('Não foi possível atualizar a senha.'); return; }
-    window.location.assign('/');
+    window.location.assign('/central');
   }
   return <main className="auth-shell"><Card className="auth-card">
     <div className="auth-brand"><BrandLogo /></div>

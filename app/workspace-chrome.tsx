@@ -27,7 +27,7 @@ function domainForPath(pathname: string): Domain {
 export function WorkspaceChrome({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [userLabel, setUserLabel] = useState('Usuário');
-  const publicPage = pathname === '/login' || pathname === '/update-password' || pathname.startsWith('/auth/');
+  const publicPage = pathname === '/' || pathname === '/landing' || pathname === '/login' || pathname === '/update-password' || pathname.startsWith('/auth/');
   const activeDomain = domainForPath(pathname);
 
   useEffect(() => { if (publicPage) setUserLabel('Usuário'); }, [publicPage]);
@@ -42,7 +42,7 @@ export function WorkspaceChrome({ children }: { children: ReactNode }) {
           <Link className="wordmark" href="/central" aria-label="Tier Trade, início"><BrandLogo variant="light" /></Link>
           <nav aria-label="Domínios">
             <Link className={activeDomain === 'central' ? 'active' : undefined} aria-current={activeDomain === 'central' ? 'page' : undefined} href="/central">Central</Link>
-            <Link className={activeDomain === 'commercial' ? 'active' : undefined} aria-current={activeDomain === 'commercial' ? 'page' : undefined} href="/">Comercial</Link>
+            <Link className={activeDomain === 'commercial' ? 'active' : undefined} aria-current={activeDomain === 'commercial' ? 'page' : undefined} href="/ofertas">Comercial</Link>
             <Link className={activeDomain === 'contracts' ? 'active' : undefined} aria-current={activeDomain === 'contracts' ? 'page' : undefined} href="/contratos">Contratos</Link>
             <Link className={activeDomain === 'operations' ? 'active' : undefined} aria-current={activeDomain === 'operations' ? 'page' : undefined} href="/cargas">Operações</Link>
             <Link className={activeDomain === 'inventory' ? 'active' : undefined} aria-current={activeDomain === 'inventory' ? 'page' : undefined} href="/estoque">Estoque</Link>
