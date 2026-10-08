@@ -19,7 +19,7 @@ function domainForPath(pathname: string): Domain {
   if (pathname.startsWith('/relatorios/operacoes')) return 'operations';
   if (pathname.startsWith('/central') || pathname.startsWith('/demonstracao')) return 'central';
   if (pathname.startsWith('/contratos') || pathname === '/documentos') return 'contracts';
-  if (pathname.startsWith('/cargas') || pathname.startsWith('/patio') || pathname.startsWith('/recebimentos')
+  if (pathname.startsWith('/operacoes') || pathname.startsWith('/cargas') || pathname.startsWith('/patio') || pathname.startsWith('/recebimentos')
     || pathname.startsWith('/qualidade') || pathname.startsWith('/ocorrencias')) return 'operations';
   if (pathname.startsWith('/estoque')) return 'inventory';
   if (pathname.startsWith('/risco')) return 'risk';
@@ -46,13 +46,13 @@ export function WorkspaceChrome({ children }: { children: ReactNode }) {
           <Link className="wordmark" href="/central" aria-label="Tier Trade, início"><BrandLogo variant="light" /></Link>
           <nav aria-label="Domínios">
             <Link className={activeDomain === 'central' ? 'active' : undefined} aria-current={activeDomain === 'central' ? 'page' : undefined} href="/central">Central</Link>
-            <Link className={activeDomain === 'commercial' ? 'active' : undefined} aria-current={activeDomain === 'commercial' ? 'page' : undefined} href="/ofertas">Comercial</Link>
-            <Link className={activeDomain === 'contracts' ? 'active' : undefined} aria-current={activeDomain === 'contracts' ? 'page' : undefined} href="/contratos">Contratos</Link>
-            <Link className={activeDomain === 'operations' ? 'active' : undefined} aria-current={activeDomain === 'operations' ? 'page' : undefined} href="/cargas">Operações</Link>
-            <Link className={activeDomain === 'inventory' ? 'active' : undefined} aria-current={activeDomain === 'inventory' ? 'page' : undefined} href="/estoque">Estoque</Link>
-            <Link className={activeDomain === 'risk' ? 'active' : undefined} aria-current={activeDomain === 'risk' ? 'page' : undefined} href="/risco">Risco</Link>
-            <Link className={activeDomain === 'financial' ? 'active' : undefined} aria-current={activeDomain === 'financial' ? 'page' : undefined} href="/financeiro">Financeiro</Link>
-            <Link className={activeDomain === 'fiscal' ? 'active' : undefined} aria-current={activeDomain === 'fiscal' ? 'page' : undefined} href="/fiscal">Fiscal</Link>
+            <Link className={activeDomain === 'commercial' ? 'active' : undefined} aria-current={activeDomain === 'commercial' ? 'page' : undefined} href="/comercial">Comercial</Link>
+            <Link className={activeDomain === 'contracts' ? 'active' : undefined} aria-current={activeDomain === 'contracts' ? 'page' : undefined} href="/contratos/visao-geral">Contratos</Link>
+            <Link className={activeDomain === 'operations' ? 'active' : undefined} aria-current={activeDomain === 'operations' ? 'page' : undefined} href="/operacoes">Operações</Link>
+            <Link className={activeDomain === 'inventory' ? 'active' : undefined} aria-current={activeDomain === 'inventory' ? 'page' : undefined} href="/estoque/visao-geral">Estoque</Link>
+            <Link className={activeDomain === 'risk' ? 'active' : undefined} aria-current={activeDomain === 'risk' ? 'page' : undefined} href="/risco/visao-geral">Risco</Link>
+            <Link className={activeDomain === 'financial' ? 'active' : undefined} aria-current={activeDomain === 'financial' ? 'page' : undefined} href="/financeiro/visao-geral">Financeiro</Link>
+            <Link className={activeDomain === 'fiscal' ? 'active' : undefined} aria-current={activeDomain === 'fiscal' ? 'page' : undefined} href="/fiscal/visao-geral">Fiscal</Link>
           </nav>
           <div className="user-menu">
             <span className="user-avatar" aria-hidden="true">{userLabel.slice(0, 1).toUpperCase()}</span>
