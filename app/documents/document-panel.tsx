@@ -24,6 +24,7 @@ export function DocumentPanel({ aggregateType, aggregateId, documents, error, re
   const router = useRouter();
   const [state, setState] = useState(initialState);
   const [pending, setPending] = useState(false);
+  const [selectedFileName, setSelectedFileName] = useState('');
 
   async function upload(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -52,7 +53,7 @@ export function DocumentPanel({ aggregateType, aggregateId, documents, error, re
       if (stored.error) { setState({ ok: false, message: 'O envio do arquivo falhou. Tente novamente.' }); return; }
       const completed = await completeDocumentUploadAction(prepared.id, returnPath);
       setState(completed);
-      if (completed.ok) { form.reset(); router.refresh(); }
+      if (completed.ok) { form.reset(); setSelectedFileName(''); router.refresh(); }
     } catch {
       setState({ ok: false, message: 'Não foi possível acessar o armazenamento. Tente novamente.' });
     } finally {
@@ -72,7 +73,24 @@ export function DocumentPanel({ aggregateType, aggregateId, documents, error, re
           </select>
         </Field>
         <Field label="Arquivo" hint="PDF, imagem, DOCX ou XLSX · até 25 MB" required>
-          <input name="file" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx" required />
+          <span className="document-file-control">
+            <span className="document-file-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M4 16.5v2A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5v-2" />
+              </svg>
+            </span>
+            <span className="document-file-name" title={selectedFileName || undefined} aria-live="polite">
+              {selectedFileName || 'Selecionar arquivo'}
+            </span>
+            <input
+              className="document-file-input"
+              name="file"
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx"
+              onChange={(event) => setSelectedFileName(event.currentTarget.files?.[0]?.name ?? '')}
+              required
+            />
+          </span>
         </Field>
         <Field label="Observação"><input name="notes" maxLength={1000} placeholder="Referência, origem ou contexto do arquivo" /></Field>
         <div className="document-upload-action">
