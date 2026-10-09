@@ -5,6 +5,7 @@ import { PageFeedback } from '../page-state';
 import { currentUserContext } from '../../lib/current-user';
 import { loadDashboard, type DashboardModule, type DashboardResponse } from '../../lib/dashboard';
 import { ChartTips } from './chart-tips';
+import { DashboardAutoRefresh } from './auto-refresh';
 import styles from './dashboard.module.css';
 import { clockTime } from './format';
 import { KpiStrip } from './ui';
@@ -69,6 +70,7 @@ export async function ModuleDashboardPage({ module }: { module: DashboardModule 
   return (
     <AppShell activeDomain={module} userLabel={user.userLabel}>
       <div className={styles.page}>
+        {result.data ? <DashboardAutoRefresh key={module} freshness={result.data.freshness} /> : null}
         <header className={styles.head}>
           <div>
             <h1>{config.title}</h1>
@@ -98,4 +100,3 @@ export async function ModuleDashboardPage({ module }: { module: DashboardModule 
     </AppShell>
   );
 }
-
