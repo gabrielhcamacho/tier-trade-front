@@ -5,6 +5,8 @@ export type DashboardPayload = {
   contractVersion: number;
   module: DashboardModule;
   scope?: { key: string; filters: Record<string, unknown> };
+  /** Tenant-local calendar the snapshot was bucketed with. */
+  calendar?: { today: string; timezone: string };
   indicators: Record<string, number | string | null>;
   breakdowns: Record<string, unknown>;
   alerts: Array<Record<string, unknown>>;
