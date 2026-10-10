@@ -129,16 +129,17 @@ export function FinancialWorkspace({ data }: { data: FinanceWorkspace }) {
         { label: 'Previsto em vendas', value: formatMoney(data.summary.projectedAmount), detail: `${salesEvents.length} expedição(ões)` },
         { label: 'A receber', value: formatMoney(data.summary.receivableAmount), detail: `${openTitles.length} título(s) com saldo`, tone: 'primary' },
         { label: 'Contas a pagar', value: formatMoney(data.summary.payableAmount), detail: `${openPayables.length} título(s) com saldo`, tone: 'attention' },
-        { label: 'Caixa realizado', value: formatMoney(data.summary.netCashFlowAmount), detail: `${formatMoney(data.summary.receivedAmount)} recebido · ${formatMoney(data.summary.paidAmount)} pago` },
+        { label: 'Fluxo líquido realizado', value: formatMoney(data.summary.netCashFlowAmount), detail: `${formatMoney(data.summary.receivedAmount)} recebido − ${formatMoney(data.summary.paidAmount)} pago · não é saldo bancário` },
       ]} />
 
-      <DemoSection kicker="MARGEM REALIZADA" title="Receita, custo e composição da compra" id="margem-realizada" aside="somente dados persistidos e rastreáveis">
+      <DemoSection kicker="MARGEM OPERACIONAL REALIZADA" title="Receita expedida menos aquisição e componentes da compra" id="margem-realizada" aside="visão gerencial; não é margem líquida contábil">
         <DemoMetricStrip items={[
-          { label: 'Receita expedida', value: formatMoney(data.governance.realizedMargin.revenueAmount), detail: 'expedições com preço calculado' },
-          { label: 'Custo apropriado', value: formatMoney(data.governance.realizedMargin.totalCostAmount), detail: 'compra + componentes proporcionais' },
-          { label: 'Margem realizada', value: formatMoney(data.governance.realizedMargin.realizedMarginAmount), detail: data.governance.realizedMargin.status === 'COMPLETE' ? 'cobertura completa disponível' : 'aguardando compra e venda conectadas', tone: 'primary' },
+          { label: 'Receita expedida', value: formatMoney(data.governance.realizedMargin.revenueAmount), detail: 'expedições com cálculo financeiro pronto; não significa recebido' },
+          { label: 'Custo operacional apropriado', value: formatMoney(data.governance.realizedMargin.totalCostAmount), detail: 'aquisição rateada + componentes ativos da compra' },
+          { label: 'Margem operacional realizada', value: formatMoney(data.governance.realizedMargin.realizedMarginAmount), detail: data.governance.realizedMargin.status === 'COMPLETE' ? 'escopo operacional calculado; não é fechamento contábil' : 'aguardando compra e venda conectadas', tone: 'primary' },
         ]} />
-        {data.governance.realizedMargin.byCommodity.length ? <DemoTable label="Margem realizada por commodity"
+        <p className="finance-form-hint">Inclui receita expedida, aquisição apropriada e componentes ativos da compra. Não inclui, nesta versão, tributos e despesas da venda, comissões, despesas administrativas nem fechamento contábil.</p>
+        {data.governance.realizedMargin.byCommodity.length ? <DemoTable label="Margem operacional realizada por commodity"
           columns={['Commodity', 'Receita', 'Aquisição', 'Componentes', 'Custo total', 'Margem', 'Expedido']}
           rows={data.governance.realizedMargin.byCommodity.map((row) => [row.commodity, formatMoney(row.revenueAmount),
             formatMoney(row.acquisitionCostAmount), formatMoney(row.componentImpactAmount), formatMoney(row.totalCostAmount),

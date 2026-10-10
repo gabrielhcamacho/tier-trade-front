@@ -12,6 +12,8 @@ const messages: Record<string, string> = {
   ALLOCATION_EXCEEDS_CONTRACT_BALANCE: 'A alocação ultrapassa o saldo do contrato de venda.',
   DISPATCH_EXCEEDS_ALLOCATION_BALANCE: 'A expedição ultrapassa o saldo ainda alocado.',
   DISPATCH_EXCEEDS_PHYSICAL_BALANCE: 'A expedição ultrapassa o estoque físico.',
+  DISPATCH_NOT_FOUND: 'A expedição selecionada não foi encontrada.',
+  DESTINATION_UNLOAD_PRECEDES_DISPATCH: 'A descarga no destino não pode ocorrer antes da expedição.',
   CAPABILITY_NOT_FOUND: 'Seu usuário não possui permissão para esta operação.',
   COUNTERPARTY_PROFILE_REQUIRED: 'Classifique a contraparte antes de criar o contrato de venda.',
   INVENTORY_LOCATION_CODE_EXISTS: 'Já existe uma localização com esse código.',
@@ -103,6 +105,51 @@ export async function dispatchInventoryAction(
     documentReference: String(formData.get('documentReference') ?? ''),
     notes: String(formData.get('notes') ?? '').trim() || null,
   }, 'Expedição registrada e estoque baixado.');
+}
+
+export async function recordDestinationReceiptAction(
+  _state: FulfillmentState, formData: FormData,
+): Promise<FulfillmentState> {
+  const dispatchId = String(formData.get('dispatchId') ?? '');
+  const local = String(formData.get('unloadedAt') ?? '');
+  return send(`/v1/inventory/dispatches/${encodeURIComponent(dispatchId)}/destination-receipts`, 'POST', {
+    destinationWeightKg: decimal(formData.get('destinationWeightKg')),
+    unloadedAt: local ? `${local}:00-03:00` : '',
+    terminalCode: String(formData.get('terminalCode') ?? ''),
+    ticketReference: String(formData.get('ticketReference') ?? ''),
+    destinationDocumentReference: optional(formData.get('destinationDocumentReference')),
+    reason: String(formData.get('reason') ?? '').trim(),
+    notes: optional(formData.get('notes')),
+  }, 'Peso e ticket do destino registrados. O efeito financeiro continua aguardando política.');
+}
+
+export async function createDeliveryRequirementPolicyAction(
+  _state: FulfillmentState, formData: FormData,
+): Promise<FulfillmentState> {
+  return send('/v1/inventory/delivery-requirement-policies', 'POST', {
+    counterpartyId: String(formData.get('counterpartyId') ?? ''),
+    terminalCode: String(formData.get('terminalCode') ?? ''),
+    requirementType: String(formData.get('requirementType') ?? ''),
+    title: String(formData.get('title') ?? '').trim(),
+    responsibleName: String(formData.get('responsibleName') ?? '').trim(),
+    dueHoursAfterDispatch: Number(formData.get('dueHoursAfterDispatch') ?? 0),
+    portalName: optional(formData.get('portalName')),
+    portalUrl: optional(formData.get('portalUrl')),
+    consequence: String(formData.get('consequence') ?? ''),
+  }, 'Política criada. Ela será aplicada às próximas expedições do sacado e terminal.');
+}
+
+export async function updateDeliveryRequirementAction(
+  _state: FulfillmentState, formData: FormData,
+): Promise<FulfillmentState> {
+  const requirementId = String(formData.get('requirementId') ?? '');
+  return send(`/v1/inventory/delivery-requirements/${encodeURIComponent(requirementId)}`, 'PUT', {
+    status: String(formData.get('status') ?? ''),
+    evidenceReference: optional(formData.get('evidenceReference')),
+    portalConfirmation: optional(formData.get('portalConfirmation')),
+    notes: optional(formData.get('notes')),
+    reason: String(formData.get('reason') ?? '').trim(),
+  }, 'Pendência operacional atualizada com trilha de auditoria.');
 }
 
 export async function createLocationAction(_state: FulfillmentState, formData: FormData) {

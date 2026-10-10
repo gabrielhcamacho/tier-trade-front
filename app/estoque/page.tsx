@@ -108,7 +108,65 @@ function InventoryWorkspace({ data }: { data: InventoryPosition }) {
               salesContracts: data.salesContracts,
               allocations: data.allocations,
               lots: data.lots,
+              dispatches: data.dispatches,
+              counterparties: data.counterparties,
+              deliveryRequirementPolicies: data.deliveryRequirementPolicies,
+              deliveryRequirements: data.deliveryRequirements,
             }} />
+          </DemoSection>
+
+          <DemoSection kicker="REQUISITOS POR SACADO" title="Pendências de ticket e portal" aside={`${data.deliveryRequirements.length} ocorrências`}>
+            {data.deliveryRequirements.length > 0
+              ? <DemoTable label="Pendências por expedição" columns={['Contrato', 'Sacado / terminal', 'Exigência', 'Responsável', 'Prazo', 'Evidência', 'Situação', 'Consequência']} rows={data.deliveryRequirements.map((item) => [
+                item.contract_reference,
+                `${item.counterparty_name} · ${item.terminal_code}`,
+                `${item.title} · política v${item.policy_version}`,
+                item.responsible_name,
+                formatInventoryDate(item.due_at),
+                item.portal_confirmation ?? item.evidence_reference ?? 'Pendente',
+                <DemoStatus tone={item.status === 'ACCEPTED' || item.status === 'WAIVED' ? 'positive' : 'attention'} key={item.id}>{deliveryRequirementStatusLabel(item.status)}</DemoStatus>,
+                deliveryRequirementConsequenceLabel(item.consequence),
+              ])} />
+              : <EmptyState compact eyebrow="SEM PENDÊNCIAS" title="Nenhuma exigência materializada" description="Cadastre uma regra por sacado e terminal; ela será copiada de forma auditável para as próximas expedições correspondentes." />}
+          </DemoSection>
+
+          <DemoSection kicker="CONCILIAÇÃO ECONÔMICA" title="Da carga ao recebimento" aside="sem ajuste financeiro automático">
+            {data.economicReconciliations.length > 0
+              ? <DemoTable label="Conciliação econômica por expedição" columns={['Cadeia', 'Expedido / destino', 'Receita', 'Custo alocado', 'Margem operacional', 'NF-e', 'Recebível', 'Recebido', 'Saldo']} rows={data.economicReconciliations.map((item) => [
+                <span key={item.dispatch_id}>Compra v{item.purchase_contract_version_number} · carga <Link href={`/cargas/${item.source_load_id}`}>{item.source_load_id.slice(0, 8).toUpperCase()}</Link><br />Venda {item.sales_contract_reference} v{item.sales_contract_version_number}</span>,
+                `${formatTonnes(item.dispatched_weight_kg)} t / ${item.destination_weight_kg ? `${formatTonnes(item.destination_weight_kg)} t` : 'pendente'}`,
+                item.revenue_amount ? formatMoney(item.revenue_amount) : 'Pendente',
+                item.allocated_acquisition_cost_amount
+                  ? `${formatMoney(item.allocated_acquisition_cost_amount)}${item.allocated_component_impact_amount && Number(item.allocated_component_impact_amount) !== 0 ? ` (${formatMoney(item.allocated_component_impact_amount)} ajustes)` : ''}`
+                  : 'Compra sem título valorizado',
+                item.operational_margin_amount ? formatMoney(item.operational_margin_amount) : 'Pendente',
+                item.fiscal_document_number
+                  ? `${item.fiscal_document_number} · ${fiscalDocumentStatusLabel(item.fiscal_document_status)}`
+                  : 'Não vinculada',
+                item.title_number ? `${item.title_number} · ${titleStatusLabel(item.title_status)}` : 'Não emitido',
+                formatMoney(item.settled_amount),
+                item.outstanding_amount ? formatMoney(item.outstanding_amount) : '—',
+              ])} />
+              : <EmptyState compact eyebrow="SEM EXPEDIÇÕES" title="Nenhuma cadeia econômica para conciliar" description="A visão é formada automaticamente quando uma expedição gera seu evento financeiro." />}
+            <p>Receita, custo e margem são derivados dos eventos existentes. Peso de destino, ticket e documentos aparecem lado a lado, mas não alteram nota, título ou baixa sem uma regra homologada.</p>
+          </DemoSection>
+
+          <DemoSection kicker="CONCILIAÇÃO NO DESTINO" title="Peso expedido versus peso aceito" aside="sem efeito financeiro automático">
+            {data.dispatches.length > 0
+              ? <DemoTable label="Conciliação de expedições" columns={['Contrato', 'Lote', 'Expedido', 'Destino', 'Diferença', 'Ticket', 'Situação']} rows={data.dispatches.map((dispatch) => [
+                dispatch.contract_reference,
+                dispatch.lot_code,
+                `${formatTonnes(dispatch.quantity_kg)} t`,
+                dispatch.destination_weight_kg ? `${formatTonnes(dispatch.destination_weight_kg)} t` : 'Pendente',
+                dispatch.destination_difference_kg
+                  ? `${Number(dispatch.destination_difference_kg) > 0 ? '+' : ''}${formatTonnes(dispatch.destination_difference_kg)} t`
+                  : '—',
+                dispatch.ticket_reference ?? '—',
+                <DemoStatus tone={dispatch.destination_receipt_id ? 'attention' : undefined} key={dispatch.id}>
+                  {dispatch.destination_receipt_id ? 'Aguardando política' : 'Peso pendente'}
+                </DemoStatus>,
+              ])} />
+              : <EmptyState compact eyebrow="SEM EXPEDIÇÕES" title="Nenhuma saída para conciliar" description="Registre uma expedição para depois informar o peso e o ticket aceitos no destino." />}
           </DemoSection>
 
           <DemoSection kicker="CARTEIRA DE VENDA" title="Saldos executados" aside={`${data.salesContracts.length} contratos`}>
@@ -199,4 +257,35 @@ function custodyLabel(value: string): string {
 
 function formatPercent(value: string): string {
   return `${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 }).format(Number(value))}%`;
+}
+
+function deliveryRequirementStatusLabel(value: string): string {
+  if (value === 'PENDING') return 'Pendente';
+  if (value === 'SUBMITTED') return 'Enviado';
+  if (value === 'ACCEPTED') return 'Aceito';
+  if (value === 'REJECTED') return 'Rejeitado';
+  if (value === 'WAIVED') return 'Dispensado';
+  return value;
+}
+
+function deliveryRequirementConsequenceLabel(value: string): string {
+  if (value === 'BLOCK_OPERATIONAL_CLOSURE') return 'Bloquear fechamento (não aplicado)';
+  if (value === 'BLOCK_ANTICIPATION') return 'Bloquear antecipação (não aplicado)';
+  return 'Informativa';
+}
+
+function formatMoney(value: string): string {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value));
+}
+
+function fiscalDocumentStatusLabel(value: string | null): string {
+  if (value === 'VALIDATED') return 'validada';
+  if (value === 'REJECTED') return 'rejeitada';
+  return 'recebida';
+}
+
+function titleStatusLabel(value: string | null): string {
+  if (value === 'PARTIALLY_SETTLED') return 'parcial';
+  if (value === 'SETTLED') return 'liquidado';
+  return 'aberto';
 }

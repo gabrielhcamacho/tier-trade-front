@@ -98,6 +98,12 @@ export type FinanceGovernance = {
   realizedMargin: {
     status: 'COMPLETE' | 'NO_DATA'; revenueAmount: string; totalCostAmount: string;
     realizedMarginAmount: string;
+    calculationScope: {
+      basis: 'OPERATIONAL_REALIZED_MARGIN_V1';
+      included: string[];
+      excluded: string[];
+      accountingResult: false;
+    };
     byCommodity: Array<{ commodity: string; revenueAmount: string; acquisitionCostAmount: string;
       componentImpactAmount: string; totalCostAmount: string; realizedMarginAmount: string; dispatchedKg: string }>;
   };

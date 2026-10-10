@@ -65,6 +65,44 @@ export type InventoryPosition = {
     id: string; allocation_id: string; sales_contract_version_number: number; quantity_kg: string; dispatched_at: string;
     vehicle_plate: string; document_reference: string; notes: string | null;
     contract_reference: string; lot_code: string;
+    destination_receipt_id: string | null; destination_receipt_version: number | null;
+    destination_weight_kg: string | null; unloaded_at: string | null; terminal_code: string | null;
+    ticket_reference: string | null; destination_document_reference: string | null;
+    destination_receipt_reason: string | null; destination_receipt_notes: string | null;
+    destination_difference_kg: string | null;
+  }>;
+  economicReconciliations: Array<{
+    dispatch_id: string; dispatched_at: string; dispatch_document_reference: string;
+    dispatched_weight_kg: string; source_load_id: string; purchase_contract_id: string;
+    purchase_contract_version_number: number; sales_contract_id: string;
+    sales_contract_version_number: number; sales_contract_reference: string;
+    counterparty_name: string; lot_code: string; destination_weight_kg: string | null;
+    ticket_reference: string | null; financial_event_id: string | null;
+    revenue_calculation_status: string | null; revenue_amount: string | null;
+    purchase_financial_event_id: string | null; allocated_acquisition_cost_amount: string | null;
+    allocated_component_impact_amount: string | null; operational_margin_amount: string | null;
+    fiscal_document_id: string | null; fiscal_document_number: string | null;
+    fiscal_document_status: string | null; fiscal_document_amount: string | null;
+    title_id: string | null; title_number: string | null; title_status: string | null;
+    due_date: string | null; title_amount: string | null; settled_amount: string;
+    outstanding_amount: string | null;
+  }>;
+  deliveryRequirementPolicies: Array<{
+    id: string; counterparty_id: string; counterparty_name: string; terminal_code: string;
+    requirement_type: 'DESTINATION_TICKET' | 'PORTAL_CONFIRMATION'; version: number; title: string;
+    responsible_name: string; due_hours_after_dispatch: number; portal_name: string | null;
+    portal_url: string | null; consequence: 'INFORMATIONAL' | 'BLOCK_OPERATIONAL_CLOSURE' | 'BLOCK_ANTICIPATION';
+    active: boolean; created_at: string;
+  }>;
+  deliveryRequirements: Array<{
+    id: string; dispatch_id: string; policy_id: string; policy_version: number;
+    requirement_type: 'DESTINATION_TICKET' | 'PORTAL_CONFIRMATION'; title: string;
+    responsible_name: string; due_at: string; portal_name: string | null; portal_url: string | null;
+    consequence: 'INFORMATIONAL' | 'BLOCK_OPERATIONAL_CLOSURE' | 'BLOCK_ANTICIPATION';
+    status: 'PENDING' | 'SUBMITTED' | 'ACCEPTED' | 'REJECTED' | 'WAIVED';
+    evidence_reference: string | null; portal_confirmation: string | null; notes: string | null;
+    resolution_reason: string | null; submitted_at: string | null; resolved_at: string | null;
+    contract_reference: string; counterparty_name: string; terminal_code: string; document_reference: string;
   }>;
   counterparties: Array<{ id: string; legal_name: string }>;
   locations: Array<{ id: string; code: string; name: string; status: string }>;
